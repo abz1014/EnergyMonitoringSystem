@@ -109,6 +109,18 @@ public class FlowmeterData
     public string? Area { get; set; }
 }
 
+public class AppSetting
+{
+    public string SettingKey { get; set; } = "";
+    public string? SettingValue { get; set; }
+    public string? Category { get; set; }
+    public string? DisplayName { get; set; }
+    public string? Description { get; set; }
+    public string? DataType { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class DeviceTag
 {
     public int SrNo { get; set; }

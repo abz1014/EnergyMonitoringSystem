@@ -4,35 +4,36 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Interfaces;
 using EMS.Web.Models;
+using EMS.Web.Services;
 
 [Authorize(Roles = "Admin,Operator,Viewer")]
 public class CostDashboardController : Controller
 {
     private readonly IEnergyMeterRepository _meterRepo;
     private readonly IMonitoringDeviceRepository _deviceRepo;
-    private readonly IConfiguration _config;
+    private readonly AppSettingsService _settings;
     private readonly ILogger<CostDashboardController> _logger;
 
     public CostDashboardController(
         IEnergyMeterRepository meterRepo,
         IMonitoringDeviceRepository deviceRepo,
-        IConfiguration config,
+        AppSettingsService settings,
         ILogger<CostDashboardController> logger)
     {
         _meterRepo = meterRepo;
         _deviceRepo = deviceRepo;
-        _config = config;
+        _settings = settings;
         _logger = logger;
     }
 
     public async Task<IActionResult> Index()
     {
-        var defaultRate = _config.GetValue<double>("TariffRates:DefaultRate", 8.5);
-        var peakRate = _config.GetValue<double>("TariffRates:PeakRate", 10.2);
-        var offPeakRate = _config.GetValue<double>("TariffRates:OffPeakRate", 6.8);
-        var peakStart = _config.GetValue<int>("TariffRates:PeakStartHour", 10);
-        var peakEnd = _config.GetValue<int>("TariffRates:PeakEndHour", 18);
-        var currency = _config.GetValue<string>("TariffRates:Currency") ?? "₹";
+        var defaultRate = await _settings.GetDoubleAsync("Tariff.DefaultRate", 52.0);
+        var peakRate = await _settings.GetDoubleAsync("Tariff.PeakRate", 57.0);
+        var offPeakRate = await _settings.GetDoubleAsync("Tariff.OffPeakRate", 45.0);
+        var peakStart = await _settings.GetIntAsync("Tariff.PeakStartHour", 18);
+        var peakEnd = await _settings.GetIntAsync("Tariff.PeakEndHour", 22);
+        var currency = await _settings.GetAsync("Tariff.Currency", "Rs.");
 
         var model = new CostDashboardViewModel
         {

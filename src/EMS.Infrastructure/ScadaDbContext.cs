@@ -15,6 +15,7 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
     public DbSet<Alarm> Alarms { get; set; }
     public DbSet<FlowmeterData> FlowmetersData { get; set; }
     public DbSet<DeviceTag> DeviceTags { get; set; }
+    public DbSet<AppSetting> AppSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +27,7 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
         modelBuilder.Entity<Alarm>().ToTable("Alarms");
         modelBuilder.Entity<FlowmeterData>().ToTable("tbFlowmetersData");
         modelBuilder.Entity<DeviceTag>().ToTable("tblDevicesTags");
+        modelBuilder.Entity<AppSetting>().ToTable("tblAppSettings");
 
         // EnergyMeterData configurations
         modelBuilder.Entity<EnergyMeterData>()
@@ -60,6 +62,10 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
         modelBuilder.Entity<FlowmeterData>()
             .HasIndex(e => new { e.MeterNo, e.DateTime })
             .HasDatabaseName("IX_FlowmetersData_MeterNo_DateTime");
+
+        // AppSetting configurations
+        modelBuilder.Entity<AppSetting>()
+            .HasKey(e => e.SettingKey);
 
         // DeviceTag configurations
         modelBuilder.Entity<DeviceTag>()

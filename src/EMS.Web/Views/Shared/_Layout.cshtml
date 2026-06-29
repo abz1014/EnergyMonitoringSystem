@@ -157,6 +157,11 @@
             </a>
         </div>
 
+            <div class="sidebar-section">Admin</div>
+            <a class="sidebar-link @(ctrl == "Settings" ? "active" : "")" asp-controller="Settings" asp-action="Index">
+                <span class="sidebar-icon">&#9881;</span> Settings
+            </a>
+
         <div class="sidebar-footer">
             @if (User.Identity?.IsAuthenticated == true)
             {
