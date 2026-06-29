@@ -1,0 +1,196 @@
+@using EMS.Web.Models
+@model CostDashboardViewModel
+
+@{
+    ViewData["Title"] = "Cost Dashboard";
+    var c = Model.Currency;
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Cost Dashboard</h1>
+        <p class="text-muted">Energy cost analysis | Tariff: @c@Model.DefaultRate/kWh (Peak: @c@Model.PeakRate, Off-Peak: @c@Model.OffPeakRate)</p>
+    </div>
+
+    @if (!Model.HasData)
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128176;</div>
+            <h4 style="color: #E2E8F0;">No cost data available</h4>
+            <p style="color: #64748B;">Cost analysis will appear once meter data is available.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Today</div>
+                    <div style="color: #FFFFFF; font-size: 28px; font-weight: 700;">@c@Model.TodayCost.ToString("N0")</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #3B82F6;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">This Week</div>
+                    <div style="color: #FFFFFF; font-size: 28px; font-weight: 700;">@c@Model.WeekCost.ToString("N0")</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Month-to-Date</div>
+                    <div style="color: #FFFFFF; font-size: 28px; font-weight: 700;">@c@Model.MonthCost.ToString("N0")</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Projected Monthly</div>
+                    <div style="color: #FFFFFF; font-size: 28px; font-weight: 700;">@c@Model.ProjectedMonthlyCost.ToString("N0")</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Peak vs Off-Peak -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Peak vs Off-Peak Split</h5>
+                    <div id="peakSplitChart" style="height: 280px;"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Cost by Location</h5>
+                    @if (Model.CostByLocation.Count > 0)
+                    {
+                        <div id="locationCostChart" style="height: 280px;"></div>
+                    }
+                    else
+                    {
+                        <div style="height: 280px; display: flex; align-items: center; justify-content: center; color: #64748B;">No location data</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Cost Trend -->
+        @if (Model.DailyTrend.Count > 0)
+        {
+            <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+                <h5 class="text-light mb-3">Daily Cost Trend</h5>
+                <div id="dailyCostChart" style="height: 300px;"></div>
+            </div>
+        }
+
+        <!-- Cost by Meter Table -->
+        @if (Model.CostByMeter.Count > 0)
+        {
+            <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                <h5 class="text-light mb-3">Cost by Meter</h5>
+                <div id="meterCostChart" style="height: @(Math.Max(Model.CostByMeter.Count * 50, 200))px;"></div>
+
+                <table class="table table-dark table-sm mt-3" style="color: #E2E8F0; font-size: 13px;">
+                    <thead style="background-color: #0F172A;">
+                        <tr>
+                            <th style="color: #94A3B8;">Meter</th>
+                            <th style="color: #94A3B8;">Location</th>
+                            <th style="color: #94A3B8; text-align: right;">Consumption</th>
+                            <th style="color: #94A3B8; text-align: right;">Cost</th>
+                            <th style="color: #94A3B8; text-align: right;">Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.CostByMeter)
+                        {
+                            var avgRate = m.Kwh > 0 ? m.Cost / m.Kwh : 0;
+                            <tr>
+                                <td style="font-weight: 500;">@m.MeterName</td>
+                                <td style="color: #94A3B8;">@m.Location</td>
+                                <td style="text-align: right;">@m.Kwh.ToString("N0") kWh</td>
+                                <td style="text-align: right; font-weight: 600;">@c@m.Cost.ToString("N0")</td>
+                                <td style="text-align: right; color: #94A3B8;">@c@avgRate.ToString("F1")/kWh</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot style="border-top: 2px solid #334155;">
+                        <tr>
+                            <td colspan="2" style="font-weight: 700;">Total</td>
+                            <td style="text-align: right; font-weight: 700;">@Model.CostByMeter.Sum(m => m.Kwh).ToString("N0") kWh</td>
+                            <td style="text-align: right; font-weight: 700; color: #F59E0B;">@c@Model.CostByMeter.Sum(m => m.Cost).ToString("N0")</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+
+        <div class="mt-3 text-center">
+            <small style="color: #64748B;">Period: @Model.DataPeriod | Peak hours: 10:00 — 18:00</small>
+        </div>
+    }
+</div>
+
+@if (Model.HasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+    // Peak vs Off-Peak donut
+    new ApexCharts(document.querySelector('#peakSplitChart'), {
+        series: [@Model.PeakCost.ToString("F0"), @Model.OffPeakCost.ToString("F0")],
+        labels: ['Peak (@c@Model.PeakRate/kWh)', 'Off-Peak (@c@Model.OffPeakRate/kWh)'],
+        chart: { type: 'donut', height: 280, background: '#1E293B' },
+        colors: ['#F59E0B', '#3B82F6'],
+        legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
+        tooltip: { theme: 'dark', y: { formatter: function(v) { return '@c' + v.toLocaleString(); } } },
+        plotOptions: { pie: { donut: { labels: { show: true, total: { show: true, label: 'Total', color: '#94A3B8', formatter: function(w) { return '@c' + w.globals.seriesTotals.reduce(function(a,b){return a+b},0).toLocaleString(); } } } } } }
+    }).render();
+
+    @if (Model.CostByLocation.Count > 0)
+    {
+        <text>
+        new ApexCharts(document.querySelector('#locationCostChart'), {
+            series: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CostByLocation.Select(l => l.Cost))),
+            labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CostByLocation.Select(l => l.Location))),
+            chart: { type: 'donut', height: 280, background: '#1E293B' },
+            colors: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
+            legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
+            tooltip: { theme: 'dark', y: { formatter: function(v) { return '@c' + v.toLocaleString(); } } }
+        }).render();
+        </text>
+    }
+
+    @if (Model.DailyTrend.Count > 0)
+    {
+        <text>
+        new ApexCharts(document.querySelector('#dailyCostChart'), {
+            series: [{ name: 'Daily Cost', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DailyTrend.Select(d => d.Cost))) }],
+            chart: { type: 'bar', height: 300, background: '#1E293B', toolbar: { show: true } },
+            colors: ['#2563EB'],
+            xaxis: { categories: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DailyTrend.Select(d => d.Date))), labels: { style: { colors: '#94A3B8' }, rotate: -45 } },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return '@c' + v.toLocaleString(); } } },
+            tooltip: { theme: 'dark', y: { formatter: function(v) { return '@c' + v.toLocaleString(); } } },
+            grid: { borderColor: '#334155' },
+            plotOptions: { bar: { borderRadius: 4 } }
+        }).render();
+        </text>
+    }
+
+    @if (Model.CostByMeter.Count > 0)
+    {
+        <text>
+        new ApexCharts(document.querySelector('#meterCostChart'), {
+            series: [{ name: 'Cost', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CostByMeter.Select(m => m.Cost))) }],
+            chart: { type: 'bar', height: @(Math.Max(Model.CostByMeter.Count * 50, 200)), background: '#1E293B', toolbar: { show: false } },
+            plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
+            colors: ['#2563EB', '#3B82F6', '#60A5FA', '#10B981', '#F59E0B', '#EF4444'],
+            xaxis: { categories: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CostByMeter.Select(m => m.MeterName))), labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return '@c' + v.toLocaleString(); } } },
+            yaxis: { labels: { style: { colors: '#94A3B8' } } },
+            tooltip: { theme: 'dark', y: { formatter: function(v) { return '@c' + v.toLocaleString(); } } },
+            legend: { show: false }
+        }).render();
+        </text>
+    }
+    </script>
+}
+

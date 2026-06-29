@@ -123,6 +123,11 @@
                 <span class="sidebar-icon">&#9673;</span> Live Monitoring
             </a>
 
+            <div class="sidebar-section">Finance</div>
+            <a class="sidebar-link @(ctrl == "CostDashboard" ? "active" : "")" asp-controller="CostDashboard" asp-action="Index">
+                <span class="sidebar-icon">&#8377;</span> Cost Dashboard
+            </a>
+
             <div class="sidebar-section">Devices</div>
             <a class="sidebar-link @(ctrl == "MeterFaceplate" ? "active" : "")" asp-controller="MeterFaceplate" asp-action="Index">
                 <span class="sidebar-icon">&#9889;</span> Meter Faceplate
