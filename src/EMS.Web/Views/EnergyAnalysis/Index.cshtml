@@ -20,7 +20,7 @@
             <div class="col-12 col-md-2">
                 <label class="form-label text-light">Timeframe</label>
                 @{
-                    var timeframes = new[] { ("daily", "Today"), ("weekly", "This Week"), ("monthly", "This Month"), ("yearly", "This Year") };
+                    var timeframes = new[] { ("daily", "Today"), ("weekly", "This Week"), ("monthly", "This Month"), ("yearly", "This Year"), ("custom", "Custom Range") };
                     var metrics = new[] { ("kwh", "kWh"), ("peak", "kW (Peak)"), ("kva", "kVA"), ("kvar", "kVAR") };
                     var compares = new[] { ("", "None"), ("yesterday", "Previous Day"), ("lastweek", "Previous Week"), ("lastmonth", "Previous Month") };
                 }
@@ -69,6 +69,11 @@
                         }
                     }
                 </select>
+            </div>
+            <div class="col-12 col-md-2" id="customDateRange" style="display: @(Model.Timeframe == "custom" ? "block" : "none");">
+                <label class="form-label text-light">Date Range</label>
+                <input type="date" id="dateFrom" class="form-control mb-1" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" value="@Model.DateFrom.ToString("yyyy-MM-dd")" />
+                <input type="date" id="dateTo" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" value="@Model.DateTo.ToString("yyyy-MM-dd")" />
             </div>
             <div class="col-12 col-md-2">
                 <label class="form-label text-light">View</label>
@@ -225,7 +230,7 @@
                             var change = hasComp && compVal > 0 ? ((row.Total - compVal) / compVal) * 100 : 0;
 
                             <tr style="border-bottom: 1px solid #334155;">
-                                <td style="color: #E2E8F0;">@row.Date.ToString(Model.Timeframe == "daily" ? "HH:mm" : "yyyy-MM-dd")</td>
+                                <td style="color: #E2E8F0;">@row.Date.ToString(Model.Timeframe == "daily" ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd")</td>
                                 <td style="color: #CBD5E1;">@row.Total.ToString("F0")</td>
                                 <td style="color: #CBD5E1;">@row.Peak.ToString("F0")</td>
                                 <td style="color: #CBD5E1;">@row.Average.ToString("F0")</td>
@@ -313,6 +318,10 @@
         </text>
     }
 
+    document.getElementById('filterTimeframe').addEventListener('change', function() {
+        document.getElementById('customDateRange').style.display = this.value === 'custom' ? 'block' : 'none';
+    });
+
     function applyAnalysisFilters() {
         var overlay = document.getElementById('loadingOverlay');
         overlay.style.display = 'flex';
@@ -331,6 +340,14 @@
         url.searchParams.set('metric', metric);
         if (compare) url.searchParams.set('compareWith', compare);
         url.searchParams.set('view', view);
+
+        if (timeframe === 'custom') {
+            var dateFrom = document.getElementById('dateFrom').value;
+            var dateTo = document.getElementById('dateTo').value;
+            if (dateFrom) url.searchParams.set('dateFrom', dateFrom);
+            if (dateTo) url.searchParams.set('dateTo', dateTo);
+        }
+
         window.location.href = url.toString();
     }
 

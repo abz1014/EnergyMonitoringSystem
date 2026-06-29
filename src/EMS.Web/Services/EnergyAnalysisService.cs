@@ -18,13 +18,24 @@ public class EnergyAnalysisService : IEnergyAnalysisService
         _logger = logger;
     }
 
-    public async Task<EnergyAnalysisResultDto> GetAnalysisAsync(string timeframe, string metric, string compareWith)
+    private static readonly HashSet<string> ValidTimeframesExtended = new() { "daily", "weekly", "monthly", "yearly", "custom" };
+
+    public async Task<EnergyAnalysisResultDto> GetAnalysisAsync(string timeframe, string metric, string compareWith, DateTime? customFrom = null, DateTime? customTo = null)
     {
-        if (!ValidTimeframes.Contains(timeframe)) timeframe = "daily";
+        if (!ValidTimeframesExtended.Contains(timeframe)) timeframe = "daily";
         if (!ValidMetrics.Contains(metric)) metric = "kwh";
         if (!ValidCompare.Contains(compareWith)) compareWith = "";
 
-        var (dateFrom, dateTo) = GetDateRange(timeframe);
+        DateTime dateFrom, dateTo;
+        if (timeframe == "custom" && customFrom.HasValue && customTo.HasValue)
+        {
+            dateFrom = customFrom.Value;
+            dateTo = customTo.Value;
+        }
+        else
+        {
+            (dateFrom, dateTo) = GetDateRange(timeframe);
+        }
 
         List<EnergyMeterData> consumptionData;
         try

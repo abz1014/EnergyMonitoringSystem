@@ -17,11 +17,18 @@ public class EnergyAnalysisController : Controller
         _logger = logger;
     }
 
-    public async Task<IActionResult> Index(string timeframe = "daily", string compareWith = "", string metric = "kwh", string view = "peak")
+    public async Task<IActionResult> Index(string timeframe = "daily", string compareWith = "", string metric = "kwh", string view = "peak", string? dateFrom = null, string? dateTo = null)
     {
         try
         {
-            var result = await _analysisService.GetAnalysisAsync(timeframe, metric, compareWith);
+            DateTime? customFrom = null, customTo = null;
+            if (timeframe == "custom" && !string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
+            {
+                customFrom = DateTime.Parse(dateFrom);
+                customTo = DateTime.Parse(dateTo).AddDays(1).AddTicks(-1);
+            }
+
+            var result = await _analysisService.GetAnalysisAsync(timeframe, metric, compareWith, customFrom, customTo);
 
             var model = new EnergyAnalysisViewModel
             {

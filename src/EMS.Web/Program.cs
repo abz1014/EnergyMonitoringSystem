@@ -51,6 +51,7 @@ builder.Services.AddScoped<IEnergyMeterRepository, EnergyMeterRepository>();
 builder.Services.AddScoped<IMonitoringDeviceRepository, MonitoringDeviceRepository>();
 builder.Services.AddScoped<IAlarmRepository, AlarmRepository>();
 builder.Services.AddScoped<IFlowmeterRepository, FlowmeterRepository>();
+builder.Services.AddScoped<IDeviceTagRepository, DeviceTagRepository>();
 
 // Service dependency injection
 builder.Services.AddScoped<IDashboardService, WebDashboardService>();

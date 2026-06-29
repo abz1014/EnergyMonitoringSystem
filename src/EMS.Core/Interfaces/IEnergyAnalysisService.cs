@@ -4,7 +4,7 @@ using EMS.Core.Models;
 
 public interface IEnergyAnalysisService
 {
-    Task<EnergyAnalysisResultDto> GetAnalysisAsync(string timeframe, string metric, string compareWith);
+    Task<EnergyAnalysisResultDto> GetAnalysisAsync(string timeframe, string metric, string compareWith, DateTime? customFrom = null, DateTime? customTo = null);
 }
 
 public class EnergyAnalysisResultDto
