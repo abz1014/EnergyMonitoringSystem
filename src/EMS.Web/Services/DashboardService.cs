@@ -68,7 +68,7 @@ public class WebDashboardService : IDashboardService
             var co2Factor = 0.82;
             var co2Emissions = (todaysConsumption / 1000.0) * co2Factor;
 
-            var tariffRate = 35.0;
+            var tariffRate = 52.0;
             var estimatedCost = (monthlyTotal * tariffRate) / 100_000;
 
             var latestReadings = todayData.Where(d => d.MeterNo.HasValue).GroupBy(d => d.MeterNo!.Value).Select(g => g.OrderByDescending(d => d.DateTime).First()).ToList();
@@ -126,7 +126,7 @@ public class WebDashboardService : IDashboardService
                     Title = "Est. Monthly Cost",
                     Value = estimatedCost,
                     Unit = "Lakh Rs.",
-                    Trend = $"Rs.{tariffRate}/kWh",
+                    Trend = $"Rs.52/kWh (B2)",
                     Status = "warning",
                     Subtitle = "Projected spend"
                 },
