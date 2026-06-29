@@ -1,9 +1,11 @@
 namespace EMS.Web.Controllers;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using EMS.Core.Interfaces;
 
+[Authorize]
 public class LiveMonitoringController : Controller
 {
     private readonly ILiveMonitoringService _liveMonitoringService;

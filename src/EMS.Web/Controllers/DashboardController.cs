@@ -1,9 +1,11 @@
 namespace EMS.Web.Controllers;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using EMS.Core.Interfaces;
 
+[Authorize]
 public class DashboardController : Controller
 {
     private readonly IDashboardService _dashboardService;

@@ -1,9 +1,11 @@
 namespace EMS.Web.Controllers;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Interfaces;
 using EMS.Web.Models;
 
+[Authorize]
 public class EnergyAnalysisController : Controller
 {
     private readonly IEnergyMeterRepository _energyMeterRepository;
