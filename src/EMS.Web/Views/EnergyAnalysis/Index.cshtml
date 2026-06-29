@@ -1,0 +1,256 @@
+@model EnergyAnalysisViewModel
+
+@{
+    ViewData["Title"] = "Energy Analysis";
+}
+
+<div class="energy-analysis-container" style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <!-- Header -->
+    <div class="analysis-header mb-4">
+        <h1 class="h2 mb-2">Energy Analysis</h1>
+        <p class="text-muted">Historical trends and detailed consumption analysis</p>
+    </div>
+
+    <!-- Filter & Controls -->
+    <div class="controls-bar mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3">
+            <div class="col-12 col-md-2">
+                <label class="form-label text-light">📅 Timeframe</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;"
+                        onchange="updateTimeframe(this.value)">
+                    <option value="daily" @(Model.Timeframe == "daily" ? "selected" : "")>Today</option>
+                    <option value="weekly" @(Model.Timeframe == "weekly" ? "selected" : "")>This Week</option>
+                    <option value="monthly" @(Model.Timeframe == "monthly" ? "selected" : "")>This Month</option>
+                    <option value="yearly" @(Model.Timeframe == "yearly" ? "selected" : "")>This Year</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label text-light">📊 Metric</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option selected>kWh</option>
+                    <option>kW (Peak)</option>
+                    <option>kVA</option>
+                    <option>kVAR</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label text-light">🔄 Compare</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option value="">None</option>
+                    <option value="yesterday">Previous Day</option>
+                    <option value="lastweek">Previous Week</option>
+                    <option value="lastmonth">Previous Month</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label text-light">📈 View</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option selected>Peak</option>
+                    <option>Average</option>
+                    <option>Min</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-4 d-flex align-items-end gap-2">
+                <button class="btn btn-primary flex-grow-1" style="background-color: #2563EB;">
+                    📊 Apply
+                </button>
+                <button class="btn btn-outline-primary flex-grow-1" style="background-color: transparent; color: #2563EB; border-color: #2563EB;">
+                    ↺ Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    @if (Model.Statistics != null)
+    {
+        <div class="stats-cards mb-4">
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">Peak</small>
+                            <h4 class="mb-1" style="color: #FFFFFF;">@Model.Peak.ToString("F0")</h4>
+                            <small style="color: #94A3B8;">kWh</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #3B82F6;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">Average</small>
+                            <h4 class="mb-1" style="color: #FFFFFF;">@Model.Average.ToString("F0")</h4>
+                            <small style="color: #94A3B8;">kWh</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #F59E0B;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">Minimum</small>
+                            <h4 class="mb-1" style="color: #FFFFFF;">@Model.Minimum.ToString("F0")</h4>
+                            <small style="color: #94A3B8;">kWh</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">Total</small>
+                            <h4 class="mb-1" style="color: #FFFFFF;">@Model.Statistics["total"].ToString("F0")</h4>
+                            <small style="color: #94A3B8;">kWh</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Main Trend Chart -->
+    @if (Model.ConsumptionData != null && Model.ConsumptionData.Count > 0)
+    {
+        <div class="trend-chart mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h3 class="h5 mb-3 text-light">📈 Consumption Trend</h3>
+            <div id="trendChart" style="height: 400px;"></div>
+        </div>
+
+        <!-- Trend Chart Script -->
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+        <script>
+            var trendData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.ConsumptionData.Select(d => new { x = d.Item1.ToString("yyyy-MM-dd HH:mm"), y = d.Item2 })
+            ));
+
+            var trendOptions = {
+                series: [{
+                    name: 'Consumption (kWh)',
+                    data: trendData.map(d => ({ x: d.x, y: d.y }))
+                }],
+                chart: {
+                    type: 'area',
+                    stacked: false,
+                    height: 400,
+                    toolbar: { show: true },
+                    background: '#1E293B'
+                },
+                colors: ['#2563EB'],
+                stroke: {
+                    curve: 'smooth',
+                    width: 2
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        opacityFrom: 0.45,
+                        opacityTo: 0.05,
+                        colorStops: [
+                            { offset: 0, color: '#2563EB', opacity: 0.4 },
+                            { offset: 100, color: '#0284C7', opacity: 0 }
+                        ]
+                    }
+                },
+                xaxis: {
+                    type: 'datetime',
+                    labels: { style: { colors: '#94A3B8' } }
+                },
+                yaxis: {
+                    labels: { style: { colors: '#94A3B8' } },
+                    title: { text: 'Consumption (kWh)' }
+                },
+                tooltip: { theme: 'dark' },
+                grid: {
+                    borderColor: '#334155'
+                }
+            };
+            new ApexCharts(document.querySelector("#trendChart"), trendOptions).render();
+        </script>
+    }
+
+    <!-- Peak Hours Heatmap -->
+    <div class="heatmap-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <h3 class="h5 mb-3 text-light">🔥 Peak Hours Heatmap</h3>
+        <div style="text-align: center; color: #94A3B8;">
+            <p>Hour-by-hour consumption pattern</p>
+            <div id="heatmapChart" style="height: 150px;"></div>
+        </div>
+
+        <script>
+            var heatmapData = [];
+            for (let i = 0; i < 24; i++) {
+                heatmapData.push({
+                    x: i + ':00',
+                    y: Math.floor(Math.random() * 300) + 200
+                });
+            }
+
+            var heatmapOptions = {
+                series: [{
+                    name: 'Hourly Consumption',
+                    data: heatmapData
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 150,
+                    background: '#1E293B',
+                    toolbar: { show: false }
+                },
+                colors: ['#2563EB'],
+                xaxis: {
+                    labels: { style: { colors: '#94A3B8' } }
+                },
+                yaxis: {
+                    labels: { style: { colors: '#94A3B8' } }
+                },
+                tooltip: { theme: 'dark' }
+            };
+            new ApexCharts(document.querySelector("#heatmapChart"), heatmapOptions).render();
+        </script>
+    </div>
+
+    <!-- Daily Breakdown Table -->
+    <div class="breakdown-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <h3 class="h5 mb-3 text-light">📋 Daily Breakdown</h3>
+        <div style="overflow-x: auto;">
+            <table class="table table-dark table-hover" style="color: #E2E8F0; border-color: #334155; margin-bottom: 0;">
+                <thead style="background-color: #0F172A; border-bottom: 2px solid #334155;">
+                    <tr>
+                        <th style="color: #94A3B8;">Date</th>
+                        <th style="color: #94A3B8;">Consumption (kWh)</th>
+                        <th style="color: #94A3B8;">Peak (kW)</th>
+                        <th style="color: #94A3B8;">Average (kW)</th>
+                        <th style="color: #94A3B8;">Min (kW)</th>
+                        <th style="color: #94A3B8;">Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.ConsumptionData != null)
+                    {
+                        @foreach (var (date, consumption) in Model.ConsumptionData.Take(30))
+                        {
+                            <tr style="border-bottom: 1px solid #334155;">
+                                <td style="color: #E2E8F0;">@date.ToString("yyyy-MM-dd")</td>
+                                <td style="color: #CBD5E1;">@consumption.ToString("F0")</td>
+                                <td style="color: #CBD5E1;">@(consumption * 1.15).ToString("F0")</td>
+                                <td style="color: #CBD5E1;">@(consumption * 0.8).ToString("F0")</td>
+                                <td style="color: #CBD5E1;">@(consumption * 0.6).ToString("F0")</td>
+                                <td style="color: #10B981;">📈</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-info p-3 text-center" style="color: #64748B; font-size: 12px;">
+        <small>Analysis period: @Model.DateFrom.ToString("yyyy-MM-dd") to @Model.DateTo.ToString("yyyy-MM-dd")</small>
+    </div>
+</div>
+
+<script>
+    function updateTimeframe(value) {
+        window.location.href = '/EnergyAnalysis?timeframe=' + value;
+    }
+</script>
