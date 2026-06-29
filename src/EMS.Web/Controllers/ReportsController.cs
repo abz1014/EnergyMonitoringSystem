@@ -3,6 +3,7 @@ namespace EMS.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Interfaces;
+using EMS.Web.Services;
 using System.Text;
 
 [Authorize(Roles = "Admin,Operator,Viewer")]
@@ -10,22 +11,25 @@ public class ReportsController : Controller
 {
     private readonly IEnergyMeterRepository _meterRepo;
     private readonly IMonitoringDeviceRepository _deviceRepo;
+    private readonly ReportGeneratorService _reportGenerator;
     private readonly ILogger<ReportsController> _logger;
 
     public ReportsController(
         IEnergyMeterRepository meterRepo,
         IMonitoringDeviceRepository deviceRepo,
+        ReportGeneratorService reportGenerator,
         ILogger<ReportsController> logger)
     {
         _meterRepo = meterRepo;
         _deviceRepo = deviceRepo;
+        _reportGenerator = reportGenerator;
         _logger = logger;
     }
 
     public async Task<IActionResult> Index(string? dateFrom = null, string? dateTo = null, int? meterId = null)
     {
-        var from = string.IsNullOrEmpty(dateFrom) ? DateTime.Now.Date.AddDays(-7) : DateTime.Parse(dateFrom);
-        var to = string.IsNullOrEmpty(dateTo) ? DateTime.Now.Date.AddDays(1).AddTicks(-1) : DateTime.Parse(dateTo).AddDays(1).AddTicks(-1);
+        var from = DateTime.TryParse(dateFrom, out var pf1) ? pf1 : DateTime.Now.Date.AddDays(-7);
+        var to = DateTime.TryParse(dateTo, out var pt1) ? pt1.AddDays(1).AddTicks(-1) : DateTime.Now.Date.AddDays(1).AddTicks(-1);
 
         var data = await _meterRepo.GetByDateRange(from, to);
         if (meterId.HasValue)
@@ -51,8 +55,8 @@ public class ReportsController : Controller
     [HttpGet]
     public async Task<IActionResult> ExportCsv(string? dateFrom = null, string? dateTo = null, int? meterId = null)
     {
-        var from = string.IsNullOrEmpty(dateFrom) ? DateTime.Now.Date.AddDays(-7) : DateTime.Parse(dateFrom);
-        var to = string.IsNullOrEmpty(dateTo) ? DateTime.Now.Date.AddDays(1).AddTicks(-1) : DateTime.Parse(dateTo).AddDays(1).AddTicks(-1);
+        var from = DateTime.TryParse(dateFrom, out var pf2) ? pf2 : DateTime.Now.Date.AddDays(-7);
+        var to = DateTime.TryParse(dateTo, out var pt2) ? pt2.AddDays(1).AddTicks(-1) : DateTime.Now.Date.AddDays(1).AddTicks(-1);
 
         var data = await _meterRepo.GetByDateRange(from, to);
         if (meterId.HasValue)
@@ -68,5 +72,30 @@ public class ReportsController : Controller
 
         var fileName = $"EnergyReport_{from:yyyyMMdd}_{to.Date:yyyyMMdd}.csv";
         return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv", fileName);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportPdf(string? dateFrom = null, string? dateTo = null, int? meterId = null)
+    {
+        try
+        {
+            var from = DateTime.TryParse(dateFrom, out var pFrom) ? pFrom : DateTime.Now.Date.AddDays(-7);
+            var to = DateTime.TryParse(dateTo, out var pTo) ? pTo.AddDays(1).AddTicks(-1) : DateTime.Now.Date.AddDays(1).AddTicks(-1);
+
+            var data = await _meterRepo.GetByDateRange(from, to);
+            if (meterId.HasValue)
+                data = data.Where(d => d.MeterNo == meterId.Value).ToList();
+
+            var devices = await _deviceRepo.GetAllDevices();
+            var pdfBytes = _reportGenerator.GenerateReport(from, to.Date, data, devices, meterId);
+
+            var fileName = $"EnergyReport_{from:yyyyMMdd}_{to.Date:yyyyMMdd}.pdf";
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating PDF report");
+            return RedirectToAction("Index");
+        }
     }
 }

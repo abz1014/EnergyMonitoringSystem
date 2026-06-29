@@ -51,6 +51,8 @@
                 <button type="submit" class="btn btn-primary flex-grow-1" style="background-color: #2563EB;">Generate</button>
                 <a href="/Reports/ExportCsv?dateFrom=@dateFrom&dateTo=@dateTo@(selectedMeterId.HasValue ? $"&meterId={selectedMeterId}" : "")"
                    class="btn btn-success flex-grow-1">Export CSV</a>
+                <a href="/Reports/ExportPdf?dateFrom=@dateFrom&dateTo=@dateTo@(selectedMeterId.HasValue ? $"&meterId={selectedMeterId}" : "")"
+                   class="btn flex-grow-1" style="background-color: #EF4444; color: white;">Export PDF</a>
             </div>
         </form>
     </div>

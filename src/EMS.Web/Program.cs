@@ -58,6 +58,7 @@ builder.Services.AddScoped<IDashboardService, WebDashboardService>();
 builder.Services.AddScoped<ILiveMonitoringService, LiveMonitoringService>();
 builder.Services.AddScoped<IEnergyAnalysisService, EnergyAnalysisService>();
 builder.Services.AddScoped<BriefingService>();
+builder.Services.AddScoped<ReportGeneratorService>();
 
 // Role and user seeding
 builder.Services.AddScoped<RoleSeederService>();
