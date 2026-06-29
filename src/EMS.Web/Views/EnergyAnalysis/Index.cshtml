@@ -18,7 +18,7 @@
         <div class="row g-3">
             <div class="col-12 col-md-2">
                 <label class="form-label text-light">📅 Timeframe</label>
-                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;"
+                <select id="filterTimeframe" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;"
                         onchange="updateTimeframe(this.value)">
                     @if (Model.Timeframe == "daily") { <option value="daily" selected>Today</option> } else { <option value="daily">Today</option> }
                     @if (Model.Timeframe == "weekly") { <option value="weekly" selected>This Week</option> } else { <option value="weekly">This Week</option> }
@@ -28,16 +28,16 @@
             </div>
             <div class="col-12 col-md-2">
                 <label class="form-label text-light">📊 Metric</label>
-                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
-                    <option selected>kWh</option>
-                    <option>kW (Peak)</option>
-                    <option>kVA</option>
-                    <option>kVAR</option>
+                <select id="filterMetric" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option value="" selected>kWh</option>
+                    <option value="peak">kW (Peak)</option>
+                    <option value="kva">kVA</option>
+                    <option value="kvar">kVAR</option>
                 </select>
             </div>
             <div class="col-12 col-md-2">
                 <label class="form-label text-light">🔄 Compare</label>
-                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                <select id="filterCompare" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
                     <option value="">None</option>
                     <option value="yesterday">Previous Day</option>
                     <option value="lastweek">Previous Week</option>
@@ -46,17 +46,17 @@
             </div>
             <div class="col-12 col-md-2">
                 <label class="form-label text-light">📈 View</label>
-                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
-                    <option selected>Peak</option>
-                    <option>Average</option>
-                    <option>Min</option>
+                <select id="filterView" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option value="peak" selected>Peak</option>
+                    <option value="average">Average</option>
+                    <option value="min">Min</option>
                 </select>
             </div>
             <div class="col-12 col-md-4 d-flex align-items-end gap-2">
-                <button class="btn btn-primary flex-grow-1" style="background-color: #2563EB;">
+                <button class="btn btn-primary flex-grow-1" style="background-color: #2563EB;" onclick="applyAnalysisFilters()">
                     📊 Apply
                 </button>
-                <button class="btn btn-outline-primary flex-grow-1" style="background-color: transparent; color: #2563EB; border-color: #2563EB;">
+                <button class="btn btn-outline-primary flex-grow-1" style="background-color: transparent; color: #2563EB; border-color: #2563EB;" onclick="resetAnalysisFilters()">
                     ↺ Reset
                 </button>
             </div>
@@ -99,7 +99,7 @@
                     <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
                         <div class="card-body">
                             <small class="text-muted d-block mb-2">Total</small>
-                            <h4 class="mb-1" style="color: #FFFFFF;">@Model.Statistics["total"].ToString("F0")</h4>
+                            <h4 class="mb-1" style="color: #FFFFFF;">@(Model.Statistics?.ContainsKey("total") == true ? Model.Statistics["total"].ToString("F0") : "—")</h4>
                             <small style="color: #94A3B8;">kWh</small>
                         </div>
                     </div>
@@ -171,6 +171,26 @@
 
 <script>
     function updateTimeframe(value) {
-        window.location.href = '/EnergyAnalysis?timeframe=' + value;
+        const url = new URL(window.location);
+        url.searchParams.set('timeframe', value);
+        window.location.href = url.toString();
+    }
+
+    function applyAnalysisFilters() {
+        const timeframe = document.getElementById('filterTimeframe')?.value || 'daily';
+        const metric = document.getElementById('filterMetric')?.value || '';
+        const compare = document.getElementById('filterCompare')?.value || '';
+        const view = document.getElementById('filterView')?.value || 'peak';
+
+        const url = new URL(window.location);
+        url.searchParams.set('timeframe', timeframe);
+        if (metric) url.searchParams.set('metric', metric);
+        if (compare) url.searchParams.set('compareWith', compare);
+        if (view) url.searchParams.set('view', view);
+        window.location.href = url.toString();
+    }
+
+    function resetAnalysisFilters() {
+        window.location.href = '/EnergyAnalysis';
     }
 </script>
