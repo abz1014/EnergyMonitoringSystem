@@ -2,7 +2,7 @@ namespace EMS.Web.Models;
 
 public class CostDashboardViewModel
 {
-    public string Currency { get; set; } = "₹";
+    public string Currency { get; set; } = "Rs.";
     public double DefaultRate { get; set; }
     public double PeakRate { get; set; }
     public double OffPeakRate { get; set; }

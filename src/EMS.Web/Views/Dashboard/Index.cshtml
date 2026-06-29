@@ -95,7 +95,7 @@
                     };
                 @foreach (var kpi in kpis)
                 {
-                    var fmt = kpi.Card.Unit == "PF" ? "F2" : kpi.Card.Unit == "Million ₹" ? "F2" : "F0";
+                    var fmt = kpi.Card.Unit == "PF" ? "F2" : kpi.Card.Unit.Contains("Rs") ? "F2" : "F0";
                     <div class="col-12 col-sm-6 col-lg-3">
                         <a href="@kpi.Link" class="kpi-card">
                             <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid @kpi.Color;">
