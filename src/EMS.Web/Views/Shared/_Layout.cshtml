@@ -111,6 +111,10 @@
         <a class="sidebar-brand" asp-controller="Dashboard" asp-action="Index">EMS</a>
 
         <div class="sidebar-nav">
+            <a class="sidebar-link @(ctrl == "Briefing" ? "active" : "")" asp-controller="Briefing" asp-action="Index" style="@(ctrl == "Briefing" ? "background: rgba(37,99,235,0.15);" : "")">
+                <span class="sidebar-icon">&#9733;</span> Briefing
+            </a>
+
             <div class="sidebar-section">Monitoring</div>
             <a class="sidebar-link @(ctrl == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
                 <span class="sidebar-icon">&#9632;</span> Dashboard

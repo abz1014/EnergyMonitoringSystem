@@ -1,0 +1,165 @@
+@using EMS.Web.Models
+@model BriefingViewModel
+
+@{
+    ViewData["Title"] = "Daily Briefing";
+    var scoreColor = Model.PlantScore >= 80 ? "#10B981" : Model.PlantScore >= 50 ? "#F59E0B" : "#EF4444";
+    var scoreLabel = Model.PlantScore >= 80 ? "Excellent" : Model.PlantScore >= 50 ? "Needs Attention" : "Critical";
+    var trendIcon = Model.ConsumptionChange > 5 ? "&#9650;" : Model.ConsumptionChange < -5 ? "&#9660;" : "&#8594;";
+    var trendColor = Model.ConsumptionChange > 5 ? "#EF4444" : Model.ConsumptionChange < -5 ? "#10B981" : "#3B82F6";
+}
+
+<style>
+    .briefing-container { background: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 32px; }
+    .briefing-hero { background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border: 1px solid #334155; border-radius: 16px; padding: 40px; margin-bottom: 24px; }
+    .score-ring { width: 140px; height: 140px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; }
+    .score-ring::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 6px solid #334155; }
+    .score-ring::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 6px solid transparent; border-top-color: var(--score-color); border-right-color: var(--score-color); transform: rotate(-45deg); }
+    .score-number { font-size: 42px; font-weight: 800; line-height: 1; }
+    .score-label { font-size: 12px; color: #94A3B8; margin-top: 4px; }
+    .bp-card { background: #1E293B; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+    .insight-card { background: #1E293B; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 12px; transition: transform 0.15s; }
+    .insight-card:hover { transform: translateX(4px); }
+    .metric-value { font-size: 28px; font-weight: 700; color: #FFFFFF; }
+    .metric-label { font-size: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-sub { font-size: 13px; color: #64748B; margin-top: 4px; }
+    .action-btn { background: #2563EB; color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; text-decoration: none; transition: background 0.15s; }
+    .action-btn:hover { background: #1D4ED8; color: white; }
+    .action-btn-outline { background: transparent; color: #2563EB; border: 1px solid #2563EB; padding: 10px 24px; border-radius: 8px; font-size: 14px; text-decoration: none; transition: all 0.15s; }
+    .action-btn-outline:hover { background: #2563EB; color: white; }
+    .score-breakdown { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 16px; }
+    .sb-item { text-align: center; padding: 8px; background: #0F172A; border-radius: 8px; }
+    .sb-pts { font-size: 18px; font-weight: 700; }
+    .sb-label { font-size: 10px; color: #64748B; text-transform: uppercase; }
+</style>
+
+<div class="briefing-container">
+
+    @if (!Model.HasData)
+    {
+        <div class="briefing-hero text-center">
+            <h1 style="font-size: 28px; margin-bottom: 8px;">@Model.Greeting, @Model.UserName</h1>
+            <p style="color: #64748B; font-size: 16px; margin-bottom: 32px;">No recent meter data available to generate your briefing.</p>
+            <a href="/Dashboard" class="action-btn-outline">Go to Dashboard</a>
+        </div>
+    }
+    else
+    {
+        <!-- Hero Section -->
+        <div class="briefing-hero">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 style="font-size: 28px; font-weight: 300; margin-bottom: 4px; color: #E2E8F0;">@Model.Greeting, <strong>@Model.UserName</strong></h1>
+                    <p style="color: #64748B; font-size: 15px; margin-bottom: 24px;">Here is your plant performance summary for @Model.DataDateLabel</p>
+
+                    <div class="row g-4">
+                        <div class="col-6 col-md-3">
+                            <div class="metric-label">Consumption</div>
+                            <div class="metric-value">@Model.TotalConsumption.ToString("F0")</div>
+                            <div class="metric-sub">
+                                kWh <span style="color: @trendColor;">@Html.Raw(trendIcon) @Model.ConsumptionChange.ToString("+0.0;-0.0;0.0")%</span>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-label">Peak Demand</div>
+                            <div class="metric-value">@Model.PeakDemand.ToString("F1")</div>
+                            <div class="metric-sub">kW at @Model.PeakDemandTime</div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-label">Power Factor</div>
+                            <div class="metric-value" style="color: @(Model.AveragePowerFactor >= 0.90 ? "#10B981" : "#F59E0B")">@Model.AveragePowerFactor.ToString("F3")</div>
+                            <div class="metric-sub">@(Model.AveragePowerFactor >= 0.95 ? "Excellent" : Model.AveragePowerFactor >= 0.90 ? "Good" : "Below target")</div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-label">Active Alarms</div>
+                            <div class="metric-value" style="color: @(Model.ActiveAlarmCount == 0 ? "#10B981" : "#EF4444")">@Model.ActiveAlarmCount</div>
+                            <div class="metric-sub">@(Model.ActiveAlarmCount == 0 ? "All clear" : "Need attention")</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="score-ring mx-auto" style="--score-color: @scoreColor; border: 6px solid @scoreColor;">
+                        <div class="score-number" style="color: @scoreColor;">@Model.PlantScore</div>
+                        <div class="score-label">/ 100</div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 14px; font-weight: 600; color: @scoreColor;">@scoreLabel</div>
+                    <div style="font-size: 12px; color: #64748B;">Plant Health Score</div>
+
+                    <div class="score-breakdown">
+                        <div class="sb-item">
+                            <div class="sb-pts" style="color: @(Model.PfScore >= 20 ? "#10B981" : "#F59E0B")">@Model.PfScore</div>
+                            <div class="sb-label">PF</div>
+                        </div>
+                        <div class="sb-item">
+                            <div class="sb-pts" style="color: @(Model.ConsumptionScore >= 15 ? "#10B981" : "#F59E0B")">@Model.ConsumptionScore</div>
+                            <div class="sb-label">Load</div>
+                        </div>
+                        <div class="sb-item">
+                            <div class="sb-pts" style="color: @(Model.AlarmScore >= 15 ? "#10B981" : "#F59E0B")">@Model.AlarmScore</div>
+                            <div class="sb-label">Alarm</div>
+                        </div>
+                        <div class="sb-item">
+                            <div class="sb-pts" style="color: @(Model.PowerQualityScore >= 10 ? "#10B981" : "#F59E0B")">@Model.PowerQualityScore</div>
+                            <div class="sb-label">PQ</div>
+                        </div>
+                        <div class="sb-item">
+                            <div class="sb-pts" style="color: @(Model.DataQualityScore >= 5 ? "#10B981" : "#F59E0B")">@Model.DataQualityScore</div>
+                            <div class="sb-label">Data</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights -->
+        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #E2E8F0;">Things to Know Today</h3>
+
+        @foreach (var insight in Model.Insights)
+        {
+            <div class="insight-card" style="border-left: 4px solid @insight.Color;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div style="font-size: 15px; font-weight: 600; color: #E2E8F0; margin-bottom: 4px;">
+                            <span style="color: @insight.Color; margin-right: 8px;">@Html.Raw(insight.Icon)</span>
+                            @insight.Title
+                        </div>
+                        <div style="font-size: 13px; color: #94A3B8; line-height: 1.5;">@insight.Description</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(insight.ActionUrl))
+                    {
+                        <a href="@insight.ActionUrl" class="action-btn" style="white-space: nowrap; margin-left: 16px;">@insight.ActionLabel</a>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Quick Actions -->
+        <div class="mt-4 d-flex gap-3 flex-wrap">
+            <a href="/Dashboard" class="action-btn-outline">View Dashboard</a>
+            <a href="/EnergyAnalysis" class="action-btn-outline">Energy Analysis</a>
+            <a href="/LiveMonitoring" class="action-btn-outline">Live Monitoring</a>
+            <a href="/Reports" class="action-btn-outline">Reports</a>
+            <a href="/MeterFaceplate" class="action-btn-outline">Meter Faceplate</a>
+        </div>
+
+        <!-- Top Consumer + Data Quality -->
+        <div class="row g-3 mt-3">
+            <div class="col-md-6">
+                <div class="bp-card">
+                    <div class="metric-label" style="margin-bottom: 8px;">Top Consumer</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #FFFFFF;">@Model.TopConsumerName</div>
+                    <div style="font-size: 14px; color: #94A3B8;">@Model.TopConsumerKwh.ToString("F0") kWh — highest consumption @Model.DataDateLabel.ToLower()</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="bp-card">
+                    <div class="metric-label" style="margin-bottom: 8px;">Data Coverage</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #FFFFFF;">@Model.ReportingMeters / @Model.TotalMeters meters</div>
+                    <div style="font-size: 14px; color: #94A3B8;">
+                        @(Model.TotalMeters > 0 ? $"{Model.ReportingMeters * 100 / Model.TotalMeters}% of devices reported data" : "No devices configured")
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

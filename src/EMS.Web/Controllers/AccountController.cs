@@ -195,6 +195,6 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         }
 
-        return RedirectToAction("Index", "Dashboard");
+        return RedirectToAction("Index", "Briefing");
     }
 }

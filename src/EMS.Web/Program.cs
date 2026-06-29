@@ -57,6 +57,7 @@ builder.Services.AddScoped<IDeviceTagRepository, DeviceTagRepository>();
 builder.Services.AddScoped<IDashboardService, WebDashboardService>();
 builder.Services.AddScoped<ILiveMonitoringService, LiveMonitoringService>();
 builder.Services.AddScoped<IEnergyAnalysisService, EnergyAnalysisService>();
+builder.Services.AddScoped<BriefingService>();
 
 // Role and user seeding
 builder.Services.AddScoped<RoleSeederService>();
@@ -105,7 +106,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Briefing}/{action=Index}/{id?}");
 
 app.MapHealthChecks("/health");
 
