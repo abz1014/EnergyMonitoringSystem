@@ -11,12 +11,11 @@ public class DashboardServiceTests
 {
     private readonly Mock<IEnergyMeterRepository> _meterRepo = new();
     private readonly Mock<IMonitoringDeviceRepository> _deviceRepo = new();
-    private readonly Mock<IEnergyMeterLiveRepository> _liveRepo = new();
     private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
     private readonly Mock<ILogger<WebDashboardService>> _logger = new();
 
     private WebDashboardService CreateService() =>
-        new(_meterRepo.Object, _deviceRepo.Object, _liveRepo.Object, _cache, _logger.Object);
+        new(_meterRepo.Object, _deviceRepo.Object, _cache, _logger.Object);
 
     [Fact]
     public async Task GetExecutiveDashboardAsync_ReturnsKpiCards()
@@ -27,7 +26,7 @@ public class DashboardServiceTests
             .ReturnsAsync(new List<EnergyMeterData>());
         _deviceRepo.Setup(r => r.GetOnlineDeviceCount()).ReturnsAsync(10);
         _deviceRepo.Setup(r => r.GetAllDevices()).ReturnsAsync(new List<MonitoringDevice>());
-        _liveRepo.Setup(r => r.GetAllLive()).ReturnsAsync(new List<EnergyMeterLive>());
+
 
         var service = CreateService();
         var result = await service.GetExecutiveDashboardAsync(new DashboardFilterDto());
@@ -48,7 +47,7 @@ public class DashboardServiceTests
             .ReturnsAsync(new List<EnergyMeterData>());
         _deviceRepo.Setup(r => r.GetOnlineDeviceCount()).ReturnsAsync(5);
         _deviceRepo.Setup(r => r.GetAllDevices()).ReturnsAsync(new List<MonitoringDevice>());
-        _liveRepo.Setup(r => r.GetAllLive()).ReturnsAsync(new List<EnergyMeterLive>());
+
 
         var service = CreateService();
         var filter = new DashboardFilterDto { Plant = "TestPlant" };
@@ -72,8 +71,8 @@ public class DashboardServiceTests
         };
         var devices = new List<MonitoringDevice>
         {
-            new() { DeviceID = 1, DeviceName = "Panel-A", Building = "Main", Plant = "P1", Type = "EM", Location = "L1", IsActive = true },
-            new() { DeviceID = 2, DeviceName = "Panel-B", Building = "Warehouse", Plant = "P1", Type = "EM", Location = "L2", IsActive = true }
+            new() { DeviceID = 1, DeviceName = "Panel-A", GroupName = "P1", DeviceType = "EM", Location = "L1", IsActive = true },
+            new() { DeviceID = 2, DeviceName = "Panel-B", GroupName = "P1", DeviceType = "EM", Location = "L2", IsActive = true }
         };
 
         _meterRepo.Setup(r => r.GetTodaysTotalConsumption()).ReturnsAsync(450);
@@ -81,7 +80,7 @@ public class DashboardServiceTests
         _meterRepo.Setup(r => r.GetByDateRange(It.IsAny<DateTime>(), It.IsAny<DateTime>())).ReturnsAsync(meterData);
         _deviceRepo.Setup(r => r.GetOnlineDeviceCount()).ReturnsAsync(2);
         _deviceRepo.Setup(r => r.GetAllDevices()).ReturnsAsync(devices);
-        _liveRepo.Setup(r => r.GetAllLive()).ReturnsAsync(new List<EnergyMeterLive>());
+
 
         var service = CreateService();
         var result = await service.GetExecutiveDashboardAsync(new DashboardFilterDto());
@@ -121,7 +120,7 @@ public class DashboardServiceTests
         _meterRepo.Setup(r => r.GetByDateRange(It.IsAny<DateTime>(), It.IsAny<DateTime>())).ReturnsAsync(monthData);
         _deviceRepo.Setup(r => r.GetOnlineDeviceCount()).ReturnsAsync(1);
         _deviceRepo.Setup(r => r.GetAllDevices()).ReturnsAsync(new List<MonitoringDevice>());
-        _liveRepo.Setup(r => r.GetAllLive()).ReturnsAsync(new List<EnergyMeterLive>());
+
 
         var service = CreateService();
         var result = await service.GetExecutiveDashboardAsync(new DashboardFilterDto());

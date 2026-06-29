@@ -5,18 +5,18 @@ using EMS.Core.Models;
 
 public class LiveMonitoringService : ILiveMonitoringService
 {
-    private readonly IEnergyMeterLiveRepository _liveRepository;
+    private readonly IEnergyMeterRepository _meterRepository;
     private readonly IMonitoringDeviceRepository _deviceRepository;
     private readonly IAlarmRepository _alarmRepository;
     private readonly ILogger<LiveMonitoringService> _logger;
 
     public LiveMonitoringService(
-        IEnergyMeterLiveRepository liveRepository,
+        IEnergyMeterRepository meterRepository,
         IMonitoringDeviceRepository deviceRepository,
         IAlarmRepository alarmRepository,
         ILogger<LiveMonitoringService> logger)
     {
-        _liveRepository = liveRepository;
+        _meterRepository = meterRepository;
         _deviceRepository = deviceRepository;
         _alarmRepository = alarmRepository;
         _logger = logger;
@@ -26,18 +26,20 @@ public class LiveMonitoringService : ILiveMonitoringService
     {
         try
         {
-            var liveReadings = filter.Plant != "All"
-                ? await _liveRepository.GetLiveByPlant(filter.Plant)
-                : filter.Building != "All"
-                    ? await _liveRepository.GetLiveByBuilding(filter.Building)
-                    : await _liveRepository.GetAllLive();
-
             var devices = await _deviceRepository.GetAllDevices();
             var activeAlarms = await _alarmRepository.GetActiveAlarms();
 
+            var now = DateTime.Now;
+            var recentData = await _meterRepository.GetByDateRange(now.AddHours(-1), now);
+
+            var latestPerMeter = recentData
+                .GroupBy(d => d.MeterNo)
+                .Select(g => g.OrderByDescending(d => d.DateTime).First())
+                .ToList();
+
             var deviceLookup = devices.ToDictionary(d => d.DeviceID, d => d);
 
-            var meters = liveReadings.Select(live =>
+            var meters = latestPerMeter.Select(live =>
             {
                 var device = deviceLookup.GetValueOrDefault(live.MeterNo);
                 var status = DetermineStatus(live);
@@ -45,7 +47,7 @@ public class LiveMonitoringService : ILiveMonitoringService
                 return new MeterLiveDto
                 {
                     MeterId = live.MeterNo,
-                    Name = device?.DeviceName ?? $"Meter-{live.MeterNo}",
+                    Name = device?.DeviceName ?? live.MeterName ?? $"Meter-{live.MeterNo}",
                     Status = status,
                     Voltage = new VoltageReadingDto
                     {
@@ -62,8 +64,8 @@ public class LiveMonitoringService : ILiveMonitoringService
                     Power = new PowerReadingDto
                     {
                         kW = live.kWtotal ?? 0,
-                        kVA = (live.kWtotal ?? 0) / Math.Max(live.PFL1 ?? 0.9, 0.1),
-                        kVAR = (live.kWtotal ?? 0) * Math.Tan(Math.Acos(Math.Clamp(live.PFL1 ?? 0.9, 0, 1)))
+                        kVA = live.kVAtotal ?? 0,
+                        kVAR = live.kVARtotal ?? 0
                     },
                     PowerFactor = live.PFL1 ?? 0,
                     Frequency = live.MFreq ?? 0,
@@ -113,18 +115,15 @@ public class LiveMonitoringService : ILiveMonitoringService
         }
     }
 
-    private static string DetermineStatus(EnergyMeterLive live)
+    private static string DetermineStatus(EnergyMeterData reading)
     {
-        if (!live.IsValid)
+        if (reading.DateTime < DateTime.Now.AddMinutes(-5))
             return "offline";
 
-        if (live.DateTime < DateTime.Now.AddMinutes(-5))
-            return "offline";
-
-        if (live.DateTime < DateTime.Now.AddMinutes(-2))
+        if (reading.DateTime < DateTime.Now.AddMinutes(-2))
             return "warning";
 
-        var voltage = live.VoltL1N ?? 0;
+        var voltage = reading.VoltL1N ?? 0;
         if (voltage > 0 && (voltage < 200 || voltage > 260))
             return "warning";
 

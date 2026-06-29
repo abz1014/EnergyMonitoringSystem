@@ -8,7 +8,6 @@ public class WebDashboardService : IDashboardService
 {
     private readonly IEnergyMeterRepository _energyMeterRepository;
     private readonly IMonitoringDeviceRepository _deviceRepository;
-    private readonly IEnergyMeterLiveRepository _liveRepository;
     private readonly IMemoryCache _cache;
     private readonly ILogger<WebDashboardService> _logger;
 
@@ -18,13 +17,11 @@ public class WebDashboardService : IDashboardService
     public WebDashboardService(
         IEnergyMeterRepository energyMeterRepository,
         IMonitoringDeviceRepository deviceRepository,
-        IEnergyMeterLiveRepository liveRepository,
         IMemoryCache cache,
         ILogger<WebDashboardService> logger)
     {
         _energyMeterRepository = energyMeterRepository;
         _deviceRepository = deviceRepository;
-        _liveRepository = liveRepository;
         _cache = cache;
         _logger = logger;
     }
@@ -50,17 +47,20 @@ public class WebDashboardService : IDashboardService
             var monthData = await _energyMeterRepository.GetByDateRange(monthStart, tomorrow);
             var monthlyTotal = monthData.Sum(d => d.kWh ?? 0);
 
-            var liveMeters = await _liveRepository.GetAllLive();
-            var avgPowerFactor = liveMeters.Count > 0
-                ? liveMeters.Where(m => m.PFL1.HasValue && m.PFL1 > 0).Select(m => m.PFL1!.Value).DefaultIfEmpty(0).Average()
+            var todayData = await _energyMeterRepository.GetByDateRange(today, tomorrow);
+
+            var avgPowerFactor = todayData.Count > 0
+                ? todayData.Where(m => m.PFL1.HasValue && m.PFL1 > 0).Select(m => m.PFL1!.Value).DefaultIfEmpty(0).Average()
                 : 0;
 
-            var todayData = await _energyMeterRepository.GetByDateRange(today, tomorrow);
             var co2Factor = 0.82;
             var co2Emissions = (todaysConsumption / 1000.0) * co2Factor;
 
             var tariffRate = 8.5;
             var estimatedCost = (monthlyTotal * tariffRate) / 1_000_000;
+
+            var latestReadings = todayData.GroupBy(d => d.MeterNo).Select(g => g.OrderByDescending(d => d.DateTime).First()).ToList();
+            var currentLoad = latestReadings.Sum(m => m.kWtotal ?? 0);
 
             var kpiCards = new KpiCardsDto
             {
@@ -76,7 +76,7 @@ public class WebDashboardService : IDashboardService
                 CurrentLoad = new KpiCardDto
                 {
                     Title = "Current Load",
-                    Value = liveMeters.Sum(m => m.kWtotal ?? 0),
+                    Value = currentLoad,
                     Unit = "kW",
                     Trend = "Real-time",
                     Status = "normal",
@@ -182,7 +182,7 @@ public class WebDashboardService : IDashboardService
 
         var locationGroups = todayData
             .Where(d => deviceLookup.ContainsKey(d.MeterNo))
-            .GroupBy(d => deviceLookup[d.MeterNo].Building)
+            .GroupBy(d => deviceLookup[d.MeterNo].Location)
             .Select(g => new { Location = g.Key, Total = g.Sum(x => x.kWh ?? 0) })
             .OrderByDescending(g => g.Total)
             .ToList();

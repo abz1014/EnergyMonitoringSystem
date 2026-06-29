@@ -26,7 +26,7 @@ public class EnergyMeterLiveRepository : IEnergyMeterLiveRepository
                 live => live.MeterNo,
                 device => device.DeviceID,
                 (live, device) => new { live, device })
-            .Where(x => x.device.Plant == plant)
+            .Where(x => x.device.GroupName == plant)
             .Select(x => x.live)
             .ToListAsync();
     }
@@ -38,7 +38,7 @@ public class EnergyMeterLiveRepository : IEnergyMeterLiveRepository
                 live => live.MeterNo,
                 device => device.DeviceID,
                 (live, device) => new { live, device })
-            .Where(x => x.device.Building == building)
+            .Where(x => x.device.Location == building)
             .Select(x => x.live)
             .ToListAsync();
     }

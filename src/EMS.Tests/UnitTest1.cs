@@ -22,9 +22,9 @@ public class EnergyMeterRepositoryTests
         var now = DateTime.Now.Date;
 
         context.EnergyMetersData.AddRange(
-            new EnergyMeterData { Id = 1, MeterNo = 1, DateTime = now.AddHours(1), kWh = 100 },
-            new EnergyMeterData { Id = 2, MeterNo = 1, DateTime = now.AddHours(5), kWh = 200 },
-            new EnergyMeterData { Id = 3, MeterNo = 1, DateTime = now.AddDays(-2), kWh = 300 }
+            new EnergyMeterData { SrNo = 1, MeterNo = 1, DateTime = now.AddHours(1), kWh = 100 },
+            new EnergyMeterData { SrNo = 2, MeterNo = 1, DateTime = now.AddHours(5), kWh = 200 },
+            new EnergyMeterData { SrNo = 3, MeterNo = 1, DateTime = now.AddDays(-2), kWh = 300 }
         );
         await context.SaveChangesAsync();
 
@@ -53,9 +53,9 @@ public class EnergyMeterRepositoryTests
         var today = DateTime.Now.Date;
 
         context.EnergyMetersData.AddRange(
-            new EnergyMeterData { Id = 1, MeterNo = 1, DateTime = today.AddHours(2), kWh = 100 },
-            new EnergyMeterData { Id = 2, MeterNo = 2, DateTime = today.AddHours(3), kWh = 150 },
-            new EnergyMeterData { Id = 3, MeterNo = 1, DateTime = today.AddDays(-1).AddHours(5), kWh = 200 }
+            new EnergyMeterData { SrNo = 1, MeterNo = 1, DateTime = today.AddHours(2), kWh = 100 },
+            new EnergyMeterData { SrNo = 2, MeterNo = 2, DateTime = today.AddHours(3), kWh = 150 },
+            new EnergyMeterData { SrNo = 3, MeterNo = 1, DateTime = today.AddDays(-1).AddHours(5), kWh = 200 }
         );
         await context.SaveChangesAsync();
 
@@ -73,9 +73,9 @@ public class EnergyMeterRepositoryTests
         var now = DateTime.Now;
 
         context.EnergyMetersData.AddRange(
-            new EnergyMeterData { Id = 1, MeterNo = 5, DateTime = now.AddHours(-2), kWh = 100 },
-            new EnergyMeterData { Id = 2, MeterNo = 5, DateTime = now.AddHours(-1), kWh = 200 },
-            new EnergyMeterData { Id = 3, MeterNo = 5, DateTime = now.AddHours(-3), kWh = 50 }
+            new EnergyMeterData { SrNo = 1, MeterNo = 5, DateTime = now.AddHours(-2), kWh = 100 },
+            new EnergyMeterData { SrNo = 2, MeterNo = 5, DateTime = now.AddHours(-1), kWh = 200 },
+            new EnergyMeterData { SrNo = 3, MeterNo = 5, DateTime = now.AddHours(-3), kWh = 50 }
         );
         await context.SaveChangesAsync();
 
@@ -104,9 +104,9 @@ public class EnergyMeterRepositoryTests
         var today = DateTime.Now.Date;
 
         context.EnergyMetersData.AddRange(
-            new EnergyMeterData { Id = 1, MeterNo = 1, DateTime = today.AddHours(1), kWh = 100 },
-            new EnergyMeterData { Id = 2, MeterNo = 1, DateTime = today.AddHours(2), kWh = 200 },
-            new EnergyMeterData { Id = 3, MeterNo = 1, DateTime = today.AddDays(-1), kWh = 999 }
+            new EnergyMeterData { SrNo = 1, MeterNo = 1, DateTime = today.AddHours(1), kWh = 100 },
+            new EnergyMeterData { SrNo = 2, MeterNo = 1, DateTime = today.AddHours(2), kWh = 200 },
+            new EnergyMeterData { SrNo = 3, MeterNo = 1, DateTime = today.AddDays(-1), kWh = 999 }
         );
         await context.SaveChangesAsync();
 
@@ -123,9 +123,9 @@ public class EnergyMeterRepositoryTests
         var today = DateTime.Now.Date;
 
         context.EnergyMetersData.AddRange(
-            new EnergyMeterData { Id = 1, MeterNo = 1, DateTime = today.AddHours(1), kWtotal = 50 },
-            new EnergyMeterData { Id = 2, MeterNo = 1, DateTime = today.AddHours(2), kWtotal = 120 },
-            new EnergyMeterData { Id = 3, MeterNo = 1, DateTime = today.AddHours(3), kWtotal = 80 }
+            new EnergyMeterData { SrNo = 1, MeterNo = 1, DateTime = today.AddHours(1), kWtotal = 50 },
+            new EnergyMeterData { SrNo = 2, MeterNo = 1, DateTime = today.AddHours(2), kWtotal = 120 },
+            new EnergyMeterData { SrNo = 3, MeterNo = 1, DateTime = today.AddHours(3), kWtotal = 80 }
         );
         await context.SaveChangesAsync();
 
@@ -143,9 +143,9 @@ public class EnergyMeterRepositoryTests
         var to = from.AddDays(7);
 
         context.EnergyMetersData.AddRange(
-            new EnergyMeterData { Id = 1, MeterNo = 1, DateTime = from.AddDays(1), kWh = 100 },
-            new EnergyMeterData { Id = 2, MeterNo = 2, DateTime = from.AddDays(2), kWh = 200 },
-            new EnergyMeterData { Id = 3, MeterNo = 1, DateTime = from.AddDays(3), kWh = 300 }
+            new EnergyMeterData { SrNo = 1, MeterNo = 1, DateTime = from.AddDays(1), kWh = 100 },
+            new EnergyMeterData { SrNo = 2, MeterNo = 2, DateTime = from.AddDays(2), kWh = 200 },
+            new EnergyMeterData { SrNo = 3, MeterNo = 1, DateTime = from.AddDays(3), kWh = 300 }
         );
         await context.SaveChangesAsync();
 
@@ -221,7 +221,7 @@ public class ModelTests
     {
         var data = new EnergyMeterData();
 
-        Assert.Equal(0, data.Id);
+        Assert.Equal(0, data.SrNo);
         Assert.Equal(0, data.MeterNo);
         Assert.Null(data.kWh);
         Assert.Null(data.kWtotal);
@@ -254,14 +254,13 @@ public class ModelTests
         {
             DeviceID = 1,
             DeviceName = "EM-001",
-            Type = "Energy Meter",
+            DeviceType = "Energy Meter",
             Location = "Panel A",
-            Building = "Main",
-            Plant = "Plant-1",
+            GroupName = "Plant-1",
             IsActive = true
         };
 
-        Assert.Equal("Plant-1", device.Plant);
+        Assert.Equal("Plant-1", device.GroupName);
         Assert.True(device.IsActive);
     }
 }

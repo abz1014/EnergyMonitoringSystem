@@ -2,57 +2,48 @@
 
 public class EnergyMeterData
 {
-    public int Id { get; set; }
+    public int SrNo { get; set; }
     public int MeterNo { get; set; }
+    public string? MeterName { get; set; }
+    public string? MeterLocation { get; set; }
+    public string? MeterBrand { get; set; }
+    public string? MeterModel { get; set; }
+    public string? Type1 { get; set; }
     public DateTime DateTime { get; set; }
 
-    // Voltages (Line-to-Neutral)
     public double? VoltL1N { get; set; }
     public double? VoltL2N { get; set; }
     public double? VoltL3N { get; set; }
-
-    // Voltages (Line-to-Line)
     public double? VoltL1L2 { get; set; }
     public double? VoltL2L3 { get; set; }
-    public double? VoltL3L1 { get; set; }
+    public double? VoltL1L3 { get; set; }
 
-    // Currents
     public double? CurrentL1 { get; set; }
     public double? CurrentL2 { get; set; }
     public double? CurrentL3 { get; set; }
 
-    // Active Power (kW)
-    public double? kWL1 { get; set; }
-    public double? kWL2 { get; set; }
-    public double? kWL3 { get; set; }
+    public double? PowerL1 { get; set; }
+    public double? PowerL2 { get; set; }
+    public double? PowerL3 { get; set; }
     public double? kWtotal { get; set; }
-
-    // Reactive Power (kVAR)
+    public double? kVAtotal { get; set; }
     public double? kVARtotal { get; set; }
 
-    // Apparent Power (kVA)
-    public double? kVAtotal { get; set; }
-
-    // Power Factors
     public double? PFL1 { get; set; }
     public double? PFL2 { get; set; }
     public double? PFL3 { get; set; }
+    public double? MFreq { get; set; }
 
-    // Energy Counters
     public double? kWh { get; set; }
     public double? kVAh { get; set; }
     public double? kVARh { get; set; }
 
-    // Harmonics (THD - Total Harmonic Distortion)
-    public double? THD_VoltL1 { get; set; }
-    public double? THD_VoltL2 { get; set; }
-    public double? THD_VoltL3 { get; set; }
-    public double? THD_CurrentL1 { get; set; }
-    public double? THD_CurrentL2 { get; set; }
-    public double? THD_CurrentL3 { get; set; }
-
-    // Frequency
-    public double? MFreq { get; set; }
+    public double? HarmonicV1 { get; set; }
+    public double? HarmonicV2 { get; set; }
+    public double? HarmonicV3 { get; set; }
+    public double? HarmonicI1 { get; set; }
+    public double? HarmonicI2 { get; set; }
+    public double? HarmonicI3 { get; set; }
 }
 
 public class EnergyMeterLive
@@ -75,15 +66,19 @@ public class EnergyMeterLive
 
 public class MonitoringDevice
 {
-    public int Id { get; set; }
+    public int SrNo { get; set; }
     public int DeviceID { get; set; }
-    public string DeviceName { get; set; }
-    public string Type { get; set; }
-    public string Location { get; set; }
-    public string Building { get; set; }
-    public string Plant { get; set; }
+    public string DeviceType { get; set; } = "";
+    public string DeviceName { get; set; } = "";
+    public string? Model { get; set; }
+    public string? MasterDevice { get; set; }
+    public string? IPAddress { get; set; }
+    public int? Port { get; set; }
+    public string? Protocols { get; set; }
+    public string Location { get; set; } = "";
+    public string? Description { get; set; }
     public bool IsActive { get; set; }
-    public DateTime CreatedDate { get; set; }
+    public string? GroupName { get; set; }
 }
 
 public class Alarm

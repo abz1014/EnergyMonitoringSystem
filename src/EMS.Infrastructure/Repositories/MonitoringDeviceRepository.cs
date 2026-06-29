@@ -22,28 +22,28 @@ public class MonitoringDeviceRepository : IMonitoringDeviceRepository
     public async Task<List<MonitoringDevice>> GetDevicesByType(string type)
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .Where(d => d.Type == type)
+            .Where(d => d.DeviceType == type)
             .ToListAsync();
     }
 
     public async Task<List<MonitoringDevice>> GetDevicesByPlant(string plant)
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .Where(d => d.Plant == plant && d.IsActive)
+            .Where(d => d.GroupName == plant && d.IsActive)
             .ToListAsync();
     }
 
     public async Task<List<MonitoringDevice>> GetDevicesByBuilding(string building)
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .Where(d => d.Building == building && d.IsActive)
+            .Where(d => d.Location == building && d.IsActive)
             .ToListAsync();
     }
 
     public async Task<MonitoringDevice?> GetDeviceById(int deviceId)
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .FirstOrDefaultAsync(d => d.Id == deviceId);
+            .FirstOrDefaultAsync(d => d.SrNo == deviceId);
     }
 
     public async Task<MonitoringDevice?> GetDeviceByDeviceId(int deviceId)
@@ -61,7 +61,7 @@ public class MonitoringDeviceRepository : IMonitoringDeviceRepository
     public async Task<List<string>> GetAllPlants()
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .Select(d => d.Plant)
+            .Select(d => d.GroupName ?? "")
             .Distinct()
             .Where(p => !string.IsNullOrEmpty(p))
             .OrderBy(p => p)
@@ -71,8 +71,8 @@ public class MonitoringDeviceRepository : IMonitoringDeviceRepository
     public async Task<List<string>> GetBuildingsByPlant(string plant)
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .Where(d => d.Plant == plant)
-            .Select(d => d.Building)
+            .Where(d => d.GroupName == plant)
+            .Select(d => d.Location)
             .Distinct()
             .Where(b => !string.IsNullOrEmpty(b))
             .OrderBy(b => b)
@@ -82,8 +82,8 @@ public class MonitoringDeviceRepository : IMonitoringDeviceRepository
     public async Task<List<string>> GetLocationsByBuilding(string plant, string building)
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .Where(d => d.Plant == plant && d.Building == building)
-            .Select(d => d.Location)
+            .Where(d => d.GroupName == plant && d.Location == building)
+            .Select(d => d.Description ?? "")
             .Distinct()
             .Where(l => !string.IsNullOrEmpty(l))
             .OrderBy(l => l)

@@ -31,7 +31,7 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
 
         // EnergyMeterData configurations
         modelBuilder.Entity<EnergyMeterData>()
-            .HasKey(e => e.Id);
+            .HasKey(e => e.SrNo);
         modelBuilder.Entity<EnergyMeterData>()
             .HasIndex(e => new { e.MeterNo, e.DateTime })
             .HasDatabaseName("IX_EnergyMetersData_MeterNo_DateTime");
@@ -49,13 +49,13 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
 
         // MonitoringDevice configurations
         modelBuilder.Entity<MonitoringDevice>()
-            .HasKey(e => e.Id);
+            .HasKey(e => e.SrNo);
         modelBuilder.Entity<MonitoringDevice>()
             .HasIndex(e => e.DeviceID)
             .HasDatabaseName("IX_MonitoringDevices_DeviceID");
         modelBuilder.Entity<MonitoringDevice>()
-            .HasIndex(e => new { e.Plant, e.Building })
-            .HasDatabaseName("IX_MonitoringDevices_Plant_Building");
+            .HasIndex(e => e.GroupName)
+            .HasDatabaseName("IX_MonitoringDevices_GroupName");
 
         // Alarm configurations
         modelBuilder.Entity<Alarm>()

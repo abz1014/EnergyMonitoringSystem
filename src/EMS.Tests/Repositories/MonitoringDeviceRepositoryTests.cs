@@ -18,9 +18,9 @@ public class MonitoringDeviceRepositoryTests
     private void SeedDevices(ScadaDbContext context)
     {
         context.MonitoringDevices.AddRange(
-            new MonitoringDevice { Id = 1, DeviceID = 1, DeviceName = "EM-001", Type = "Energy Meter", Location = "Floor 1", Building = "Main", Plant = "Plant-1", IsActive = true, CreatedDate = DateTime.Now },
-            new MonitoringDevice { Id = 2, DeviceID = 2, DeviceName = "EM-002", Type = "Energy Meter", Location = "Floor 2", Building = "Main", Plant = "Plant-1", IsActive = true, CreatedDate = DateTime.Now },
-            new MonitoringDevice { Id = 3, DeviceID = 3, DeviceName = "FM-001", Type = "Flowmeter", Location = "Utility", Building = "Warehouse", Plant = "Plant-2", IsActive = false, CreatedDate = DateTime.Now }
+            new MonitoringDevice { SrNo = 1, DeviceID = 1, DeviceName = "EM-001", DeviceType = "Energy Meter", Location = "Floor 1", GroupName = "Plant-1", IsActive = true },
+            new MonitoringDevice { SrNo = 2, DeviceID = 2, DeviceName = "EM-002", DeviceType = "Energy Meter", Location = "Floor 2", GroupName = "Plant-1", IsActive = true },
+            new MonitoringDevice { SrNo = 3, DeviceID = 3, DeviceName = "FM-001", DeviceType = "Flowmeter", Location = "Utility", GroupName = "Plant-2", IsActive = false }
         );
         context.SaveChanges();
     }
@@ -30,10 +30,8 @@ public class MonitoringDeviceRepositoryTests
     {
         using var context = CreateContext();
         SeedDevices(context);
-
         var repo = new MonitoringDeviceRepository(context);
         var result = await repo.GetAllDevices();
-
         Assert.Equal(3, result.Count);
     }
 
@@ -42,10 +40,8 @@ public class MonitoringDeviceRepositoryTests
     {
         using var context = CreateContext();
         SeedDevices(context);
-
         var repo = new MonitoringDeviceRepository(context);
         var count = await repo.GetOnlineDeviceCount();
-
         Assert.Equal(2, count);
     }
 
@@ -54,12 +50,9 @@ public class MonitoringDeviceRepositoryTests
     {
         using var context = CreateContext();
         SeedDevices(context);
-
         var repo = new MonitoringDeviceRepository(context);
         var result = await repo.GetDevicesByPlant("Plant-1");
-
         Assert.Equal(2, result.Count);
-        Assert.All(result, d => Assert.Equal("Plant-1", d.Plant));
     }
 
     [Fact]
@@ -67,10 +60,8 @@ public class MonitoringDeviceRepositoryTests
     {
         using var context = CreateContext();
         SeedDevices(context);
-
         var repo = new MonitoringDeviceRepository(context);
         var plants = await repo.GetAllPlants();
-
         Assert.Equal(2, plants.Count);
         Assert.Contains("Plant-1", plants);
         Assert.Contains("Plant-2", plants);
@@ -81,12 +72,9 @@ public class MonitoringDeviceRepositoryTests
     {
         using var context = CreateContext();
         SeedDevices(context);
-
         var repo = new MonitoringDeviceRepository(context);
         var buildings = await repo.GetBuildingsByPlant("Plant-1");
-
-        Assert.Single(buildings);
-        Assert.Equal("Main", buildings[0]);
+        Assert.Equal(2, buildings.Count);
     }
 
     [Fact]
@@ -94,10 +82,8 @@ public class MonitoringDeviceRepositoryTests
     {
         using var context = CreateContext();
         SeedDevices(context);
-
         var repo = new MonitoringDeviceRepository(context);
         var device = await repo.GetDeviceByDeviceId(2);
-
         Assert.NotNull(device);
         Assert.Equal("EM-002", device.DeviceName);
     }
@@ -107,9 +93,7 @@ public class MonitoringDeviceRepositoryTests
     {
         using var context = CreateContext();
         var repo = new MonitoringDeviceRepository(context);
-
         var device = await repo.GetDeviceByDeviceId(999);
-
         Assert.Null(device);
     }
 }
