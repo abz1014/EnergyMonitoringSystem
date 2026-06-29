@@ -43,7 +43,7 @@ public class LiveMonitoringService : ILiveMonitoringService
                 .Select(g => g.OrderByDescending(d => d.DateTime).First())
                 .ToList();
 
-            var deviceLookup = devices.Where(d => d.DeviceID.HasValue).ToDictionary(d => d.DeviceID!.Value, d => d);
+            var deviceLookup = devices.Where(d => d.DeviceID.HasValue).GroupBy(d => d.DeviceID!.Value).ToDictionary(g => g.Key, g => g.First());
 
             var meters = latestPerMeter.Select(live =>
             {

@@ -191,7 +191,7 @@ public class WebDashboardService : IDashboardService
             .ToList();
 
         var devices = await _deviceRepository.GetAllDevices();
-        var deviceLookup = devices.Where(d => d.DeviceID.HasValue).ToDictionary(d => d.DeviceID!.Value, d => d);
+        var deviceLookup = devices.Where(d => d.DeviceID.HasValue).GroupBy(d => d.DeviceID!.Value).ToDictionary(g => g.Key, g => g.First());
 
         var locationGroups = todayData
             .Where(d => d.MeterNo.HasValue && deviceLookup.ContainsKey(d.MeterNo.Value))
