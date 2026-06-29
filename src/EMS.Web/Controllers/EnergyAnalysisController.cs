@@ -17,50 +17,51 @@ public class EnergyAnalysisController : Controller
         _logger = logger;
     }
 
+    private static readonly HashSet<string> ValidTimeframes = new() { "daily", "weekly", "monthly", "yearly" };
+    private static readonly HashSet<string> ValidMetrics = new() { "kwh", "peak", "kva", "kvar" };
+    private static readonly HashSet<string> ValidCompare = new() { "", "yesterday", "lastweek", "lastmonth" };
+
     public async Task<IActionResult> Index(string timeframe = "daily", string compareWith = "", string metric = "kwh", string view = "peak")
     {
         try
         {
-            _logger.LogInformation("Energy Analysis requested with timeframe: {timeframe}", timeframe);
+            if (!ValidTimeframes.Contains(timeframe)) timeframe = "daily";
+            if (!ValidMetrics.Contains(metric)) metric = "kwh";
+            if (!ValidCompare.Contains(compareWith)) compareWith = "";
 
-            // Get date range based on timeframe
+            _logger.LogInformation("Energy Analysis: timeframe={timeframe}, metric={metric}, compare={compare}", timeframe, metric, compareWith);
+
             var (dateFrom, dateTo) = GetDateRange(timeframe);
-            _logger.LogInformation("Date range: {dateFrom} to {dateTo}", dateFrom, dateTo);
 
-            // Get consumption data
             List<EMS.Core.Models.EnergyMeterData> consumptionData = new();
             try
             {
                 consumptionData = await _energyMeterRepository.GetByDateRange(dateFrom, dateTo);
-                _logger.LogInformation("Retrieved {count} consumption records from database", consumptionData?.Count ?? 0);
             }
             catch (Exception dbEx)
             {
                 _logger.LogWarning(dbEx, "Database query failed, using mock data instead");
             }
 
-            // Use mock data if no real data found or database failed
             if (consumptionData == null || consumptionData.Count == 0)
             {
-                _logger.LogInformation("Generating mock data");
                 consumptionData = GenerateMockData(dateFrom, dateTo, timeframe);
             }
 
             consumptionData ??= new();
 
-            // Aggregate by timeframe
-            var aggregatedData = AggregateByTimeframe(consumptionData, timeframe);
+            var aggregatedData = AggregateByTimeframe(consumptionData, timeframe, metric);
 
-            // Get comparison data if requested
-            var comparisonData = await GetComparisonData(timeframe, compareWith, dateFrom);
+            var comparisonData = await GetComparisonData(timeframe, compareWith, dateFrom, metric);
             comparisonData ??= new();
 
-            // Calculate statistics
             var stats = CalculateStats(aggregatedData);
 
             var model = new EnergyAnalysisViewModel
             {
                 Timeframe = timeframe,
+                Metric = metric,
+                CompareWith = compareWith,
                 DateFrom = dateFrom,
                 DateTo = dateTo,
                 ConsumptionData = aggregatedData ?? new(),
@@ -93,44 +94,57 @@ public class EnergyAnalysisController : Controller
         };
     }
 
-    private async Task<List<(DateTime, double)>> GetComparisonData(string timeframe, string compareWith, DateTime dateFrom)
+    private async Task<List<(DateTime, double)>> GetComparisonData(string timeframe, string compareWith, DateTime dateFrom, string metric = "kwh")
     {
         if (string.IsNullOrEmpty(compareWith))
             return new();
 
-        var (compFrom, compTo) = timeframe switch
+        var (compFrom, compTo) = compareWith switch
         {
-            "daily" when compareWith == "yesterday" => (dateFrom.AddDays(-1), dateFrom.AddTicks(-1)),
-            "weekly" when compareWith == "lastweek" => (dateFrom.AddDays(-7), dateFrom.AddTicks(-1)),
-            "monthly" when compareWith == "lastmonth" => (dateFrom.AddMonths(-1), dateFrom.AddTicks(-1)),
+            "yesterday" => (dateFrom.AddDays(-1), dateFrom.AddTicks(-1)),
+            "lastweek" => (dateFrom.AddDays(-7), dateFrom.AddTicks(-1)),
+            "lastmonth" => (dateFrom.AddMonths(-1), dateFrom.AddTicks(-1)),
             _ => (DateTime.MinValue, DateTime.MinValue)
         };
 
         if (compFrom == DateTime.MinValue)
             return new();
 
-        var data = await _energyMeterRepository.GetByDateRange(compFrom, compTo);
-        return AggregateByTimeframe(data, timeframe);
+        try
+        {
+            var data = await _energyMeterRepository.GetByDateRange(compFrom, compTo);
+            if (data == null || data.Count == 0)
+                data = GenerateMockData(compFrom, compTo, timeframe);
+            return AggregateByTimeframe(data, timeframe, metric);
+        }
+        catch
+        {
+            var mockData = GenerateMockData(compFrom, compTo, timeframe);
+            return AggregateByTimeframe(mockData, timeframe, metric);
+        }
     }
 
-    private List<(DateTime, double)> AggregateByTimeframe(List<EMS.Core.Models.EnergyMeterData> data, string timeframe)
+    private static double ExtractMetric(EMS.Core.Models.EnergyMeterData d, string metric)
+    {
+        return metric switch
+        {
+            "peak" => d.kWtotal ?? 0,
+            "kva" => (d.kWtotal ?? 0) / Math.Max(d.PFL1 ?? 0.9, 0.1),
+            "kvar" => (d.kWtotal ?? 0) * Math.Tan(Math.Acos(Math.Min(d.PFL1 ?? 0.9, 1.0))),
+            _ => d.kWh ?? 0
+        };
+    }
+
+    private List<(DateTime, double)> AggregateByTimeframe(List<EMS.Core.Models.EnergyMeterData> data, string timeframe, string metric = "kwh")
     {
         return timeframe switch
         {
             "daily" => data.GroupBy(d => d.DateTime.Hour)
-                .Select(g => (new DateTime(2026, 1, 1, g.Key, 0, 0), g.Sum(x => x.kWh ?? 0)))
+                .Select(g => (new DateTime(2026, 1, 1, g.Key, 0, 0), g.Sum(x => ExtractMetric(x, metric))))
                 .OrderBy(x => x.Item1)
                 .ToList(),
-            "weekly" => data.GroupBy(d => d.DateTime.Date)
-                .Select(g => (g.Key, g.Sum(x => x.kWh ?? 0)))
-                .OrderBy(x => x.Key)
-                .ToList(),
-            "monthly" => data.GroupBy(d => d.DateTime.Date)
-                .Select(g => (g.Key, g.Sum(x => x.kWh ?? 0)))
-                .OrderBy(x => x.Key)
-                .ToList(),
             _ => data.GroupBy(d => d.DateTime.Date)
-                .Select(g => (g.Key, g.Sum(x => x.kWh ?? 0)))
+                .Select(g => (g.Key, g.Sum(x => ExtractMetric(x, metric))))
                 .OrderBy(x => x.Key)
                 .ToList()
         };

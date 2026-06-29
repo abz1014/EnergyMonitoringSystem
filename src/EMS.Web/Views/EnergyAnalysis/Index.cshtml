@@ -3,6 +3,7 @@
 
 @{
     ViewData["Title"] = "Energy Analysis";
+    var unit = Model.MetricUnit;
 }
 
 <div class="energy-analysis-container" style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
@@ -17,35 +18,60 @@
     <div class="controls-bar mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
         <div class="row g-3">
             <div class="col-12 col-md-2">
-                <label class="form-label text-light">📅 Timeframe</label>
-                <select id="filterTimeframe" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;"
-                        onchange="updateTimeframe(this.value)">
-                    @if (Model.Timeframe == "daily") { <option value="daily" selected>Today</option> } else { <option value="daily">Today</option> }
-                    @if (Model.Timeframe == "weekly") { <option value="weekly" selected>This Week</option> } else { <option value="weekly">This Week</option> }
-                    @if (Model.Timeframe == "monthly") { <option value="monthly" selected>This Month</option> } else { <option value="monthly">This Month</option> }
-                    @if (Model.Timeframe == "yearly") { <option value="yearly" selected>This Year</option> } else { <option value="yearly">This Year</option> }
+                <label class="form-label text-light">Timeframe</label>
+                @{
+                    var timeframes = new[] { ("daily", "Today"), ("weekly", "This Week"), ("monthly", "This Month"), ("yearly", "This Year") };
+                    var metrics = new[] { ("kwh", "kWh"), ("peak", "kW (Peak)"), ("kva", "kVA"), ("kvar", "kVAR") };
+                    var compares = new[] { ("", "None"), ("yesterday", "Previous Day"), ("lastweek", "Previous Week"), ("lastmonth", "Previous Month") };
+                }
+                <select id="filterTimeframe" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in timeframes)
+                    {
+                        if (Model.Timeframe == val)
+                        {
+                            <option value="@val" selected>@label</option>
+                        }
+                        else
+                        {
+                            <option value="@val">@label</option>
+                        }
+                    }
                 </select>
             </div>
             <div class="col-12 col-md-2">
-                <label class="form-label text-light">📊 Metric</label>
+                <label class="form-label text-light">Metric</label>
                 <select id="filterMetric" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
-                    <option value="" selected>kWh</option>
-                    <option value="peak">kW (Peak)</option>
-                    <option value="kva">kVA</option>
-                    <option value="kvar">kVAR</option>
+                    @foreach (var (val, label) in metrics)
+                    {
+                        if (Model.Metric == val)
+                        {
+                            <option value="@val" selected>@label</option>
+                        }
+                        else
+                        {
+                            <option value="@val">@label</option>
+                        }
+                    }
                 </select>
             </div>
             <div class="col-12 col-md-2">
-                <label class="form-label text-light">🔄 Compare</label>
+                <label class="form-label text-light">Compare</label>
                 <select id="filterCompare" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
-                    <option value="">None</option>
-                    <option value="yesterday">Previous Day</option>
-                    <option value="lastweek">Previous Week</option>
-                    <option value="lastmonth">Previous Month</option>
+                    @foreach (var (val, label) in compares)
+                    {
+                        if (Model.CompareWith == val)
+                        {
+                            <option value="@val" selected>@label</option>
+                        }
+                        else
+                        {
+                            <option value="@val">@label</option>
+                        }
+                    }
                 </select>
             </div>
             <div class="col-12 col-md-2">
-                <label class="form-label text-light">📈 View</label>
+                <label class="form-label text-light">View</label>
                 <select id="filterView" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
                     <option value="peak" selected>Peak</option>
                     <option value="average">Average</option>
@@ -53,18 +79,28 @@
                 </select>
             </div>
             <div class="col-12 col-md-4 d-flex align-items-end gap-2">
-                <button class="btn btn-primary flex-grow-1" style="background-color: #2563EB;" onclick="applyAnalysisFilters()">
-                    📊 Apply
+                <button id="btnApply" class="btn btn-primary flex-grow-1" style="background-color: #2563EB;" onclick="applyAnalysisFilters()">
+                    Apply
                 </button>
                 <button class="btn btn-outline-primary flex-grow-1" style="background-color: transparent; color: #2563EB; border-color: #2563EB;" onclick="resetAnalysisFilters()">
-                    ↺ Reset
+                    Reset
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.8); z-index:9999; display:none; justify-content:center; align-items:center;">
+        <div style="text-align:center;">
+            <div class="spinner-border text-primary" style="width:3rem; height:3rem;" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-light">Loading analysis data...</p>
+        </div>
+    </div>
+
     <!-- Statistics Cards -->
-    @if (Model.Statistics != null)
+    @if (Model.Statistics != null && Model.Statistics.Count > 0)
     {
         <div class="stats-cards mb-4">
             <div class="row g-3">
@@ -73,7 +109,7 @@
                         <div class="card-body">
                             <small class="text-muted d-block mb-2">Peak</small>
                             <h4 class="mb-1" style="color: #FFFFFF;">@Model.Peak.ToString("F0")</h4>
-                            <small style="color: #94A3B8;">kWh</small>
+                            <small style="color: #94A3B8;">@unit</small>
                         </div>
                     </div>
                 </div>
@@ -82,7 +118,7 @@
                         <div class="card-body">
                             <small class="text-muted d-block mb-2">Average</small>
                             <h4 class="mb-1" style="color: #FFFFFF;">@Model.Average.ToString("F0")</h4>
-                            <small style="color: #94A3B8;">kWh</small>
+                            <small style="color: #94A3B8;">@unit</small>
                         </div>
                     </div>
                 </div>
@@ -91,18 +127,47 @@
                         <div class="card-body">
                             <small class="text-muted d-block mb-2">Minimum</small>
                             <h4 class="mb-1" style="color: #FFFFFF;">@Model.Minimum.ToString("F0")</h4>
-                            <small style="color: #94A3B8;">kWh</small>
+                            <small style="color: #94A3B8;">@unit</small>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #8B5CF6;">
                         <div class="card-body">
                             <small class="text-muted d-block mb-2">Total</small>
-                            <h4 class="mb-1" style="color: #FFFFFF;">@(Model.Statistics?.ContainsKey("total") == true ? Model.Statistics["total"].ToString("F0") : "—")</h4>
-                            <small style="color: #94A3B8;">kWh</small>
+                            <h4 class="mb-1" style="color: #FFFFFF;">@(Model.Statistics.ContainsKey("total") ? Model.Statistics["total"].ToString("F0") : "—")</h4>
+                            <small style="color: #94A3B8;">@unit</small>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Comparison Banner -->
+    @if (Model.ComparisonData != null && Model.ComparisonData.Count > 0)
+    {
+        var compTotal = Model.ComparisonData.Sum(c => c.Item2);
+        var currentTotal = Model.ConsumptionData?.Sum(c => c.Item2) ?? 0;
+        var diff = currentTotal - compTotal;
+        var pctChange = compTotal > 0 ? (diff / compTotal) * 100 : 0;
+        var isIncrease = diff > 0;
+
+        <div class="comparison-banner mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @(isIncrease ? "#EF4444" : "#10B981");">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Comparison Period</small>
+                    <strong style="color: #E2E8F0;">@Model.CompareWith</strong>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Previous Total</small>
+                    <strong style="color: #E2E8F0;">@compTotal.ToString("F0") @unit</strong>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Change</small>
+                    <strong style="color: @(isIncrease ? "#EF4444" : "#10B981");">
+                        @(isIncrease ? "+" : "")@pctChange.ToString("F1")% (@(isIncrease ? "+" : "")@diff.ToString("F0") @unit)
+                    </strong>
                 </div>
             </div>
         </div>
@@ -112,49 +177,62 @@
     @if (Model.ConsumptionData != null && Model.ConsumptionData.Count > 0)
     {
         <div class="trend-chart mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
-            <h3 class="h5 mb-3 text-light">📈 Consumption Trend</h3>
+            <h3 class="h5 mb-3 text-light">Consumption Trend (@unit)</h3>
             <div id="trendChart" style="height: 400px; display: flex; align-items: center; justify-content: center; color: #94A3B8;">
-                📊 Chart - @Model.ConsumptionData.Count data points loaded
+                Chart - @Model.ConsumptionData.Count data points loaded
             </div>
         </div>
     }
 
-    <!-- Peak Hours Heatmap -->
-    <div class="heatmap-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
-        <h3 class="h5 mb-3 text-light">🔥 Peak Hours Heatmap</h3>
-        <div style="text-align: center; color: #94A3B8; padding: 40px;">
-            <p>Hour-by-hour consumption pattern (24 hours)</p>
-            <small style="color: #64748B;">Chart generation enabled</small>
-        </div>
-    </div>
-
     <!-- Daily Breakdown Table -->
     <div class="breakdown-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
-        <h3 class="h5 mb-3 text-light">📋 Daily Breakdown</h3>
+        <h3 class="h5 mb-3 text-light">Breakdown</h3>
         <div style="overflow-x: auto;">
             <table class="table table-dark table-hover" style="color: #E2E8F0; border-color: #334155; margin-bottom: 0;">
                 <thead style="background-color: #0F172A; border-bottom: 2px solid #334155;">
                     <tr>
                         <th style="color: #94A3B8;">Date</th>
-                        <th style="color: #94A3B8;">Consumption (kWh)</th>
-                        <th style="color: #94A3B8;">Peak (kW)</th>
-                        <th style="color: #94A3B8;">Average (kW)</th>
-                        <th style="color: #94A3B8;">Min (kW)</th>
+                        <th style="color: #94A3B8;">Consumption (@unit)</th>
+                        <th style="color: #94A3B8;">Peak (@unit)</th>
+                        <th style="color: #94A3B8;">Average (@unit)</th>
+                        <th style="color: #94A3B8;">Min (@unit)</th>
+                        @if (Model.ComparisonData != null && Model.ComparisonData.Count > 0)
+                        {
+                            <th style="color: #94A3B8;">Previous (@unit)</th>
+                            <th style="color: #94A3B8;">Change</th>
+                        }
                         <th style="color: #94A3B8;">Trend</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (Model.ConsumptionData != null)
                     {
+                        var compLookup = (Model.ComparisonData ?? new List<(DateTime, double)>())
+                            .ToDictionary(c => c.Item1.ToString("yyyy-MM-dd"), c => c.Item2);
+
                         @foreach (var item in Model.ConsumptionData.Take(30))
                         {
+                            var dateKey = item.Item1.ToString("yyyy-MM-dd");
+                            var hasComp = compLookup.ContainsKey(dateKey);
+                            var compVal = hasComp ? compLookup[dateKey] : 0;
+                            var change = hasComp && compVal > 0 ? ((item.Item2 - compVal) / compVal) * 100 : 0;
+
                             <tr style="border-bottom: 1px solid #334155;">
                                 <td style="color: #E2E8F0;">@item.Item1.ToString("yyyy-MM-dd")</td>
                                 <td style="color: #CBD5E1;">@item.Item2.ToString("F0")</td>
                                 <td style="color: #CBD5E1;">@((item.Item2 * 1.15).ToString("F0"))</td>
                                 <td style="color: #CBD5E1;">@((item.Item2 * 0.8).ToString("F0"))</td>
                                 <td style="color: #CBD5E1;">@((item.Item2 * 0.6).ToString("F0"))</td>
-                                <td style="color: #10B981;">📈</td>
+                                @if (Model.ComparisonData != null && Model.ComparisonData.Count > 0)
+                                {
+                                    <td style="color: #94A3B8;">@(hasComp ? compVal.ToString("F0") : "—")</td>
+                                    <td style="color: @(change > 0 ? "#EF4444" : change < 0 ? "#10B981" : "#94A3B8");">
+                                        @(hasComp ? $"{(change > 0 ? "+" : "")}{change:F1}%" : "—")
+                                    </td>
+                                }
+                                <td style="color: @(item.Item2 > (Model.Average > 0 ? Model.Average : item.Item2) ? "#EF4444" : "#10B981");">
+                                    @(item.Item2 > (Model.Average > 0 ? Model.Average : item.Item2) ? "▲" : "▼")
+                                </td>
                             </tr>
                         }
                     }
@@ -165,28 +243,29 @@
 
     <!-- Footer -->
     <div class="footer-info p-3 text-center" style="color: #64748B; font-size: 12px;">
-        <small>Analysis period: @Model.DateFrom.ToString("yyyy-MM-dd") to @Model.DateTo.ToString("yyyy-MM-dd")</small>
+        <small>Analysis period: @Model.DateFrom.ToString("yyyy-MM-dd") to @Model.DateTo.ToString("yyyy-MM-dd") | Metric: @unit</small>
     </div>
 </div>
 
 <script>
-    function updateTimeframe(value) {
-        const url = new URL(window.location);
-        url.searchParams.set('timeframe', value);
-        window.location.href = url.toString();
-    }
-
     function applyAnalysisFilters() {
-        const timeframe = document.getElementById('filterTimeframe')?.value || 'daily';
-        const metric = document.getElementById('filterMetric')?.value || '';
-        const compare = document.getElementById('filterCompare')?.value || '';
-        const view = document.getElementById('filterView')?.value || 'peak';
+        var overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = 'flex';
 
-        const url = new URL(window.location);
+        var btn = document.getElementById('btnApply');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Loading...';
+
+        var timeframe = document.getElementById('filterTimeframe').value || 'daily';
+        var metric = document.getElementById('filterMetric').value || 'kwh';
+        var compare = document.getElementById('filterCompare').value || '';
+        var view = document.getElementById('filterView').value || 'peak';
+
+        var url = new URL(window.location.origin + '/EnergyAnalysis');
         url.searchParams.set('timeframe', timeframe);
-        if (metric) url.searchParams.set('metric', metric);
+        url.searchParams.set('metric', metric);
         if (compare) url.searchParams.set('compareWith', compare);
-        if (view) url.searchParams.set('view', view);
+        url.searchParams.set('view', view);
         window.location.href = url.toString();
     }
 

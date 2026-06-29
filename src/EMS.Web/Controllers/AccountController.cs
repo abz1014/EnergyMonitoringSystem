@@ -118,43 +118,6 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
-    [HttpGet("Setup")]
-    public async Task<IActionResult> SetupAdmin()
-    {
-        var adminEmail = "admin@energymonitoring.local";
-        var existingAdmin = await _userManager.FindByEmailAsync(adminEmail);
-
-        if (existingAdmin != null)
-        {
-            return Ok(new { message = "Admin user already exists" });
-        }
-
-        var adminUser = new AppUser
-        {
-            UserName = adminEmail,
-            Email = adminEmail,
-            FullName = "System Administrator",
-            Department = "IT",
-            EmailConfirmed = true,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        var result = await _userManager.CreateAsync(adminUser, "Admin@123");
-        if (!result.Succeeded)
-        {
-            return Ok(new { errors = result.Errors.Select(e => e.Description) });
-        }
-
-        var roleResult = await _userManager.AddToRoleAsync(adminUser, "Admin");
-        if (!roleResult.Succeeded)
-        {
-            return Ok(new { message = "User created but role assignment failed", errors = roleResult.Errors.Select(e => e.Description) });
-        }
-
-        return Ok(new { message = "Admin user created successfully", email = adminEmail, password = "Admin@123" });
-    }
-
     private IActionResult RedirectToLocal(string? returnUrl)
     {
         if (Url.IsLocalUrl(returnUrl))

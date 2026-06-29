@@ -7,7 +7,6 @@ using EMS.Infrastructure.Data;
 using EMS.Infrastructure.Repositories;
 using EMS.Web.Services;
 using EMS.Web.Validators;
-using EMS.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
