@@ -1,0 +1,226 @@
+@using EMS.Core.Models
+@{
+    ViewData["Title"] = "Alarm Timeline";
+    var alarms = ViewBag.Alarms as List<Alarm> ?? new List<Alarm>();
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var activeCount = (int)(ViewBag.ActiveCount ?? 0);
+    var ackCount = (int)(ViewBag.AcknowledgedCount ?? 0);
+    var totalCount = (int)(ViewBag.TotalCount ?? 0);
+    var avgResponse = (double)(ViewBag.AvgResponseMinutes ?? 0.0);
+    var worstDevice = ViewBag.WorstDevice as string ?? "—";
+    var worstCount = (int)(ViewBag.WorstDeviceCount ?? 0);
+    var devices = ViewBag.DistinctDevices as List<string> ?? new List<string>();
+    var selectedSev = ViewBag.SelectedSeverity as byte?;
+    var selectedDev = ViewBag.SelectedDevice as string;
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Alarm Timeline</h1>
+        <p class="text-muted">Alarm history, response times, and patterns</p>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" asp-action="Index" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Severity</label>
+                <select name="severity" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option value="">All</option>
+                    @foreach (var (val, label) in new (string,string)[] { ("3","Critical"), ("2","Warning"), ("1","Info") })
+                    {
+                        if (selectedSev.HasValue && selectedSev.Value.ToString() == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-light">Device</label>
+                <select name="device" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option value="">All Devices</option>
+                    @foreach (var d in devices)
+                    {
+                        if (d == selectedDev) { <option value="@d" selected>@d</option> } else { <option value="@d">@d</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Filter</button>
+            </div>
+            <div class="col-md-3">
+                <a href="/Alarm" class="btn btn-outline-secondary w-100">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Active</div>
+                <div style="color: @(activeCount > 0 ? "#EF4444" : "#10B981"); font-size: 28px; font-weight: 700;">@activeCount</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Acknowledged</div>
+                <div style="color: #FFFFFF; font-size: 28px; font-weight: 700;">@ackCount</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Avg Response</div>
+                <div style="color: #FFFFFF; font-size: 28px; font-weight: 700;">@(avgResponse < 60 ? $"{avgResponse:F0}m" : $"{avgResponse / 60:F1}h")</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Most Alarming</div>
+                <div style="color: #FFFFFF; font-size: 18px; font-weight: 700;">@worstDevice</div>
+                <div style="color: #64748B; font-size: 12px;">@worstCount alarms</div>
+            </div>
+        </div>
+    </div>
+
+    @if (hasData)
+    {
+        <!-- Timeline Chart -->
+        <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Alarm Timeline</h5>
+            <div id="timelineChart" style="height: @(Math.Max(alarms.Select(a => a.DeviceName).Distinct().Count() * 80, 250))px;"></div>
+        </div>
+
+        <!-- Alarm Table -->
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px; overflow-x: auto;">
+            <h5 class="text-light mb-3">Alarm Details (@totalCount)</h5>
+            <table class="table table-dark table-sm table-hover" style="color: #E2E8F0; font-size: 13px;">
+                <thead style="background-color: #0F172A;">
+                    <tr>
+                        <th style="color: #94A3B8;">ID</th>
+                        <th style="color: #94A3B8;">Severity</th>
+                        <th style="color: #94A3B8;">Device</th>
+                        <th style="color: #94A3B8;">Tag</th>
+                        <th style="color: #94A3B8;">Value</th>
+                        <th style="color: #94A3B8;">Threshold</th>
+                        <th style="color: #94A3B8;">Message</th>
+                        <th style="color: #94A3B8;">Created</th>
+                        <th style="color: #94A3B8;">Duration</th>
+                        <th style="color: #94A3B8;">Status</th>
+                        <th style="color: #94A3B8;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in alarms)
+                    {
+                        var sevColor = a.Severity == 3 ? "#EF4444" : a.Severity == 2 ? "#F59E0B" : "#3B82F6";
+                        var sevName = a.Severity == 3 ? "CRITICAL" : a.Severity == 2 ? "WARNING" : "INFO";
+                        var duration = (a.AckTime ?? DateTime.Now) - a.CreatedAt;
+                        var durStr = duration.TotalHours >= 1 ? $"{duration.TotalHours:F1}h" : $"{duration.TotalMinutes:F0}m";
+
+                        <tr>
+                            <td>@a.AlarmID</td>
+                            <td><span style="color: @sevColor; font-weight: 700; font-size: 11px;">@sevName</span></td>
+                            <td style="font-weight: 500;">@a.DeviceName</td>
+                            <td style="color: #94A3B8;">@a.TagName</td>
+                            <td>@a.TagValue.ToString("F1")</td>
+                            <td style="color: #94A3B8;">@a.Threshold.ToString("F1")</td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@a.Message</td>
+                            <td style="color: #94A3B8;">@a.CreatedAt.ToString("MMM dd HH:mm")</td>
+                            <td style="color: @(duration.TotalHours > 24 ? "#EF4444" : "#94A3B8");">@durStr</td>
+                            <td>
+                                @if (a.IsActive)
+                                {
+                                    <span style="color: #EF4444; font-weight: 600;">ACTIVE</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #10B981;">Ack by @a.AckBy</span>
+                                }
+                            </td>
+                            <td>
+                                @if (a.IsActive)
+                                {
+                                    <form asp-action="Acknowledge" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="alarmId" value="@a.AlarmID" />
+                                        <button type="submit" class="btn btn-sm" style="background: #2563EB; color: white; font-size: 11px; padding: 2px 10px;">Ack</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #10B981;">&#10003;</div>
+            <h4 style="color: #E2E8F0;">No alarms found</h4>
+            <p style="color: #64748B;">All clear — no alarms match the current filters.</p>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <style>
+        .apexcharts-menu { background: #1E293B !important; border-color: #334155 !important; }
+        .apexcharts-menu-item { color: #E2E8F0 !important; }
+        .apexcharts-menu-item:hover { background: #334155 !important; }
+    </style>
+    <script>
+        var timelineData = @Html.Raw(ViewBag.TimelineJson);
+
+        // Group by device
+        var deviceGroups = {};
+        timelineData.forEach(function(t) {
+            if (!deviceGroups[t.device]) deviceGroups[t.device] = [];
+            deviceGroups[t.device].push({
+                x: t.tag + (t.active ? ' (ACTIVE)' : ''),
+                y: [new Date(t.start).getTime(), new Date(t.end).getTime()],
+                fillColor: t.color
+            });
+        });
+
+        var series = Object.keys(deviceGroups).map(function(device) {
+            return { name: device, data: deviceGroups[device] };
+        });
+
+        new ApexCharts(document.querySelector('#timelineChart'), {
+            series: series,
+            chart: {
+                type: 'rangeBar',
+                height: @(Math.Max(alarms.Select(a => a.DeviceName).Distinct().Count() * 80, 250)),
+                background: '#1E293B',
+                toolbar: { show: true }
+            },
+            plotOptions: {
+                bar: { horizontal: true, barHeight: '60%', rangeBarGroupRows: true }
+            },
+            xaxis: {
+                type: 'datetime',
+                labels: { style: { colors: '#94A3B8' }, datetimeFormatter: { hour: 'HH:mm', day: 'MMM dd' } }
+            },
+            yaxis: { labels: { style: { colors: '#94A3B8' } } },
+            tooltip: {
+                theme: 'dark',
+                custom: function(opts) {
+                    var from = new Date(opts.y1);
+                    var to = new Date(opts.y2);
+                    var dur = Math.round((to - from) / 60000);
+                    var durStr = dur >= 60 ? (dur / 60).toFixed(1) + 'h' : dur + 'm';
+                    return '<div style="padding:8px 12px;background:#1E293B;border:1px solid #334155;border-radius:6px;">' +
+                        '<strong style="color:#E2E8F0;">' + opts.w.globals.seriesNames[opts.seriesIndex] + '</strong><br>' +
+                        '<span style="color:#94A3B8;">From: ' + from.toLocaleString() + '</span><br>' +
+                        '<span style="color:#94A3B8;">To: ' + to.toLocaleString() + '</span><br>' +
+                        '<span style="color:#F59E0B;">Duration: ' + durStr + '</span></div>';
+                }
+            },
+            legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+            grid: { borderColor: '#334155' }
+        }).render();
+    </script>
+}
