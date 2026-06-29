@@ -4,6 +4,7 @@ using EMS.Core.Models;
 
 public interface IAlarmRepository
 {
+    Task<List<Alarm>> GetAllAlarms();
     Task<List<Alarm>> GetActiveAlarms();
     Task<List<Alarm>> GetAlarmsByMeterId(int meterId);
     Task<List<Alarm>> GetAlarmsBySeverity(byte severity);

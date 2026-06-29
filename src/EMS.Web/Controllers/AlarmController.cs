@@ -22,9 +22,7 @@ public class AlarmController : Controller
     {
         try
         {
-            var allAlarms = await _alarmRepo.GetActiveAlarms();
-            var acknowledgedAlarms = await GetAllAlarms();
-            var combined = acknowledgedAlarms;
+            var combined = await _alarmRepo.GetAllAlarms();
 
             if (severity.HasValue)
                 combined = combined.Where(a => a.Severity == severity.Value).ToList();
@@ -94,27 +92,6 @@ public class AlarmController : Controller
             _logger.LogError(ex, "Error loading alarm timeline");
             return View("Error");
         }
-    }
-
-    private async Task<List<Alarm>> GetAllAlarms()
-    {
-        var active = await _alarmRepo.GetActiveAlarms();
-        // Also get recently acknowledged (workaround since repo only has GetActiveAlarms)
-        // In production, add a GetAllAlarms method to the repo
-        var all = new List<Alarm>(active);
-
-        // Query acknowledged alarms via severity levels
-        for (byte sev = 1; sev <= 3; sev++)
-        {
-            var bySev = await _alarmRepo.GetAlarmsBySeverity(sev);
-            foreach (var a in bySev)
-            {
-                if (!all.Any(x => x.AlarmID == a.AlarmID))
-                    all.Add(a);
-            }
-        }
-
-        return all.OrderByDescending(a => a.CreatedAt).ToList();
     }
 
     [HttpPost]

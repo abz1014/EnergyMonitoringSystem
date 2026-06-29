@@ -14,6 +14,13 @@ public class AlarmRepository : IAlarmRepository
         _context = context;
     }
 
+    public async Task<List<Alarm>> GetAllAlarms()
+    {
+        return await _context.Alarms
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<List<Alarm>> GetActiveAlarms()
     {
         return await _context.Alarms
