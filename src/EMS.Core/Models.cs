@@ -46,23 +46,6 @@ public class EnergyMeterData
     public double? HarmonicI3 { get; set; }
 }
 
-public class EnergyMeterLive
-{
-    public int Id { get; set; }
-    public int MeterNo { get; set; }
-    public DateTime DateTime { get; set; }
-    public bool IsValid { get; set; }
-
-    public double? VoltL1N { get; set; }
-    public double? VoltL2N { get; set; }
-    public double? VoltL3N { get; set; }
-    public double? CurrentL1 { get; set; }
-    public double? CurrentL2 { get; set; }
-    public double? CurrentL3 { get; set; }
-    public double? kWtotal { get; set; }
-    public double? PFL1 { get; set; }
-    public double? MFreq { get; set; }
-}
 
 public class MonitoringDevice
 {
@@ -83,35 +66,44 @@ public class MonitoringDevice
 
 public class Alarm
 {
-    public int Id { get; set; }
-    public int MeterNo { get; set; }
-    public string DeviceName { get; set; }
-    public string Parameter { get; set; }
-    public double? CurrentValue { get; set; }
+    public int AlarmID { get; set; }
+    public int DeviceID { get; set; }
+    public string DeviceName { get; set; } = "";
+    public string? DeviceLocation { get; set; }
+    public string TagName { get; set; } = "";
+    public double? TagValue { get; set; }
     public double? Threshold { get; set; }
-    public string Severity { get; set; }
-    public string Message { get; set; }
+    public string? Condition { get; set; }
+    public string Severity { get; set; } = "";
+    public string Message { get; set; } = "";
     public bool IsActive { get; set; }
-    public DateTime CreatedAt { get; set; }
     public string? AckBy { get; set; }
     public DateTime? AckTime { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 public class FlowmeterData
 {
-    public int Id { get; set; }
-    public int DeviceID { get; set; }
-    public DateTime DateTime { get; set; }
-    public double? FlowRate { get; set; }
-    public double? TotalFlow { get; set; }
+    public int SrNo { get; set; }
     public string? DeviceName { get; set; }
+    public string? IPAddress { get; set; }
+    public DateTime DateTime { get; set; }
+    public int MeterNo { get; set; }
+    public string? InformationType { get; set; }
+    public double? Data { get; set; }
+    public string? DataUnit { get; set; }
+    public string? Area { get; set; }
 }
 
 public class DeviceTag
 {
-    public int Id { get; set; }
-    public int DeviceID { get; set; }
-    public string TagName { get; set; }
-    public string RegisterAddress { get; set; }
-    public string DataType { get; set; }
+    public int SrNo { get; set; }
+    public string? DeviceType { get; set; }
+    public string? DeviceModel { get; set; }
+    public string TagName { get; set; } = "";
+    public string? TagAddress { get; set; }
+    public string? DataType { get; set; }
+    public int? SizeBits { get; set; }
+    public double? ScaleFactor { get; set; }
+    public int? RegisterCount { get; set; }
 }

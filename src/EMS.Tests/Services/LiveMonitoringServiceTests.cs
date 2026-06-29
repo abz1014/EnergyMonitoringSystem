@@ -106,7 +106,7 @@ public class LiveMonitoringServiceTests
     {
         var alarms = new List<Alarm>
         {
-            new() { Id = 1, MeterNo = 1, DeviceName = "EM-001", Severity = "warning", Message = "Voltage low", Parameter = "VoltL1N", IsActive = true, CreatedAt = DateTime.Now }
+            new() { AlarmID = 1, DeviceID = 1, DeviceName = "EM-001", Severity = "warning", Message = "Voltage low", TagName = "VoltL1N", IsActive = true, CreatedAt = DateTime.Now }
         };
 
         _meterRepo.Setup(r => r.GetByDateRange(It.IsAny<DateTime>(), It.IsAny<DateTime>())).ReturnsAsync(new List<EnergyMeterData>());

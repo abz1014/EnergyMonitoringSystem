@@ -31,14 +31,11 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 
 // Repository dependency injection
 builder.Services.AddScoped<IEnergyMeterRepository, EnergyMeterRepository>();
-builder.Services.AddScoped<IEnergyMeterLiveRepository, EnergyMeterLiveRepository>();
 builder.Services.AddScoped<IMonitoringDeviceRepository, MonitoringDeviceRepository>();
 builder.Services.AddScoped<IAlarmRepository, AlarmRepository>();
 builder.Services.AddScoped<IFlowmeterRepository, FlowmeterRepository>();
 
-// Service dependency injection
-builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<ILiveMonitoringService, LiveMonitoringService>();
+// Role seeder
 builder.Services.AddScoped<RoleSeederService>();
 
 // CORS configuration for external clients

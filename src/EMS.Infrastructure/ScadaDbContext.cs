@@ -11,7 +11,6 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
     }
 
     public DbSet<EnergyMeterData> EnergyMetersData { get; set; }
-    public DbSet<EnergyMeterLive> EnergyMeterLive { get; set; }
     public DbSet<MonitoringDevice> MonitoringDevices { get; set; }
     public DbSet<Alarm> Alarms { get; set; }
     public DbSet<FlowmeterData> FlowmetersData { get; set; }
@@ -23,7 +22,6 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
 
         // Table mappings
         modelBuilder.Entity<EnergyMeterData>().ToTable("tblEnergyMetersData");
-        modelBuilder.Entity<EnergyMeterLive>().ToTable("tblEnergyMeterLive");
         modelBuilder.Entity<MonitoringDevice>().ToTable("tblMonitoringDevices");
         modelBuilder.Entity<Alarm>().ToTable("Alarms");
         modelBuilder.Entity<FlowmeterData>().ToTable("tbFlowmetersData");
@@ -39,14 +37,6 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
             .HasIndex(e => e.DateTime)
             .HasDatabaseName("IX_EnergyMetersData_DateTime");
 
-        // EnergyMeterLive configurations
-        modelBuilder.Entity<EnergyMeterLive>()
-            .HasKey(e => e.Id);
-        modelBuilder.Entity<EnergyMeterLive>()
-            .HasIndex(e => e.MeterNo)
-            .IsUnique()
-            .HasDatabaseName("IX_EnergyMeterLive_MeterNo");
-
         // MonitoringDevice configurations
         modelBuilder.Entity<MonitoringDevice>()
             .HasKey(e => e.SrNo);
@@ -59,23 +49,23 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
 
         // Alarm configurations
         modelBuilder.Entity<Alarm>()
-            .HasKey(e => e.Id);
+            .HasKey(e => e.AlarmID);
         modelBuilder.Entity<Alarm>()
             .HasIndex(e => new { e.IsActive, e.CreatedAt })
             .HasDatabaseName("IX_Alarms_IsActive_CreatedAt");
 
         // FlowmeterData configurations
         modelBuilder.Entity<FlowmeterData>()
-            .HasKey(e => e.Id);
+            .HasKey(e => e.SrNo);
         modelBuilder.Entity<FlowmeterData>()
-            .HasIndex(e => new { e.DeviceID, e.DateTime })
-            .HasDatabaseName("IX_FlowmetersData_DeviceID_DateTime");
+            .HasIndex(e => new { e.MeterNo, e.DateTime })
+            .HasDatabaseName("IX_FlowmetersData_MeterNo_DateTime");
 
         // DeviceTag configurations
         modelBuilder.Entity<DeviceTag>()
-            .HasKey(e => e.Id);
+            .HasKey(e => e.SrNo);
         modelBuilder.Entity<DeviceTag>()
-            .HasIndex(e => e.DeviceID)
-            .HasDatabaseName("IX_DevicesTags_DeviceID");
+            .HasIndex(e => e.TagName)
+            .HasDatabaseName("IX_DevicesTags_TagName");
     }
 }

@@ -79,11 +79,11 @@ public class LiveMonitoringService : ILiveMonitoringService
 
             var alarmDtos = activeAlarms.Select(a => new AlarmDto
             {
-                Id = a.Id,
-                MeterId = a.MeterNo,
-                DeviceName = deviceLookup.GetValueOrDefault(a.MeterNo)?.DeviceName ?? a.DeviceName,
-                Parameter = a.Parameter,
-                CurrentValue = a.CurrentValue,
+                Id = a.AlarmID,
+                MeterId = a.DeviceID,
+                DeviceName = deviceLookup.GetValueOrDefault(a.DeviceID)?.DeviceName ?? a.DeviceName,
+                Parameter = a.TagName,
+                CurrentValue = a.TagValue,
                 Threshold = a.Threshold,
                 Severity = a.Severity,
                 Message = a.Message,

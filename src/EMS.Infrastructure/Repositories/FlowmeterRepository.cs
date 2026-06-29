@@ -16,24 +16,24 @@ public class FlowmeterRepository : IFlowmeterRepository
 
     public async Task<List<FlowmeterData>> GetFlowmeterData(int deviceId, DateTime from, DateTime to)
     {
-        return await _context.FlowmetersData
-            .Where(f => f.DeviceID == deviceId && f.DateTime >= from && f.DateTime <= to)
+        return await _context.FlowmetersData.AsNoTracking()
+            .Where(f => f.MeterNo == deviceId && f.DateTime >= from && f.DateTime <= to)
             .OrderBy(f => f.DateTime)
             .ToListAsync();
     }
 
     public async Task<FlowmeterData?> GetLatestFlowReading(int deviceId)
     {
-        return await _context.FlowmetersData
-            .Where(f => f.DeviceID == deviceId)
+        return await _context.FlowmetersData.AsNoTracking()
+            .Where(f => f.MeterNo == deviceId)
             .OrderByDescending(f => f.DateTime)
             .FirstOrDefaultAsync();
     }
 
     public async Task<List<FlowmeterData>> GetAllLatestReadings()
     {
-        var latestReadings = await _context.FlowmetersData
-            .GroupBy(f => f.DeviceID)
+        var latestReadings = await _context.FlowmetersData.AsNoTracking()
+            .GroupBy(f => f.MeterNo)
             .Select(g => g.OrderByDescending(f => f.DateTime).FirstOrDefault())
             .Where(f => f != null)
             .ToListAsync();
