@@ -79,6 +79,15 @@
         </div>
     }
 
+    @if (Model?.Meters == null || Model.Meters.Count == 0)
+    {
+        <div class="mb-5 p-5" style="background-color: #1E293B; border-radius: 8px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px; color: #64748B;">📡</div>
+            <h4 style="color: #E2E8F0;">No live meters available</h4>
+            <p style="color: #64748B;">No meters are currently reporting data. Check device connections and ensure the SCADA system is running.</p>
+        </div>
+    }
+
     <!-- Live Meters Table -->
     @if (Model?.Meters != null && Model.Meters.Count > 0)
     {
@@ -229,17 +238,12 @@
         location.reload();
     }
 
-    // Auto-refresh every 30 seconds
-    setInterval(function() {
-        fetch(location.href)
-            .then(response => response.text())
-            .then(html => {
-                document.documentElement.innerHTML = html;
-                var now = new Date();
-                document.getElementById('lastRefresh').innerText = now.getHours().toString().padStart(2, '0') + ':' +
-                                                                    now.getMinutes().toString().padStart(2, '0') + ':' +
-                                                                    now.getSeconds().toString().padStart(2, '0');
-            });
+    var autoRefreshInterval = setInterval(function() {
+        var countdown = document.getElementById('lastRefresh');
+        if (countdown) {
+            countdown.innerText = 'Refreshing...';
+        }
+        location.reload();
     }, 30000);
 </script>
 

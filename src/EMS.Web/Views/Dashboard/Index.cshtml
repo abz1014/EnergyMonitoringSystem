@@ -186,7 +186,20 @@
     <!-- Main Chart Section -->
     <div class="chart-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
         <h3 class="h5 mb-4 text-light">Daily Energy Consumption (Today's Breakdown)</h3>
-        <div id="consumptionChart" style="height: 400px;"></div>
+        @if (Model?.Charts?.ConsumptionTrend != null && Model.Charts.ConsumptionTrend.Count > 0)
+        {
+            <div id="consumptionChart" style="height: 400px;"></div>
+        }
+        else
+        {
+            <div style="height: 400px; display: flex; align-items: center; justify-content: center; color: #64748B;">
+                <div style="text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                    <p style="font-size: 16px;">No consumption data available for today</p>
+                    <small>Data will appear once meters start reporting</small>
+                </div>
+            </div>
+        }
     </div>
 
     <!-- Bottom Section - Two Columns -->
@@ -195,7 +208,19 @@
         <div class="col-12 col-lg-6">
             <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
                 <h3 class="h5 mb-4 text-light">Consumption by Location</h3>
-                <div id="locationChart" style="height: 300px;"></div>
+                @if (Model?.Charts?.LocationBreakdown != null && Model.Charts.LocationBreakdown.Count > 0)
+                {
+                    <div id="locationChart" style="height: 300px;"></div>
+                }
+                else
+                {
+                    <div style="height: 300px; display: flex; align-items: center; justify-content: center; color: #64748B;">
+                        <div style="text-align: center;">
+                            <p>No location data available</p>
+                            <small>Assign meters to buildings to see breakdown</small>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
 
@@ -203,7 +228,19 @@
         <div class="col-12 col-lg-6">
             <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
                 <h3 class="h5 mb-4 text-light">Top 10 Consumers</h3>
-                <div id="consumersChart" style="height: 300px;"></div>
+                @if (Model?.Charts?.TopConsumers != null && Model.Charts.TopConsumers.Count > 0)
+                {
+                    <div id="consumersChart" style="height: 300px;"></div>
+                }
+                else
+                {
+                    <div style="height: 300px; display: flex; align-items: center; justify-content: center; color: #64748B;">
+                        <div style="text-align: center;">
+                            <p>No consumer data available</p>
+                            <small>Data will appear once meters report consumption</small>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -358,58 +395,9 @@
     }
 
     function refreshDashboard() {
-        LoadingState.show('Refreshing dashboard data...');
-
-        fetch(window.location.href, {
-            method: 'GET',
-            headers: { 'Accept': 'text/html' }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to refresh dashboard');
-            return response.text();
-        })
-        .then(html => {
-            const parser = new DOMParser();
-            const newDoc = parser.parseFromString(html, 'text/html');
-
-            // Update KPI cards
-            const oldKpiSection = document.querySelector('.kpi-section');
-            const newKpiSection = newDoc.querySelector('.kpi-section');
-            if (oldKpiSection && newKpiSection) {
-                oldKpiSection.innerHTML = newKpiSection.innerHTML;
-            }
-
-            // Update charts
-            const oldChartSection = document.querySelector('.chart-section');
-            const newChartSection = newDoc.querySelector('.chart-section');
-            if (oldChartSection && newChartSection) {
-                oldChartSection.innerHTML = newChartSection.innerHTML;
-            }
-
-            // Update bottom section (location and consumers)
-            const bottomRow = document.querySelector('.row.g-4.mb-5');
-            const newBottomRow = newDoc.querySelector('.row.g-4.mb-5');
-            if (bottomRow && newBottomRow) {
-                bottomRow.innerHTML = newBottomRow.innerHTML;
-            }
-
-            // Update timestamp
-            const lastUpdated = document.getElementById('lastUpdated');
-            if (lastUpdated) {
-                lastUpdated.innerText = 'Just now';
-            }
-
-            // Re-render charts (ApexCharts requires re-initialization)
-            setTimeout(() => {
-                location.reload(); // Reload to re-render ApexCharts properly
-                LoadingState.hide();
-            }, 500);
-        })
-        .catch(error => {
-            console.error('Dashboard refresh failed:', error);
-            LoadingState.hide();
-            alert('Failed to refresh dashboard. Please try again.');
-        });
+        var btn = document.querySelector('.btn-primary');
+        if (btn) { btn.disabled = true; btn.textContent = 'Refreshing...'; }
+        location.reload();
     }
 </script>
 
