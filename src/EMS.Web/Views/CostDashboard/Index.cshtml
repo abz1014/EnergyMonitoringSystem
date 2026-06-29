@@ -140,7 +140,7 @@
         .apexcharts-menu-item:hover { background: #334155 !important; }
     </style>
     <script>
-    var R = '₹';
+    var R = '@Html.Raw(Model.Currency) ';
     function fmt(v) { return R + Math.round(v).toLocaleString(); }
 
     new ApexCharts(document.querySelector('#peakSplitChart'), {

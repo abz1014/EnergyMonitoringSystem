@@ -68,8 +68,8 @@ public class WebDashboardService : IDashboardService
             var co2Factor = 0.82;
             var co2Emissions = (todaysConsumption / 1000.0) * co2Factor;
 
-            var tariffRate = 8.5;
-            var estimatedCost = (monthlyTotal * tariffRate) / 1_000_000;
+            var tariffRate = 35.0;
+            var estimatedCost = (monthlyTotal * tariffRate) / 100_000;
 
             var latestReadings = todayData.Where(d => d.MeterNo.HasValue).GroupBy(d => d.MeterNo!.Value).Select(g => g.OrderByDescending(d => d.DateTime).First()).ToList();
             var currentLoad = latestReadings.Sum(m => (double)(m.kWtotal ?? 0));
@@ -125,8 +125,8 @@ public class WebDashboardService : IDashboardService
                 {
                     Title = "Est. Monthly Cost",
                     Value = estimatedCost,
-                    Unit = "Million ₹",
-                    Trend = $"₹{tariffRate}/kWh",
+                    Unit = "Lakh Rs.",
+                    Trend = $"Rs.{tariffRate}/kWh",
                     Status = "warning",
                     Subtitle = "Projected spend"
                 },
@@ -312,7 +312,7 @@ public class WebDashboardService : IDashboardService
             PeakDemand = new KpiCardDto { Title = "Peak Demand Today", Value = 0, Unit = "kW", Trend = "—", Status = "warning", Subtitle = "No data" },
             MonthlyTotal = new KpiCardDto { Title = "Monthly Total", Value = 0, Unit = "kWh", Trend = "—", Status = "warning", Subtitle = "No data" },
             OnlineMeters = new KpiCardDto { Title = "Online Meters", Value = 0, Unit = "/ 0", Trend = "—", Status = "warning", Subtitle = "No data" },
-            EstimatedCost = new KpiCardDto { Title = "Est. Monthly Cost", Value = 0, Unit = "Million ₹", Trend = "—", Status = "warning", Subtitle = "No data" },
+            EstimatedCost = new KpiCardDto { Title = "Est. Monthly Cost", Value = 0, Unit = "Lakh Rs.", Trend = "—", Status = "warning", Subtitle = "No data" },
             AvgPowerFactor = new KpiCardDto { Title = "Avg Power Factor", Value = 0, Unit = "PF", Trend = "—", Status = "warning", Subtitle = "No data" },
             Co2Emissions = new KpiCardDto { Title = "CO₂ Emissions", Value = 0, Unit = "Metric Tons", Trend = "—", Status = "warning", Subtitle = "No data" }
         };
