@@ -358,7 +358,58 @@
     }
 
     function refreshDashboard() {
-        location.reload();
+        LoadingState.show('Refreshing dashboard data...');
+
+        fetch(window.location.href, {
+            method: 'GET',
+            headers: { 'Accept': 'text/html' }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to refresh dashboard');
+            return response.text();
+        })
+        .then(html => {
+            const parser = new DOMParser();
+            const newDoc = parser.parseFromString(html, 'text/html');
+
+            // Update KPI cards
+            const oldKpiSection = document.querySelector('.kpi-section');
+            const newKpiSection = newDoc.querySelector('.kpi-section');
+            if (oldKpiSection && newKpiSection) {
+                oldKpiSection.innerHTML = newKpiSection.innerHTML;
+            }
+
+            // Update charts
+            const oldChartSection = document.querySelector('.chart-section');
+            const newChartSection = newDoc.querySelector('.chart-section');
+            if (oldChartSection && newChartSection) {
+                oldChartSection.innerHTML = newChartSection.innerHTML;
+            }
+
+            // Update bottom section (location and consumers)
+            const bottomRow = document.querySelector('.row.g-4.mb-5');
+            const newBottomRow = newDoc.querySelector('.row.g-4.mb-5');
+            if (bottomRow && newBottomRow) {
+                bottomRow.innerHTML = newBottomRow.innerHTML;
+            }
+
+            // Update timestamp
+            const lastUpdated = document.getElementById('lastUpdated');
+            if (lastUpdated) {
+                lastUpdated.innerText = 'Just now';
+            }
+
+            // Re-render charts (ApexCharts requires re-initialization)
+            setTimeout(() => {
+                location.reload(); // Reload to re-render ApexCharts properly
+                LoadingState.hide();
+            }, 500);
+        })
+        .catch(error => {
+            console.error('Dashboard refresh failed:', error);
+            LoadingState.hide();
+            alert('Failed to refresh dashboard. Please try again.');
+        });
     }
 </script>
 
