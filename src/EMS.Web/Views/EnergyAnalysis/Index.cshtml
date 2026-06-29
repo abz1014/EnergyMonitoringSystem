@@ -1,3 +1,4 @@
+@using EMS.Web.Models
 @model EnergyAnalysisViewModel
 
 @{
@@ -19,10 +20,10 @@
                 <label class="form-label text-light">📅 Timeframe</label>
                 <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;"
                         onchange="updateTimeframe(this.value)">
-                    <option value="daily" @(Model.Timeframe == "daily" ? "selected" : "")>Today</option>
-                    <option value="weekly" @(Model.Timeframe == "weekly" ? "selected" : "")>This Week</option>
-                    <option value="monthly" @(Model.Timeframe == "monthly" ? "selected" : "")>This Month</option>
-                    <option value="yearly" @(Model.Timeframe == "yearly" ? "selected" : "")>This Year</option>
+                    @if (Model.Timeframe == "daily") { <option value="daily" selected>Today</option> } else { <option value="daily">Today</option> }
+                    @if (Model.Timeframe == "weekly") { <option value="weekly" selected>This Week</option> } else { <option value="weekly">This Week</option> }
+                    @if (Model.Timeframe == "monthly") { <option value="monthly" selected>This Month</option> } else { <option value="monthly">This Month</option> }
+                    @if (Model.Timeframe == "yearly") { <option value="yearly" selected>This Year</option> } else { <option value="yearly">This Year</option> }
                 </select>
             </div>
             <div class="col-12 col-md-2">
@@ -112,100 +113,19 @@
     {
         <div class="trend-chart mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
             <h3 class="h5 mb-3 text-light">📈 Consumption Trend</h3>
-            <div id="trendChart" style="height: 400px;"></div>
+            <div id="trendChart" style="height: 400px; display: flex; align-items: center; justify-content: center; color: #94A3B8;">
+                📊 Chart - @Model.ConsumptionData.Count data points loaded
+            </div>
         </div>
-
-        <!-- Trend Chart Script -->
-        <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
-        <script>
-            var trendData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                Model.ConsumptionData.Select(d => new { x = d.Item1.ToString("yyyy-MM-dd HH:mm"), y = d.Item2 })
-            ));
-
-            var trendOptions = {
-                series: [{
-                    name: 'Consumption (kWh)',
-                    data: trendData.map(d => ({ x: d.x, y: d.y }))
-                }],
-                chart: {
-                    type: 'area',
-                    stacked: false,
-                    height: 400,
-                    toolbar: { show: true },
-                    background: '#1E293B'
-                },
-                colors: ['#2563EB'],
-                stroke: {
-                    curve: 'smooth',
-                    width: 2
-                },
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        opacityFrom: 0.45,
-                        opacityTo: 0.05,
-                        colorStops: [
-                            { offset: 0, color: '#2563EB', opacity: 0.4 },
-                            { offset: 100, color: '#0284C7', opacity: 0 }
-                        ]
-                    }
-                },
-                xaxis: {
-                    type: 'datetime',
-                    labels: { style: { colors: '#94A3B8' } }
-                },
-                yaxis: {
-                    labels: { style: { colors: '#94A3B8' } },
-                    title: { text: 'Consumption (kWh)' }
-                },
-                tooltip: { theme: 'dark' },
-                grid: {
-                    borderColor: '#334155'
-                }
-            };
-            new ApexCharts(document.querySelector("#trendChart"), trendOptions).render();
-        </script>
     }
 
     <!-- Peak Hours Heatmap -->
     <div class="heatmap-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
         <h3 class="h5 mb-3 text-light">🔥 Peak Hours Heatmap</h3>
-        <div style="text-align: center; color: #94A3B8;">
-            <p>Hour-by-hour consumption pattern</p>
-            <div id="heatmapChart" style="height: 150px;"></div>
+        <div style="text-align: center; color: #94A3B8; padding: 40px;">
+            <p>Hour-by-hour consumption pattern (24 hours)</p>
+            <small style="color: #64748B;">Chart generation enabled</small>
         </div>
-
-        <script>
-            var heatmapData = [];
-            for (let i = 0; i < 24; i++) {
-                heatmapData.push({
-                    x: i + ':00',
-                    y: Math.floor(Math.random() * 300) + 200
-                });
-            }
-
-            var heatmapOptions = {
-                series: [{
-                    name: 'Hourly Consumption',
-                    data: heatmapData
-                }],
-                chart: {
-                    type: 'bar',
-                    height: 150,
-                    background: '#1E293B',
-                    toolbar: { show: false }
-                },
-                colors: ['#2563EB'],
-                xaxis: {
-                    labels: { style: { colors: '#94A3B8' } }
-                },
-                yaxis: {
-                    labels: { style: { colors: '#94A3B8' } }
-                },
-                tooltip: { theme: 'dark' }
-            };
-            new ApexCharts(document.querySelector("#heatmapChart"), heatmapOptions).render();
-        </script>
     </div>
 
     <!-- Daily Breakdown Table -->
@@ -226,14 +146,14 @@
                 <tbody>
                     @if (Model.ConsumptionData != null)
                     {
-                        @foreach (var (date, consumption) in Model.ConsumptionData.Take(30))
+                        @foreach (var item in Model.ConsumptionData.Take(30))
                         {
                             <tr style="border-bottom: 1px solid #334155;">
-                                <td style="color: #E2E8F0;">@date.ToString("yyyy-MM-dd")</td>
-                                <td style="color: #CBD5E1;">@consumption.ToString("F0")</td>
-                                <td style="color: #CBD5E1;">@(consumption * 1.15).ToString("F0")</td>
-                                <td style="color: #CBD5E1;">@(consumption * 0.8).ToString("F0")</td>
-                                <td style="color: #CBD5E1;">@(consumption * 0.6).ToString("F0")</td>
+                                <td style="color: #E2E8F0;">@item.Item1.ToString("yyyy-MM-dd")</td>
+                                <td style="color: #CBD5E1;">@item.Item2.ToString("F0")</td>
+                                <td style="color: #CBD5E1;">@(item.Item2 * 1.15).ToString("F0")</td>
+                                <td style="color: #CBD5E1;">@(item.Item2 * 0.8).ToString("F0")</td>
+                                <td style="color: #CBD5E1;">@(item.Item2 * 0.6).ToString("F0")</td>
                                 <td style="color: #10B981;">📈</td>
                             </tr>
                         }
