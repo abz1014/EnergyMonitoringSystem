@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Interfaces;
 using EMS.Web.Models;
 
-[Authorize]
+[Authorize(Roles = "Admin,Operator,Viewer")]
 public class MeterDetailsController : Controller
 {
     private readonly IEnergyMeterRepository _energyMeterRepository;

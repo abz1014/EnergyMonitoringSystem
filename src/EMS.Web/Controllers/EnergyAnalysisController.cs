@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Interfaces;
 using EMS.Web.Models;
 
-[Authorize]
+[Authorize(Roles = "Admin,Operator,Viewer")]
 public class EnergyAnalysisController : Controller
 {
     private readonly IEnergyMeterRepository _energyMeterRepository;
@@ -17,7 +17,7 @@ public class EnergyAnalysisController : Controller
         _logger = logger;
     }
 
-    public async Task<IActionResult> Index(string timeframe = "daily", string compareWith = "")
+    public async Task<IActionResult> Index(string timeframe = "daily", string compareWith = "", string metric = "kwh", string view = "peak")
     {
         try
         {

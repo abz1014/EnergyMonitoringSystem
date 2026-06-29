@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using EMS.Core.Interfaces;
 
-[Authorize]
+[Authorize(Roles = "Admin,Operator,Viewer")]
 public class DashboardController : Controller
 {
     private readonly IDashboardService _dashboardService;

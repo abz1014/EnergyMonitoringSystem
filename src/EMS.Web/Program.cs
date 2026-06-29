@@ -58,7 +58,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Security headers
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts(); // HTTP Strict-Transport-Security
+}
+
+app.UseHttpsRedirection(); // Enforce HTTPS
 app.UseStaticFiles();
 
 app.UseRouting();

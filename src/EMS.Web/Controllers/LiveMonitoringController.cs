@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using EMS.Core.Interfaces;
 
-[Authorize]
+[Authorize(Roles = "Admin,Operator,Viewer")]
 public class LiveMonitoringController : Controller
 {
     private readonly ILiveMonitoringService _liveMonitoringService;
