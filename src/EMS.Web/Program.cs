@@ -22,6 +22,7 @@ builder.Services.AddScoped<IFlowmeterRepository, FlowmeterRepository>();
 
 // Service dependency injection
 builder.Services.AddScoped<IDashboardService, WebDashboardService>();
+builder.Services.AddScoped<ILiveMonitoringService, LiveMonitoringService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
