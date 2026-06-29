@@ -119,6 +119,75 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
+    [HttpGet]
+    public IActionResult ForgotPassword()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+        {
+            ModelState.AddModelError(string.Empty, "Email is required.");
+            return View();
+        }
+
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user != null)
+        {
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetUrl = Url.Action("ResetPassword", "Account", new { token, email }, Request.Scheme);
+            _logger.LogInformation("Password reset requested for {Email}. Reset URL: {Url}", email, resetUrl);
+        }
+
+        return View("ForgotPasswordConfirmation");
+    }
+
+    [HttpGet]
+    public IActionResult ResetPassword(string? token, string? email)
+    {
+        if (token == null || email == null)
+            return RedirectToAction("Login");
+
+        ViewBag.Token = token;
+        ViewBag.Email = email;
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(string email, string token, string password, string confirmPassword)
+    {
+        if (password != confirmPassword)
+        {
+            ModelState.AddModelError(string.Empty, "Passwords do not match.");
+            ViewBag.Token = token;
+            ViewBag.Email = email;
+            return View();
+        }
+
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+            return RedirectToAction("Login");
+
+        var result = await _userManager.ResetPasswordAsync(user, token, password);
+        if (result.Succeeded)
+        {
+            _logger.LogInformation("Password reset successful for {Email}", email);
+            return View("ResetPasswordConfirmation");
+        }
+
+        foreach (var error in result.Errors)
+            ModelState.AddModelError(string.Empty, error.Description);
+
+        ViewBag.Token = token;
+        ViewBag.Email = email;
+        return View();
+    }
+
     private IActionResult RedirectToLocal(string? returnUrl)
     {
         if (Url.IsLocalUrl(returnUrl))

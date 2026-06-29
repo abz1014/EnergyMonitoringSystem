@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Models;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager;

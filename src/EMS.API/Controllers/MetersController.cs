@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Interfaces;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Authorize]
 public class MetersController : ControllerBase
 {

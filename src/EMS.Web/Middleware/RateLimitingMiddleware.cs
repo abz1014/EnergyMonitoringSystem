@@ -16,8 +16,9 @@ public class RateLimitingMiddleware
     {
         "/Account/Login",
         "/Account/Register",
-        "/api/auth/login",
-        "/api/auth/register"
+        "/Account/ForgotPassword",
+        "/api/v1/auth/login",
+        "/api/v1/auth/register"
     };
 
     public RateLimitingMiddleware(RequestDelegate next, ILogger<RateLimitingMiddleware> logger)

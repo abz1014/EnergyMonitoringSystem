@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -8,104 +8,161 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
         :root {
-            --bs-primary: #2563EB;
-            --bs-body-bg: #0F172A;
-            --bs-body-color: #E2E8F0;
-            --bs-border-color: #334155;
+            --sidebar-width: 220px;
+            --topbar-height: 50px;
+            --bg-primary: #0F172A;
+            --bg-secondary: #1E293B;
+            --bg-tertiary: #334155;
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --accent: #2563EB;
+            --border: #334155;
         }
 
-        body {
-            background-color: #0F172A;
-            color: #E2E8F0;
+        body { background-color: var(--bg-primary); color: var(--text-primary); margin: 0; overflow-x: hidden; }
+
+        .sidebar {
+            position: fixed; top: 0; left: 0; bottom: 0;
+            width: var(--sidebar-width);
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            z-index: 1000;
+            transition: transform 0.2s;
         }
 
-        .navbar {
-            background-color: #1E293B !important;
-            border-bottom: 1px solid #334155;
+        .sidebar-brand {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 18px; font-weight: 700;
+            color: var(--accent);
+            text-decoration: none; display: block;
         }
 
-        .navbar-brand {
-            color: #2563EB !important;
-            font-weight: bold;
+        .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+
+        .sidebar-section { padding: 8px 20px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+
+        .sidebar-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 20px;
+            color: var(--text-secondary);
+            text-decoration: none; font-size: 14px;
+            transition: background-color 0.15s, color 0.15s;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-link:hover { background-color: var(--bg-tertiary); color: var(--text-primary); }
+        .sidebar-link.active { color: var(--accent); background-color: rgba(37, 99, 235, 0.1); border-left-color: var(--accent); font-weight: 600; }
+
+        .sidebar-icon { width: 18px; text-align: center; font-size: 14px; }
+
+        .sidebar-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
         }
 
-        .nav-link {
-            color: #CBD5E1 !important;
+        .sidebar-user { color: var(--text-secondary); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .topbar {
+            position: fixed; top: 0; left: var(--sidebar-width); right: 0;
+            height: var(--topbar-height);
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            z-index: 999;
         }
 
-        .nav-link:hover {
-            color: #2563EB !important;
+        .topbar-title { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+        .topbar-actions { display: flex; align-items: center; gap: 12px; }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--topbar-height);
+            min-height: calc(100vh - var(--topbar-height));
         }
 
         .footer {
-            background-color: #1E293B;
-            border-top: 1px solid #334155;
-            color: #64748B;
+            margin-left: var(--sidebar-width);
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .sidebar-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; }
+
+        @@media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content, .footer, .topbar { margin-left: 0; left: 0; }
+            .sidebar-toggle { display: block; }
         }
     </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-dark navbar-toggleable-sm border-bottom">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Dashboard" asp-action="Index">⚡ EMS</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    @{
-                        var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
-                    }
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link @(controller == "Dashboard" ? "active" : "")" asp-area="" asp-controller="Dashboard" asp-action="Index"
-                               style="@(controller == "Dashboard" ? "color: #2563EB !important; font-weight: 600;" : "")">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(controller == "LiveMonitoring" || controller == "MeterDetails" ? "active" : "")" asp-area="" asp-controller="LiveMonitoring" asp-action="Index"
-                               style="@(controller == "LiveMonitoring" || controller == "MeterDetails" ? "color: #2563EB !important; font-weight: 600;" : "")">Live</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(controller == "EnergyAnalysis" ? "active" : "")" asp-area="" asp-controller="EnergyAnalysis" asp-action="Index"
-                               style="@(controller == "EnergyAnalysis" ? "color: #2563EB !important; font-weight: 600;" : "")">Analysis</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item">
-                                <span class="nav-link" style="color: #94A3B8;">@User.Identity.Name</span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="nav-link btn btn-link" style="color: #EF4444 !important; text-decoration: none;">Logout</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div>
-        <main role="main" class="pb-3">
+    @{
+        var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    }
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <a class="sidebar-brand" asp-controller="Dashboard" asp-action="Index">EMS</a>
+
+        <div class="sidebar-nav">
+            <div class="sidebar-section">Monitoring</div>
+            <a class="sidebar-link @(ctrl == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
+                <span class="sidebar-icon">&#9632;</span> Dashboard
+            </a>
+            <a class="sidebar-link @(ctrl == "LiveMonitoring" || ctrl == "MeterDetails" ? "active" : "")" asp-controller="LiveMonitoring" asp-action="Index">
+                <span class="sidebar-icon">&#9673;</span> Live Monitoring
+            </a>
+
+            <div class="sidebar-section">Analysis</div>
+            <a class="sidebar-link @(ctrl == "EnergyAnalysis" ? "active" : "")" asp-controller="EnergyAnalysis" asp-action="Index">
+                <span class="sidebar-icon">&#9650;</span> Energy Analysis
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="sidebar-user" title="@User.Identity.Name">@User.Identity.Name</div>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100" style="font-size: 12px;">Logout</button>
+                </form>
+            }
+            else
+            {
+                <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-primary w-100" style="font-size: 12px;">Login</a>
+            }
+        </div>
+    </nav>
+
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+            <span class="topbar-title">@ViewData["Title"]</span>
+        </div>
+        <div class="topbar-actions">
+            <a asp-controller="Dashboard" asp-action="Index" style="color: var(--text-secondary); text-decoration: none; font-size: 13px;">Home</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <main role="main">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-center py-3">
-        <div class="container-fluid">
-            <small>&copy; 2026 Energy Monitoring System. All rights reserved.</small>
-        </div>
+    <footer class="footer text-center py-3">
+        <small>&copy; 2026 Energy Monitoring System. All rights reserved.</small>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
