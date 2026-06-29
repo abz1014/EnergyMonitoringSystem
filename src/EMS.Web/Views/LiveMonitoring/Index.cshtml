@@ -1,0 +1,252 @@
+@model LiveMonitoringResponseDto
+
+@{
+    ViewData["Title"] = "Live Monitoring";
+}
+
+<div class="live-monitoring-container" style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <!-- Header -->
+    <div class="monitoring-header mb-4">
+        <h1 class="h2 mb-2">Live Monitoring</h1>
+        <p class="text-muted">Real-time energy meter status and readings</p>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">🏢 Plant</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option selected>All</option>
+                    <option>Plant-1</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">🏗️ Building</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option selected>All</option>
+                    <option>Building A</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">Status</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option selected>All</option>
+                    <option>Online</option>
+                    <option>Offline</option>
+                    <option>Warning</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100" style="background-color: #2563EB;" onclick="location.reload();">
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Summary -->
+    @if (Model?.StatusSummary != null)
+    {
+        <div class="status-summary mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; color: #10B981; font-weight: bold;">🟢 @Model.StatusSummary.Online</div>
+                        <small style="color: #94A3B8;">Online</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; color: #F59E0B; font-weight: bold;">🟡 @Model.StatusSummary.Warning</div>
+                        <small style="color: #94A3B8;">Warning</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; color: #EF4444; font-weight: bold;">🔴 @Model.StatusSummary.Offline</div>
+                        <small style="color: #94A3B8;">Offline</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; color: #94A3B8; font-weight: bold;">⚪ @Model.StatusSummary.Unknown</div>
+                        <small style="color: #94A3B8;">Unknown</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Live Meters Table -->
+    @if (Model?.Meters != null && Model.Meters.Count > 0)
+    {
+        <div class="meters-table mb-5 p-4" style="background-color: #1E293B; border-radius: 8px; overflow-x: auto;">
+            <h3 class="h5 mb-3 text-light">📊 Live Meters (@Model.Meters.Count)</h3>
+
+            <table class="table table-dark table-hover" style="color: #E2E8F0; border-color: #334155;">
+                <thead style="background-color: #0F172A; border-bottom: 2px solid #334155;">
+                    <tr>
+                        <th style="color: #94A3B8;">Meter</th>
+                        <th style="color: #94A3B8;">Status</th>
+                        <th style="color: #94A3B8;">Voltage (V)</th>
+                        <th style="color: #94A3B8;">Current (A)</th>
+                        <th style="color: #94A3B8;">Power (kW)</th>
+                        <th style="color: #94A3B8;">PF</th>
+                        <th style="color: #94A3B8;">Freq (Hz)</th>
+                        <th style="color: #94A3B8;">Trend (24h)</th>
+                        <th style="color: #94A3B8;">Last Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var meter in Model.Meters)
+                    {
+                        <tr style="border-bottom: 1px solid #334155;">
+                            <td style="color: #E2E8F0; font-weight: 500;">@meter.Name</td>
+                            <td>
+                                @if (meter.Status == "online")
+                                {
+                                    <span style="color: #10B981; font-weight: bold;">🟢 Online</span>
+                                }
+                                else if (meter.Status == "warning")
+                                {
+                                    <span style="color: #F59E0B; font-weight: bold;">🟡 Warning</span>
+                                }
+                                else
+                                {
+                                    <span style="color: #EF4444; font-weight: bold;">🔴 Offline</span>
+                                }
+                            </td>
+                            <td style="color: #CBD5E1;">@meter.Voltage.L1.ToString("F1")</td>
+                            <td style="color: #CBD5E1;">@meter.Current.L1.ToString("F1")</td>
+                            <td style="color: #CBD5E1;">@meter.Power.kW.ToString("F2")</td>
+                            <td style="color: #CBD5E1;">@meter.PowerFactor.ToString("F2")</td>
+                            <td style="color: #CBD5E1;">@meter.Frequency.ToString("F1")</td>
+                            <td>
+                                <div id="sparkline_@meter.MeterId" style="height: 20px; width: 60px;"></div>
+                            </td>
+                            <td style="color: #94A3B8;">
+                                <small>@meter.LastUpdated.ToString("HH:mm:ss")</small>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Sparklines Script -->
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+        <script>
+            @foreach (var meter in Model.Meters)
+            {
+                <text>
+                var sparklineData_@meter.MeterId = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(meter.Sparkline));
+                var sparklineOptions_@meter.MeterId = {
+                    series: [{
+                        data: sparklineData_@meter.MeterId
+                    }],
+                    chart: {
+                        type: 'area',
+                        height: 20,
+                        sparkline: { enabled: true }
+                    },
+                    colors: ['#2563EB'],
+                    stroke: { curve: 'smooth', width: 1 },
+                    fill: {
+                        type: 'gradient',
+                        gradient: { opacityFrom: 0.3, opacityTo: 0 }
+                    },
+                    tooltip: { theme: 'dark' }
+                };
+                new ApexCharts(document.querySelector("#sparkline_@meter.MeterId"), sparklineOptions_@meter.MeterId).render();
+                </text>
+            }
+        </script>
+    }
+
+    <!-- Active Alerts -->
+    @if (Model?.ActiveAlarms != null && Model.ActiveAlarms.Count > 0)
+    {
+        <div class="alerts-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+            <h3 class="h5 mb-3 text-light">⚠️ Active Alerts (@Model.ActiveAlarms.Count)</h3>
+
+            @foreach (var alarm in Model.ActiveAlarms.Take(5))
+            {
+                <div class="alert-item mb-3" style="padding: 12px; background-color: #0F172A; border-radius: 6px; border-left: 3px solid @GetSeverityColor(alarm.Severity);">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div style="color: #E2E8F0; font-weight: 500;">
+                                @GetSeverityIcon(alarm.Severity) [@alarm.Severity.ToUpper()] @alarm.DeviceName
+                            </div>
+                            <small style="color: #94A3B8;">@alarm.Message</small>
+                        </div>
+                        <button class="btn btn-sm" style="background-color: #2563EB; color: white; padding: 4px 8px; font-size: 12px;">
+                            Acknowledge
+                        </button>
+                    </div>
+                    <small style="color: #64748B; margin-top: 8px; display: block;">
+                        @alarm.CreatedAt.ToString("g")
+                    </small>
+                </div>
+            }
+
+            @if (Model.ActiveAlarms.Count > 5)
+            {
+                <small style="color: #2563EB; cursor: pointer;">+ @(Model.ActiveAlarms.Count - 5) more alerts</small>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alerts-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px; text-align: center;">
+            <div style="color: #10B981; font-size: 24px;">✓</div>
+            <small style="color: #94A3B8;">No active alarms</small>
+        </div>
+    }
+
+    <!-- Auto-Refresh Info -->
+    <div class="footer-info p-3 text-center" style="color: #64748B; font-size: 12px;">
+        <small>Page auto-refreshes every 30 seconds | Last updated: <span id="lastRefresh">@DateTime.Now.ToString("HH:mm:ss")</span></small>
+    </div>
+</div>
+
+<!-- Auto-Refresh Script -->
+<script>
+    // Auto-refresh every 30 seconds
+    setInterval(function() {
+        fetch(location.href)
+            .then(response => response.text())
+            .then(html => {
+                document.documentElement.innerHTML = html;
+                var now = new Date();
+                document.getElementById('lastRefresh').innerText = now.getHours().toString().padStart(2, '0') + ':' +
+                                                                    now.getMinutes().toString().padStart(2, '0') + ':' +
+                                                                    now.getSeconds().toString().padStart(2, '0');
+            });
+    }, 30000);
+</script>
+
+@functions {
+    private string GetSeverityColor(string severity)
+    {
+        return severity?.ToLower() switch
+        {
+            "critical" => "#EF4444",
+            "warning" => "#F59E0B",
+            "info" => "#3B82F6",
+            _ => "#94A3B8"
+        };
+    }
+
+    private string GetSeverityIcon(string severity)
+    {
+        return severity?.ToLower() switch
+        {
+            "critical" => "🔴",
+            "warning" => "🟡",
+            "info" => "ℹ️",
+            _ => "⚪"
+        };
+    }
+}
