@@ -1,0 +1,259 @@
+@using EMS.Core.Models
+@{
+    ViewData["Title"] = "Power Quality";
+    var meters = ViewBag.Meters as List<MonitoringDevice> ?? new();
+    var selectedId = ViewBag.SelectedMeterId as int?;
+    var timeframe = ViewBag.Timeframe as string ?? "24h";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var meterName = ViewBag.MeterName as string ?? "";
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Power Quality</h1>
+        <p class="text-muted">Voltage, current, power factor, harmonics, and imbalance analysis</p>
+    </div>
+
+    <!-- Controls -->
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label text-light">Meter</label>
+                <select name="meterId" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var m in meters)
+                    {
+                        if (selectedId.HasValue && m.DeviceID == selectedId.Value) { <option value="@m.DeviceID" selected>@m.DeviceName (@m.Location)</option> } else { <option value="@m.DeviceID">@m.DeviceName (@m.Location)</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-light">Time Range</label>
+                <select name="timeframe" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("6h","6 Hours"), ("24h","24 Hours"), ("7d","7 Days"), ("30d","30 Days") })
+                    {
+                        if (timeframe == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+            @{
+                var avgPf = (double)(ViewBag.AvgPF ?? 0.0);
+                var maxVImb = (double)(ViewBag.MaxVoltImbalance ?? 0.0);
+                var maxCImb = (double)(ViewBag.MaxCurrImbalance ?? 0.0);
+                var maxThd = (double)(ViewBag.MaxTHDV ?? 0.0);
+                var avgFreq = (double)(ViewBag.AvgFreq ?? 0.0);
+                var pts = (int)(ViewBag.DataPoints ?? 0);
+            }
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @(avgPf >= 0.90 ? "#10B981" : "#EF4444");">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Avg PF</div>
+                    <div style="color: @(avgPf >= 0.90 ? "#10B981" : "#EF4444"); font-size: 24px; font-weight: 700;">@avgPf.ToString("F3")</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @(maxVImb <= 2 ? "#10B981" : "#F59E0B");">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">V Imbalance</div>
+                    <div style="color: @(maxVImb <= 2 ? "#10B981" : "#F59E0B"); font-size: 24px; font-weight: 700;">@maxVImb.ToString("F1")%</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @(maxCImb <= 5 ? "#10B981" : "#F59E0B");">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">I Imbalance</div>
+                    <div style="color: @(maxCImb <= 5 ? "#10B981" : "#F59E0B"); font-size: 24px; font-weight: 700;">@maxCImb.ToString("F1")%</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @(maxThd <= 5 ? "#10B981" : "#EF4444");">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Max THD-V</div>
+                    <div style="color: @(maxThd <= 5 ? "#10B981" : "#EF4444"); font-size: 24px; font-weight: 700;">@maxThd.ToString("F1")%</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @(Math.Abs(avgFreq - 50) <= 0.5 ? "#10B981" : "#F59E0B");">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Avg Freq</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@avgFreq.ToString("F2")<span style="color:#64748B;font-size:12px;">Hz</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #3B82F6;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Data Points</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@pts</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Analyzing: <strong style="color:#E2E8F0;">@meterName</strong></div>
+
+        <!-- PF Trend -->
+        <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Power Factor Trend</h5>
+            <div id="pfChart" style="height: 300px;"></div>
+        </div>
+
+        <!-- Voltage Trend -->
+        <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Voltage Trend (L-N)</h5>
+            <div id="voltChart" style="height: 300px;"></div>
+        </div>
+
+        <!-- Imbalance -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Voltage Imbalance %</h5>
+                    <div id="voltImbalanceChart" style="height: 250px;"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Current Imbalance %</h5>
+                    <div id="currImbalanceChart" style="height: 250px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Harmonics + Frequency -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Harmonics THD (Latest)</h5>
+                    <div id="harmonicsChart" style="height: 280px;"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Frequency Trend</h5>
+                    <div id="freqChart" style="height: 280px;"></div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#9889;</div>
+            <h4 style="color: #E2E8F0;">Select a meter and click Analyze</h4>
+            <p style="color: #64748B;">Power quality data will be shown for the selected meter and time range.</p>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <style>
+        .apexcharts-menu { background: #1E293B !important; border-color: #334155 !important; }
+        .apexcharts-menu-item { color: #E2E8F0 !important; }
+        .apexcharts-menu-item:hover { background: #334155 !important; }
+    </style>
+    <script>
+        var labels = @Html.Raw(ViewBag.TimeLabels);
+        var tickAmt = Math.min(labels.length, 12);
+        var xOpts = { categories: labels, labels: { style: { colors: '#94A3B8', fontSize: '10px' }, rotate: -45, rotateAlways: labels.length > 20 }, tickAmount: tickAmt };
+        var gridOpts = { borderColor: '#334155', strokeDashArray: 3 };
+
+        // PF Trend
+        new ApexCharts(document.querySelector('#pfChart'), {
+            series: [
+                { name: 'PF L1', data: @Html.Raw(ViewBag.PFL1) },
+                { name: 'PF L2', data: @Html.Raw(ViewBag.PFL2) },
+                { name: 'PF L3', data: @Html.Raw(ViewBag.PFL3) }
+            ],
+            chart: { type: 'line', height: 300, background: '#1E293B', toolbar: { show: true }, zoom: { enabled: true } },
+            colors: ['#2563EB', '#10B981', '#F59E0B'],
+            stroke: { curve: 'smooth', width: 2 },
+            xaxis: xOpts, grid: gridOpts,
+            yaxis: { min: 0.7, max: 1.05, labels: { style: { colors: '#94A3B8' }, formatter: function(v){return v.toFixed(2);} } },
+            annotations: { yaxis: [{ y: 0.90, borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'Target: 0.90', style: { color: '#FFF', background: '#EF4444', fontSize: '11px' } } }] },
+            tooltip: { theme: 'dark', shared: true }, legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+            markers: { size: 0, hover: { size: 4 } }
+        }).render();
+
+        // Voltage Trend
+        new ApexCharts(document.querySelector('#voltChart'), {
+            series: [
+                { name: 'V L1-N', data: @Html.Raw(ViewBag.VoltL1N) },
+                { name: 'V L2-N', data: @Html.Raw(ViewBag.VoltL2N) },
+                { name: 'V L3-N', data: @Html.Raw(ViewBag.VoltL3N) }
+            ],
+            chart: { type: 'line', height: 300, background: '#1E293B', toolbar: { show: true }, zoom: { enabled: true } },
+            colors: ['#2563EB', '#10B981', '#F59E0B'],
+            stroke: { curve: 'smooth', width: 2 },
+            xaxis: xOpts, grid: gridOpts,
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v){return v.toFixed(0)+'V';} } },
+            annotations: { yaxis: [
+                { y: 253, borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'High: 253V (+10%)', style: { color: '#FFF', background: '#EF4444', fontSize: '10px' } } },
+                { y: 207, borderColor: '#F59E0B', strokeDashArray: 4, label: { text: 'Low: 207V (-10%)', style: { color: '#FFF', background: '#F59E0B', fontSize: '10px' } } }
+            ]},
+            tooltip: { theme: 'dark', shared: true }, legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+            markers: { size: 0, hover: { size: 4 } }
+        }).render();
+
+        // Voltage Imbalance
+        new ApexCharts(document.querySelector('#voltImbalanceChart'), {
+            series: [{ name: 'V Imbalance %', data: @Html.Raw(ViewBag.VoltImbalance) }],
+            chart: { type: 'area', height: 250, background: '#1E293B', toolbar: { show: false } },
+            colors: ['#F59E0B'], stroke: { curve: 'smooth', width: 2 },
+            fill: { type: 'gradient', gradient: { opacityFrom: 0.3, opacityTo: 0 } },
+            xaxis: xOpts, grid: gridOpts,
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v){return v.toFixed(1)+'%';} } },
+            annotations: { yaxis: [{ y: 2, borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'NEMA limit: 2%', style: { color: '#FFF', background: '#EF4444', fontSize: '10px' } } }] },
+            tooltip: { theme: 'dark' }, markers: { size: 0 }
+        }).render();
+
+        // Current Imbalance
+        new ApexCharts(document.querySelector('#currImbalanceChart'), {
+            series: [{ name: 'I Imbalance %', data: @Html.Raw(ViewBag.CurrImbalance) }],
+            chart: { type: 'area', height: 250, background: '#1E293B', toolbar: { show: false } },
+            colors: ['#8B5CF6'], stroke: { curve: 'smooth', width: 2 },
+            fill: { type: 'gradient', gradient: { opacityFrom: 0.3, opacityTo: 0 } },
+            xaxis: xOpts, grid: gridOpts,
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v){return v.toFixed(1)+'%';} } },
+            annotations: { yaxis: [{ y: 5, borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'Limit: 5%', style: { color: '#FFF', background: '#EF4444', fontSize: '10px' } } }] },
+            tooltip: { theme: 'dark' }, markers: { size: 0 }
+        }).render();
+
+        // Harmonics
+        new ApexCharts(document.querySelector('#harmonicsChart'), {
+            series: [
+                { name: 'Voltage THD', data: @Html.Raw(ViewBag.HarmonicV) },
+                { name: 'Current THD', data: @Html.Raw(ViewBag.HarmonicI) }
+            ],
+            chart: { type: 'bar', height: 280, background: '#1E293B', toolbar: { show: false } },
+            colors: ['#3B82F6', '#F59E0B'],
+            plotOptions: { bar: { columnWidth: '50%', borderRadius: 4 } },
+            xaxis: { categories: ['Phase 1', 'Phase 2', 'Phase 3'], labels: { style: { colors: '#94A3B8' } } },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v){return v.toFixed(1)+'%';} } },
+            annotations: { yaxis: [
+                { y: 5, borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'IEEE 519 V limit: 5%', style: { color: '#FFF', background: '#EF4444', fontSize: '10px' } } },
+                { y: 8, borderColor: '#F59E0B', strokeDashArray: 4, label: { text: 'IEEE 519 I limit: 8%', style: { color: '#FFF', background: '#F59E0B', fontSize: '10px' } } }
+            ]},
+            tooltip: { theme: 'dark' }, legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+            grid: gridOpts
+        }).render();
+
+        // Frequency
+        new ApexCharts(document.querySelector('#freqChart'), {
+            series: [{ name: 'Frequency', data: @Html.Raw(ViewBag.Frequency) }],
+            chart: { type: 'line', height: 280, background: '#1E293B', toolbar: { show: false } },
+            colors: ['#10B981'], stroke: { curve: 'smooth', width: 2 },
+            xaxis: xOpts, grid: gridOpts,
+            yaxis: { min: 49, max: 51, labels: { style: { colors: '#94A3B8' }, formatter: function(v){return v.toFixed(2)+'Hz';} } },
+            annotations: { yaxis: [
+                { y: 50.5, borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'High: 50.5Hz', style: { color: '#FFF', background: '#EF4444', fontSize: '10px' } } },
+                { y: 49.5, borderColor: '#F59E0B', strokeDashArray: 4, label: { text: 'Low: 49.5Hz', style: { color: '#FFF', background: '#F59E0B', fontSize: '10px' } } }
+            ]},
+            tooltip: { theme: 'dark' }, markers: { size: 0, hover: { size: 4 } }
+        }).render();
+    </script>
+}
