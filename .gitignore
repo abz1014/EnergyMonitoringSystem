@@ -1,0 +1,120 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+*.vcxproj.user
+*.suo
+*.sln.docstates
+*.userprefs
+
+# User-specific files
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ReSharper is a .NET coding add-in
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/packages/
+.nuget/NuGet.Config
+.nuget/NuGet.exe
+
+# NUnit/xUnit
+TestResults/
+*.trx
+*.coverage
+
+# Coverage reports
+coverage/
+coveragereport/
+OpenCover/
+
+# Entity Framework
+*.edmx.diagram
+
+# SQLServer
+*.mdf
+*.ldf
+*.log
+
+# Node
+node_modules/
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+appsettings.local.json
+
+# IDE
+.idea/
+.vs/
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Rider
+.idea/
+*.sln.iml
+
+# Local history for Visual Studio Code
+.history/
+
+# VS Code settings
+.vscode-settings.json
+.vscode-launch.json
+.vscode-extensions.json
+
+# Azure
+.azure/
