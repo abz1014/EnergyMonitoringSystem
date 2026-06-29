@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Database configuration
 var connectionString = builder.Configuration.GetConnectionString("ScadaDb")
-    ?? "Server=(local)\\SQLEXPRESS;Database=db_SCADA;Integrated Security=true;TrustServerCertificate=true;";
+    ?? throw new InvalidOperationException("Connection string 'ScadaDb' not found in configuration.");
 
 builder.Services.AddDbContext<ScadaDbContext>(options =>
     options.UseSqlServer(connectionString));
