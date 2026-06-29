@@ -7,6 +7,7 @@ using EMS.Infrastructure.Data;
 using EMS.Infrastructure.Repositories;
 using EMS.Web.Services;
 using EMS.Web.Validators;
+using EMS.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,16 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ScadaDbContext>()
 .AddDefaultTokenProviders();
 
+// Configure cookie authentication
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+});
+
 // Repository dependency injection
 builder.Services.AddScoped<IEnergyMeterRepository, EnergyMeterRepository>();
 builder.Services.AddScoped<IEnergyMeterLiveRepository, EnergyMeterLiveRepository>();
@@ -41,6 +52,9 @@ builder.Services.AddScoped<IFlowmeterRepository, FlowmeterRepository>();
 // Service dependency injection
 builder.Services.AddScoped<IDashboardService, WebDashboardService>();
 builder.Services.AddScoped<ILiveMonitoringService, LiveMonitoringService>();
+
+// Role and user seeding
+builder.Services.AddScoped<RoleSeederService>();
 
 // Validation
 builder.Services.AddScoped<IValidator<DashboardFilterDto>, DashboardFilterValidator>();
@@ -75,5 +89,12 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Seed roles and default users
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<RoleSeederService>();
+    await seeder.InitializeRolesAsync();
+}
 
 app.Run();

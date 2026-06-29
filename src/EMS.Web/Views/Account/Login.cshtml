@@ -1,0 +1,71 @@
+@using EMS.Web.Controllers
+@model LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg border-0" style="background-color: #1E293B; border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h1 class="h3 text-center mb-4" style="color: #FFFFFF;">Energy Monitoring System</h1>
+                    <p class="text-center text-muted mb-4">Sign in to your account</p>
+
+                    <form method="post" asp-action="Login">
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>Login Error</strong>
+                                <ul class="mb-0 mt-2">
+                                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <li>@error.ErrorMessage</li>
+                                    }
+                                </ul>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label" style="color: #E2E8F0;">Email</label>
+                            <input asp-for="Email" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" placeholder="Enter your email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label" style="color: #E2E8F0;">Password</label>
+                            <input asp-for="Password" type="password" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" placeholder="Enter your password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input asp-for="RememberMe" class="form-check-input" type="checkbox" />
+                            <label asp-for="RememberMe" class="form-check-label" style="color: #E2E8F0;">Remember me</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2" style="background-color: #2563EB; border-color: #2563EB;">Sign In</button>
+                    </form>
+
+                    <hr style="border-color: #334155; margin: 20px 0;">
+
+                    <p class="text-center text-muted mb-0">
+                        Don't have an account?
+                        <a asp-action="Register" style="color: #2563EB; text-decoration: none;">Sign up here</a>
+                    </p>
+
+                    <p class="text-center text-muted small mt-3 mb-0">
+                        <strong>Demo Credentials:</strong><br>
+                        Email: admin@energymonitoring.local<br>
+                        Password: Admin@123
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
