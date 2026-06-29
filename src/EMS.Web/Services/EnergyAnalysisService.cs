@@ -40,6 +40,7 @@ public class EnergyAnalysisService : IEnergyAnalysisService
         var aggregated = AggregateByTimeframe(consumptionData, timeframe, metric);
         var comparison = await GetComparisonData(timeframe, compareWith, dateFrom, metric);
         var stats = CalculateStats(aggregated);
+        var rows = BuildRows(consumptionData, timeframe, metric);
 
         return new EnergyAnalysisResultDto
         {
@@ -50,6 +51,7 @@ public class EnergyAnalysisService : IEnergyAnalysisService
             DateTo = dateTo,
             ConsumptionData = aggregated,
             ComparisonData = comparison,
+            Rows = rows,
             Statistics = stats,
             Peak = stats.GetValueOrDefault("peak"),
             Average = stats.GetValueOrDefault("average"),
@@ -121,6 +123,26 @@ public class EnergyAnalysisService : IEnergyAnalysisService
                 .OrderBy(x => x.Key)
                 .ToList()
         };
+    }
+
+    private static List<AnalysisRowDto> BuildRows(List<EnergyMeterData> data, string timeframe, string metric)
+    {
+        var groups = timeframe == "daily"
+            ? data.GroupBy(d => d.DateTime.Hour).Select(g => (Date: new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, g.Key, 0, 0), Items: g.ToList()))
+            : data.GroupBy(d => d.DateTime.Date).Select(g => (Date: g.Key, Items: g.ToList()));
+
+        return groups.OrderBy(g => g.Date).Select(g =>
+        {
+            var values = g.Items.Select(x => ExtractMetric(x, metric)).ToList();
+            return new AnalysisRowDto
+            {
+                Date = g.Date,
+                Total = values.Sum(),
+                Peak = values.Count > 0 ? values.Max() : 0,
+                Average = values.Count > 0 ? values.Average() : 0,
+                Min = values.Count > 0 ? values.Min() : 0
+            };
+        }).ToList();
     }
 
     private static Dictionary<string, double> CalculateStats(List<(DateTime, double)> data)

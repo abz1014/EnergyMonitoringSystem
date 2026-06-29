@@ -32,6 +32,7 @@ public class EnergyAnalysisController : Controller
                 DateTo = result.DateTo,
                 ConsumptionData = result.ConsumptionData,
                 ComparisonData = result.ComparisonData,
+                Rows = result.Rows,
                 Statistics = result.Statistics,
                 Peak = result.Peak,
                 Average = result.Average,

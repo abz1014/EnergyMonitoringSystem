@@ -212,24 +212,24 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model.ConsumptionData != null)
+                    @if (Model.Rows != null && Model.Rows.Count > 0)
                     {
                         var compLookup = (Model.ComparisonData ?? new List<(DateTime, double)>())
-                            .ToDictionary(c => c.Item1.ToString("yyyy-MM-dd"), c => c.Item2);
+                            .ToDictionary(c => c.Item1.ToString("yyyy-MM-dd HH"), c => c.Item2);
 
-                        @foreach (var item in Model.ConsumptionData.Take(30))
+                        @foreach (var row in Model.Rows.Take(30))
                         {
-                            var dateKey = item.Item1.ToString("yyyy-MM-dd");
+                            var dateKey = row.Date.ToString("yyyy-MM-dd HH");
                             var hasComp = compLookup.ContainsKey(dateKey);
                             var compVal = hasComp ? compLookup[dateKey] : 0;
-                            var change = hasComp && compVal > 0 ? ((item.Item2 - compVal) / compVal) * 100 : 0;
+                            var change = hasComp && compVal > 0 ? ((row.Total - compVal) / compVal) * 100 : 0;
 
                             <tr style="border-bottom: 1px solid #334155;">
-                                <td style="color: #E2E8F0;">@item.Item1.ToString("yyyy-MM-dd")</td>
-                                <td style="color: #CBD5E1;">@item.Item2.ToString("F0")</td>
-                                <td style="color: #CBD5E1;">@((item.Item2 * 1.15).ToString("F0"))</td>
-                                <td style="color: #CBD5E1;">@((item.Item2 * 0.8).ToString("F0"))</td>
-                                <td style="color: #CBD5E1;">@((item.Item2 * 0.6).ToString("F0"))</td>
+                                <td style="color: #E2E8F0;">@row.Date.ToString(Model.Timeframe == "daily" ? "HH:mm" : "yyyy-MM-dd")</td>
+                                <td style="color: #CBD5E1;">@row.Total.ToString("F0")</td>
+                                <td style="color: #CBD5E1;">@row.Peak.ToString("F0")</td>
+                                <td style="color: #CBD5E1;">@row.Average.ToString("F0")</td>
+                                <td style="color: #CBD5E1;">@row.Min.ToString("F0")</td>
                                 @if (Model.ComparisonData != null && Model.ComparisonData.Count > 0)
                                 {
                                     <td style="color: #94A3B8;">@(hasComp ? compVal.ToString("F0") : "—")</td>
@@ -237,8 +237,8 @@
                                         @(hasComp ? $"{(change > 0 ? "+" : "")}{change:F1}%" : "—")
                                     </td>
                                 }
-                                <td style="color: @(item.Item2 > (Model.Average > 0 ? Model.Average : item.Item2) ? "#EF4444" : "#10B981");">
-                                    @(item.Item2 > (Model.Average > 0 ? Model.Average : item.Item2) ? "▲" : "▼")
+                                <td style="color: @(row.Total > Model.Average ? "#EF4444" : "#10B981");">
+                                    @(row.Total > Model.Average ? "▲" : "▼")
                                 </td>
                             </tr>
                         }
