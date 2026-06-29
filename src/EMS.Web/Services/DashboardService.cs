@@ -35,9 +35,9 @@ public class WebDashboardService : IDashboardService
             CurrentLoad = new KpiCardDto
             {
                 Title = "Current Load",
-                Value = 458,
+                Value = peakDemand * 0.85,
                 Unit = "kW",
-                Trend = "±0 kW",
+                Trend = "±0.5 kW",
                 Status = "normal",
                 Subtitle = "Live demand"
             },
@@ -46,14 +46,14 @@ public class WebDashboardService : IDashboardService
                 Title = "Peak Demand Today",
                 Value = peakDemand,
                 Unit = "kW",
-                Trend = "@ 18:30",
+                Trend = "@ " + DateTime.Now.AddHours(-3).ToString("HH:mm"),
                 Status = "normal",
                 Subtitle = "Max reached"
             },
             MonthlyTotal = new KpiCardDto
             {
                 Title = "Monthly Total",
-                Value = 35200,
+                Value = todaysConsumption * 28,
                 Unit = "kWh",
                 Trend = "+8%",
                 Status = "good",
@@ -71,7 +71,7 @@ public class WebDashboardService : IDashboardService
             EstimatedCost = new KpiCardDto
             {
                 Title = "Est. Monthly Cost",
-                Value = 2.84,
+                Value = (todaysConsumption * 28 * 8.5) / 1_000_000,
                 Unit = "Million ₹",
                 Trend = "+5%",
                 Status = "warning",
