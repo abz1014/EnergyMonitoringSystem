@@ -14,15 +14,15 @@ public class LiveMonitoringController : Controller
         _logger = logger;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string plant = "All", string building = "All", string status = "all")
     {
         try
         {
             var liveData = await _liveMonitoringService.GetLiveMetersAsync(new()
             {
-                Plant = "All",
-                Building = "All",
-                Status = "all",
+                Plant = plant ?? "All",
+                Building = building ?? "All",
+                Status = status ?? "all",
                 IncludeSparklines = true
             });
 

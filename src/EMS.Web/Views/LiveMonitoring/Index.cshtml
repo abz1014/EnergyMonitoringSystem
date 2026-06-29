@@ -17,29 +17,29 @@
         <div class="row g-3">
             <div class="col-12 col-md-3">
                 <label class="form-label text-light">🏢 Plant</label>
-                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
-                    <option selected>All</option>
-                    <option>Plant-1</option>
+                <select id="filterPlant" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" onchange="applyFilters()">
+                    <option value="All" selected>All</option>
+                    <option value="Plant-1">Plant-1</option>
                 </select>
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label text-light">🏗️ Building</label>
-                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
-                    <option selected>All</option>
-                    <option>Building A</option>
+                <select id="filterBuilding" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" onchange="applyFilters()">
+                    <option value="All" selected>All</option>
+                    <option value="Building A">Building A</option>
                 </select>
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label text-light">Status</label>
-                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
-                    <option selected>All</option>
-                    <option>Online</option>
-                    <option>Offline</option>
-                    <option>Warning</option>
+                <select id="filterStatus" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" onchange="applyFilters()">
+                    <option value="all" selected>All</option>
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
+                    <option value="warning">Warning</option>
                 </select>
             </div>
             <div class="col-12 col-md-3 d-flex align-items-end">
-                <button class="btn btn-primary w-100" style="background-color: #2563EB;" onclick="location.reload();">
+                <button class="btn btn-primary w-100" style="background-color: #2563EB;" onclick="refreshMonitoring()">
                     🔄 Refresh
                 </button>
             </div>
@@ -118,11 +118,11 @@
                                     <span style="color: #EF4444; font-weight: bold;">🔴 Offline</span>
                                 }
                             </td>
-                            <td style="color: #CBD5E1;">@meter.Voltage.L1.ToString("F1")</td>
-                            <td style="color: #CBD5E1;">@meter.Current.L1.ToString("F1")</td>
-                            <td style="color: #CBD5E1;">@meter.Power.kW.ToString("F2")</td>
-                            <td style="color: #CBD5E1;">@meter.PowerFactor.ToString("F2")</td>
-                            <td style="color: #CBD5E1;">@meter.Frequency.ToString("F1")</td>
+                            <td style="color: #CBD5E1;">@(meter.Voltage?.L1.ToString("F1") ?? "—")</td>
+                            <td style="color: #CBD5E1;">@(meter.Current?.L1.ToString("F1") ?? "—")</td>
+                            <td style="color: #CBD5E1;">@(meter.Power?.kW.ToString("F2") ?? "—")</td>
+                            <td style="color: #CBD5E1;">@(meter.PowerFactor.ToString("F2") ?? "—")</td>
+                            <td style="color: #CBD5E1;">@(meter.Frequency.ToString("F1") ?? "—")</td>
                             <td>
                                 <div id="sparkline_@meter.MeterId" style="height: 20px; width: 60px;"></div>
                             </td>
@@ -213,6 +213,22 @@
 
 <!-- Auto-Refresh Script -->
 <script>
+    function applyFilters() {
+        const plant = document.getElementById('filterPlant')?.value || 'All';
+        const building = document.getElementById('filterBuilding')?.value || 'All';
+        const status = document.getElementById('filterStatus')?.value || 'all';
+
+        const url = new URL(window.location);
+        url.searchParams.set('plant', plant);
+        url.searchParams.set('building', building);
+        url.searchParams.set('status', status);
+        window.location.href = url.toString();
+    }
+
+    function refreshMonitoring() {
+        location.reload();
+    }
+
     // Auto-refresh every 30 seconds
     setInterval(function() {
         fetch(location.href)
