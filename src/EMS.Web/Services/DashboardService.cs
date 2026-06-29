@@ -6,20 +6,25 @@ public class WebDashboardService : IDashboardService
 {
     private readonly IEnergyMeterRepository _energyMeterRepository;
     private readonly IMonitoringDeviceRepository _deviceRepository;
+    private readonly ILogger<WebDashboardService> _logger;
 
     public WebDashboardService(
         IEnergyMeterRepository energyMeterRepository,
-        IMonitoringDeviceRepository deviceRepository)
+        IMonitoringDeviceRepository deviceRepository,
+        ILogger<WebDashboardService> logger)
     {
         _energyMeterRepository = energyMeterRepository;
         _deviceRepository = deviceRepository;
+        _logger = logger;
     }
 
     public async Task<ExecutiveDashboardDto> GetExecutiveDashboardAsync(DashboardFilterDto filter)
     {
-        var todaysConsumption = await _energyMeterRepository.GetTodaysTotalConsumption();
-        var peakDemand = await _energyMeterRepository.GetPeakDemandToday();
-        var onlineMeters = await _deviceRepository.GetOnlineDeviceCount();
+        try
+        {
+            var todaysConsumption = await _energyMeterRepository.GetTodaysTotalConsumption();
+            var peakDemand = await _energyMeterRepository.GetPeakDemandToday();
+            var onlineMeters = await _deviceRepository.GetOnlineDeviceCount();
 
         var kpiCards = new KpiCardsDto
         {
@@ -104,11 +109,21 @@ public class WebDashboardService : IDashboardService
             TopConsumers = GenerateMockTopConsumers()
         };
 
-        return new ExecutiveDashboardDto
+            return new ExecutiveDashboardDto
+            {
+                KpiCards = kpiCards,
+                Charts = charts
+            };
+        }
+        catch (Exception ex)
         {
-            KpiCards = kpiCards,
-            Charts = charts
-        };
+            _logger.LogError(ex, "Error retrieving dashboard data for filter: {@Filter}", filter);
+            return new ExecutiveDashboardDto
+            {
+                KpiCards = GenerateFallbackKpiCards(),
+                Charts = GenerateFallbackCharts()
+            };
+        }
     }
 
     private List<ConsumptionChartPointDto> GenerateMockConsumptionTrend()
@@ -153,6 +168,31 @@ public class WebDashboardService : IDashboardService
             new() { Rank = 8, Name = "Lighting", Consumption = 4.1 },
             new() { Rank = 9, Name = "Process Ctrl", Consumption = 3.8 },
             new() { Rank = 10, Name = "Misc. Load", Consumption = 2.9 }
+        };
+    }
+
+    private KpiCardsDto GenerateFallbackKpiCards()
+    {
+        return new KpiCardsDto
+        {
+            TodayConsumption = new KpiCardDto { Title = "Today's Consumption", Value = 0, Unit = "kWh", Trend = "—", Status = "warning", Subtitle = "Daily total" },
+            CurrentLoad = new KpiCardDto { Title = "Current Load", Value = 0, Unit = "kW", Trend = "—", Status = "warning", Subtitle = "Live demand" },
+            PeakDemand = new KpiCardDto { Title = "Peak Demand Today", Value = 0, Unit = "kW", Trend = "—", Status = "warning", Subtitle = "Max reached" },
+            MonthlyTotal = new KpiCardDto { Title = "Monthly Total", Value = 0, Unit = "kWh", Trend = "—", Status = "warning", Subtitle = "Month-to-date" },
+            OnlineMeters = new KpiCardDto { Title = "Online Meters", Value = 0, Unit = "/ 36", Trend = "—", Status = "warning", Subtitle = "Active devices" },
+            EstimatedCost = new KpiCardDto { Title = "Est. Monthly Cost", Value = 0, Unit = "Million ₹", Trend = "—", Status = "warning", Subtitle = "Projected spend" },
+            AvgPowerFactor = new KpiCardDto { Title = "Avg Power Factor", Value = 0, Unit = "PF", Trend = "—", Status = "warning", Subtitle = "System efficiency" },
+            Co2Emissions = new KpiCardDto { Title = "CO₂ Emissions", Value = 0, Unit = "Metric Tons", Trend = "—", Status = "warning", Subtitle = "Daily equivalent" }
+        };
+    }
+
+    private ChartDataDto GenerateFallbackCharts()
+    {
+        return new ChartDataDto
+        {
+            ConsumptionTrend = GenerateMockConsumptionTrend(),
+            LocationBreakdown = GenerateMockLocationBreakdown(),
+            TopConsumers = GenerateMockTopConsumers()
         };
     }
 }
