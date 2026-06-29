@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using FluentValidation;
 using EMS.Core.Interfaces;
 using EMS.Infrastructure.Data;
 using EMS.Infrastructure.Repositories;
 using EMS.Web.Services;
+using EMS.Web.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +25,10 @@ builder.Services.AddScoped<IFlowmeterRepository, FlowmeterRepository>();
 // Service dependency injection
 builder.Services.AddScoped<IDashboardService, WebDashboardService>();
 builder.Services.AddScoped<ILiveMonitoringService, LiveMonitoringService>();
+
+// Validation
+builder.Services.AddScoped<IValidator<DashboardFilterDto>, DashboardFilterValidator>();
+builder.Services.AddScoped<IValidator<LiveMonitoringFilterDto>, LiveMonitoringFilterValidator>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
