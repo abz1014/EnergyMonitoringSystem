@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\EMS.Core\EMS.Core.csproj" />
     <ProjectReference Include="..\EMS.Infrastructure\EMS.Infrastructure.csproj" />
+    <ProjectReference Include="..\EMS.Web\EMS.Web.csproj" />
   </ItemGroup>
 
 </Project>
