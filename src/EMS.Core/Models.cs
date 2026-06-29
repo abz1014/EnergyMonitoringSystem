@@ -2,14 +2,14 @@
 
 public class EnergyMeterData
 {
-    public int SrNo { get; set; }
-    public int MeterNo { get; set; }
+    public long SrNo { get; set; }
+    public int? MeterNo { get; set; }
     public string? MeterName { get; set; }
     public string? MeterLocation { get; set; }
     public string? MeterBrand { get; set; }
     public string? MeterModel { get; set; }
     public string? Type1 { get; set; }
-    public DateTime DateTime { get; set; }
+    public DateTime? DateTime { get; set; }
 
     public double? VoltL1N { get; set; }
     public double? VoltL2N { get; set; }
@@ -49,18 +49,18 @@ public class EnergyMeterData
 
 public class MonitoringDevice
 {
-    public int SrNo { get; set; }
-    public int DeviceID { get; set; }
-    public string DeviceType { get; set; } = "";
-    public string DeviceName { get; set; } = "";
+    public long SrNo { get; set; }
+    public int? DeviceID { get; set; }
+    public string? DeviceType { get; set; }
+    public string? DeviceName { get; set; }
     public string? Model { get; set; }
     public string? MasterDevice { get; set; }
     public string? IPAddress { get; set; }
-    public int? Port { get; set; }
+    public string? Port { get; set; }
     public string? Protocols { get; set; }
-    public string Location { get; set; } = "";
+    public string? Location { get; set; }
     public string? Description { get; set; }
-    public bool IsActive { get; set; }
+    public int? IsActive { get; set; }
     public string? GroupName { get; set; }
 }
 
@@ -71,24 +71,32 @@ public class Alarm
     public string DeviceName { get; set; } = "";
     public string? DeviceLocation { get; set; }
     public string TagName { get; set; } = "";
-    public double? TagValue { get; set; }
-    public double? Threshold { get; set; }
-    public string? Condition { get; set; }
-    public string Severity { get; set; } = "";
+    public double TagValue { get; set; }
+    public double Threshold { get; set; }
+    public string Condition { get; set; } = "";
+    public byte Severity { get; set; }
     public string Message { get; set; } = "";
     public bool IsActive { get; set; }
     public string? AckBy { get; set; }
     public DateTime? AckTime { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    public string SeverityName => Severity switch
+    {
+        1 => "info",
+        2 => "warning",
+        3 => "critical",
+        _ => "unknown"
+    };
 }
 
 public class FlowmeterData
 {
-    public int SrNo { get; set; }
+    public long SrNo { get; set; }
     public string? DeviceName { get; set; }
     public string? IPAddress { get; set; }
-    public DateTime DateTime { get; set; }
-    public int MeterNo { get; set; }
+    public DateTime? DateTime { get; set; }
+    public int? MeterNo { get; set; }
     public string? InformationType { get; set; }
     public double? Data { get; set; }
     public string? DataUnit { get; set; }

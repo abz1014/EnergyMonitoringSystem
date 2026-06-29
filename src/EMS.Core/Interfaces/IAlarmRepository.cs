@@ -6,7 +6,7 @@ public interface IAlarmRepository
 {
     Task<List<Alarm>> GetActiveAlarms();
     Task<List<Alarm>> GetAlarmsByMeterId(int meterId);
-    Task<List<Alarm>> GetAlarmsBySeverity(string severity);
+    Task<List<Alarm>> GetAlarmsBySeverity(byte severity);
     Task<Alarm?> GetAlarmById(int id);
     Task AcknowledgeAlarm(int id, string acknowledgedBy, string? note = null);
     Task<int> GetActiveAlarmCount();

@@ -30,7 +30,7 @@ public class AlarmRepository : IAlarmRepository
             .ToListAsync();
     }
 
-    public async Task<List<Alarm>> GetAlarmsBySeverity(string severity)
+    public async Task<List<Alarm>> GetAlarmsBySeverity(byte severity)
     {
         return await _context.Alarms
             .Where(a => a.IsActive && a.Severity == severity)

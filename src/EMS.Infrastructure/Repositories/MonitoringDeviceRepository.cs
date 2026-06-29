@@ -29,14 +29,14 @@ public class MonitoringDeviceRepository : IMonitoringDeviceRepository
     public async Task<List<MonitoringDevice>> GetDevicesByPlant(string plant)
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .Where(d => d.GroupName == plant && d.IsActive)
+            .Where(d => d.GroupName == plant && d.IsActive == 1)
             .ToListAsync();
     }
 
     public async Task<List<MonitoringDevice>> GetDevicesByBuilding(string building)
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .Where(d => d.Location == building && d.IsActive)
+            .Where(d => d.Location == building && d.IsActive == 1)
             .ToListAsync();
     }
 
@@ -55,7 +55,7 @@ public class MonitoringDeviceRepository : IMonitoringDeviceRepository
     public async Task<int> GetOnlineDeviceCount()
     {
         return await _context.MonitoringDevices.AsNoTracking()
-            .CountAsync(d => d.IsActive);
+            .CountAsync(d => d.IsActive == 1);
     }
 
     public async Task<List<string>> GetAllPlants()

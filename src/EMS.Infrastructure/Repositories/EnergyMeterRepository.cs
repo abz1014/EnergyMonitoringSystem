@@ -21,7 +21,7 @@ public class EnergyMeterRepository : IEnergyMeterRepository
 
         return await _context.EnergyMetersData
             .AsNoTracking()
-            .Where(e => e.MeterNo == meterId && e.DateTime >= startDate && e.DateTime <= endDate)
+            .Where(e => e.MeterNo == meterId && e.DateTime.HasValue && e.DateTime >= startDate && e.DateTime <= endDate)
             .OrderBy(e => e.DateTime)
             .ToListAsync();
     }
@@ -30,7 +30,7 @@ public class EnergyMeterRepository : IEnergyMeterRepository
     {
         return await _context.EnergyMetersData
             .AsNoTracking()
-            .Where(e => e.MeterNo == meterId && e.DateTime >= from && e.DateTime <= to)
+            .Where(e => e.MeterNo == meterId && e.DateTime.HasValue && e.DateTime >= from && e.DateTime <= to)
             .OrderBy(e => e.DateTime)
             .ToListAsync();
     }
@@ -39,7 +39,7 @@ public class EnergyMeterRepository : IEnergyMeterRepository
     {
         return await _context.EnergyMetersData
             .AsNoTracking()
-            .Where(e => e.MeterNo == meterId)
+            .Where(e => e.MeterNo == meterId && e.DateTime.HasValue)
             .OrderByDescending(e => e.DateTime)
             .FirstOrDefaultAsync();
     }
@@ -51,8 +51,8 @@ public class EnergyMeterRepository : IEnergyMeterRepository
 
         return await _context.EnergyMetersData
             .AsNoTracking()
-            .Where(e => e.DateTime >= today && e.DateTime < tomorrow && e.kWh.HasValue)
-            .SumAsync(e => e.kWh!.Value);
+            .Where(e => e.DateTime.HasValue && e.DateTime >= today && e.DateTime < tomorrow && e.kWh.HasValue)
+            .SumAsync(e => (double)e.kWh!.Value);
     }
 
     public async Task<double> GetPeakDemandToday()
@@ -62,7 +62,7 @@ public class EnergyMeterRepository : IEnergyMeterRepository
 
         return await _context.EnergyMetersData
             .AsNoTracking()
-            .Where(e => e.DateTime >= today && e.DateTime < tomorrow && e.kWtotal.HasValue)
+            .Where(e => e.DateTime.HasValue && e.DateTime >= today && e.DateTime < tomorrow && e.kWtotal.HasValue)
             .MaxAsync(e => (double?)e.kWtotal) ?? 0;
     }
 
@@ -70,7 +70,7 @@ public class EnergyMeterRepository : IEnergyMeterRepository
     {
         return await _context.EnergyMetersData
             .AsNoTracking()
-            .Where(e => e.DateTime >= from && e.DateTime <= to)
+            .Where(e => e.DateTime.HasValue && e.DateTime >= from && e.DateTime <= to)
             .OrderBy(e => e.DateTime)
             .ToListAsync();
     }

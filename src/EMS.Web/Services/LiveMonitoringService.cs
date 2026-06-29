@@ -32,22 +32,29 @@ public class LiveMonitoringService : ILiveMonitoringService
             var now = DateTime.Now;
             var recentData = await _meterRepository.GetByDateRange(now.AddHours(-1), now);
 
+            if (recentData.Count == 0)
+            {
+                recentData = await _meterRepository.GetByDateRange(now.AddDays(-30), now);
+            }
+
             var latestPerMeter = recentData
-                .GroupBy(d => d.MeterNo)
+                .Where(d => d.MeterNo.HasValue)
+                .GroupBy(d => d.MeterNo!.Value)
                 .Select(g => g.OrderByDescending(d => d.DateTime).First())
                 .ToList();
 
-            var deviceLookup = devices.ToDictionary(d => d.DeviceID, d => d);
+            var deviceLookup = devices.Where(d => d.DeviceID.HasValue).ToDictionary(d => d.DeviceID!.Value, d => d);
 
             var meters = latestPerMeter.Select(live =>
             {
-                var device = deviceLookup.GetValueOrDefault(live.MeterNo);
+                var meterNo = live.MeterNo ?? 0;
+                var device = deviceLookup.GetValueOrDefault(meterNo);
                 var status = DetermineStatus(live);
 
                 return new MeterLiveDto
                 {
-                    MeterId = live.MeterNo,
-                    Name = device?.DeviceName ?? live.MeterName ?? $"Meter-{live.MeterNo}",
+                    MeterId = meterNo,
+                    Name = device?.DeviceName ?? live.MeterName ?? $"Meter-{meterNo}",
                     Status = status,
                     Voltage = new VoltageReadingDto
                     {
@@ -69,7 +76,7 @@ public class LiveMonitoringService : ILiveMonitoringService
                     },
                     PowerFactor = live.PFL1 ?? 0,
                     Frequency = live.MFreq ?? 0,
-                    LastUpdated = live.DateTime,
+                    LastUpdated = live.DateTime ?? DateTime.MinValue,
                     Sparkline = new List<double>()
                 };
             })
@@ -81,11 +88,11 @@ public class LiveMonitoringService : ILiveMonitoringService
             {
                 Id = a.AlarmID,
                 MeterId = a.DeviceID,
-                DeviceName = deviceLookup.GetValueOrDefault(a.DeviceID)?.DeviceName ?? a.DeviceName,
+                DeviceName = (deviceLookup.ContainsKey(a.DeviceID) ? deviceLookup[a.DeviceID].DeviceName : null) ?? a.DeviceName,
                 Parameter = a.TagName,
                 CurrentValue = a.TagValue,
                 Threshold = a.Threshold,
-                Severity = a.Severity,
+                Severity = a.SeverityName,
                 Message = a.Message,
                 CreatedAt = a.CreatedAt
             }).ToList();
@@ -117,10 +124,10 @@ public class LiveMonitoringService : ILiveMonitoringService
 
     private static string DetermineStatus(EnergyMeterData reading)
     {
-        if (reading.DateTime < DateTime.Now.AddMinutes(-5))
+        if (!reading.DateTime.HasValue || reading.DateTime.Value < DateTime.Now.AddMinutes(-5))
             return "offline";
 
-        if (reading.DateTime < DateTime.Now.AddMinutes(-2))
+        if (reading.DateTime.Value < DateTime.Now.AddMinutes(-2))
             return "warning";
 
         var voltage = reading.VoltL1N ?? 0;

@@ -103,22 +103,23 @@ public class EnergyAnalysisService : IEnergyAnalysisService
     {
         return metric switch
         {
-            "peak" => d.kWtotal ?? 0,
-            "kva" => d.kVAtotal ?? ((d.kWtotal ?? 0) / Math.Max(d.PFL1 ?? 0.9, 0.1)),
-            "kvar" => d.kVARtotal ?? ((d.kWtotal ?? 0) * Math.Tan(Math.Acos(Math.Clamp(d.PFL1 ?? 0.9, 0, 1)))),
-            _ => d.kWh ?? 0
+            "peak" => (double)(d.kWtotal ?? 0),
+            "kva" => (double)(d.kVAtotal ?? ((d.kWtotal ?? 0) / Math.Max((double)(d.PFL1 ?? 0.9), 0.1))),
+            "kvar" => (double)(d.kVARtotal ?? ((d.kWtotal ?? 0) * Math.Tan(Math.Acos(Math.Clamp((double)(d.PFL1 ?? 0.9), 0, 1))))),
+            _ => (double)(d.kWh ?? 0)
         };
     }
 
     private static List<(DateTime, double)> AggregateByTimeframe(List<EnergyMeterData> data, string timeframe, string metric)
     {
+        var filtered = data.Where(d => d.DateTime.HasValue).ToList();
         return timeframe switch
         {
-            "daily" => data.GroupBy(d => d.DateTime.Hour)
+            "daily" => filtered.GroupBy(d => d.DateTime!.Value.Hour)
                 .Select(g => (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, g.Key, 0, 0), g.Sum(x => ExtractMetric(x, metric))))
                 .OrderBy(x => x.Item1)
                 .ToList(),
-            _ => data.GroupBy(d => d.DateTime.Date)
+            _ => filtered.GroupBy(d => d.DateTime!.Value.Date)
                 .Select(g => (g.Key, g.Sum(x => ExtractMetric(x, metric))))
                 .OrderBy(x => x.Key)
                 .ToList()
@@ -127,9 +128,10 @@ public class EnergyAnalysisService : IEnergyAnalysisService
 
     private static List<AnalysisRowDto> BuildRows(List<EnergyMeterData> data, string timeframe, string metric)
     {
+        var filtered = data.Where(d => d.DateTime.HasValue).ToList();
         var groups = timeframe == "daily"
-            ? data.GroupBy(d => d.DateTime.Hour).Select(g => (Date: new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, g.Key, 0, 0), Items: g.ToList()))
-            : data.GroupBy(d => d.DateTime.Date).Select(g => (Date: g.Key, Items: g.ToList()));
+            ? filtered.GroupBy(d => d.DateTime!.Value.Hour).Select(g => (Date: new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, g.Key, 0, 0), Items: g.ToList()))
+            : filtered.GroupBy(d => d.DateTime!.Value.Date).Select(g => (Date: g.Key, Items: g.ToList()));
 
         return groups.OrderBy(g => g.Date).Select(g =>
         {

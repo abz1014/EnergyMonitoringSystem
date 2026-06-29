@@ -39,18 +39,30 @@ public class WebDashboardService : IDashboardService
             var tomorrow = today.AddDays(1);
             var monthStart = new DateTime(today.Year, today.Month, 1);
 
-            var todaysConsumption = await _energyMeterRepository.GetTodaysTotalConsumption();
-            var peakDemand = await _energyMeterRepository.GetPeakDemandToday();
+            var todayData = await _energyMeterRepository.GetByDateRange(today, tomorrow);
+
+            if (todayData.Count == 0)
+            {
+                var latestReading = await _energyMeterRepository.GetByDateRange(DateTime.Now.AddDays(-30), tomorrow);
+                if (latestReading.Count > 0)
+                {
+                    var latestDate = latestReading.Max(d => d.DateTime ?? DateTime.MinValue).Date;
+                    todayData = latestReading.Where(d => d.DateTime.HasValue && d.DateTime.Value.Date == latestDate).ToList();
+                    today = latestDate;
+                    tomorrow = latestDate.AddDays(1);
+                }
+            }
+
+            var todaysConsumption = todayData.Sum(d => (double)(d.kWh ?? 0));
+            var peakDemand = todayData.Count > 0 ? todayData.Max(d => (double)(d.kWtotal ?? 0)) : 0;
             var onlineMeters = await _deviceRepository.GetOnlineDeviceCount();
             var totalDevices = (await _deviceRepository.GetAllDevices()).Count;
 
             var monthData = await _energyMeterRepository.GetByDateRange(monthStart, tomorrow);
-            var monthlyTotal = monthData.Sum(d => d.kWh ?? 0);
-
-            var todayData = await _energyMeterRepository.GetByDateRange(today, tomorrow);
+            var monthlyTotal = monthData.Sum(d => (double)(d.kWh ?? 0));
 
             var avgPowerFactor = todayData.Count > 0
-                ? todayData.Where(m => m.PFL1.HasValue && m.PFL1 > 0).Select(m => m.PFL1!.Value).DefaultIfEmpty(0).Average()
+                ? todayData.Where(m => m.PFL1.HasValue && m.PFL1 > 0).Select(m => (double)m.PFL1!.Value).DefaultIfEmpty(0).Average()
                 : 0;
 
             var co2Factor = 0.82;
@@ -59,8 +71,8 @@ public class WebDashboardService : IDashboardService
             var tariffRate = 8.5;
             var estimatedCost = (monthlyTotal * tariffRate) / 1_000_000;
 
-            var latestReadings = todayData.GroupBy(d => d.MeterNo).Select(g => g.OrderByDescending(d => d.DateTime).First()).ToList();
-            var currentLoad = latestReadings.Sum(m => m.kWtotal ?? 0);
+            var latestReadings = todayData.Where(d => d.MeterNo.HasValue).GroupBy(d => d.MeterNo!.Value).Select(g => g.OrderByDescending(d => d.DateTime).First()).ToList();
+            var currentLoad = latestReadings.Sum(m => (double)(m.kWtotal ?? 0));
 
             var kpiCards = new KpiCardsDto
             {
@@ -168,22 +180,23 @@ public class WebDashboardService : IDashboardService
     private async Task<ChartDataDto> BuildChartDataAsync(DateTime today, DateTime tomorrow, List<EnergyMeterData> todayData)
     {
         var consumptionTrend = todayData
-            .GroupBy(d => d.DateTime.Hour)
+            .Where(d => d.DateTime.HasValue)
+            .GroupBy(d => d.DateTime!.Value.Hour)
             .Select(g => new ConsumptionChartPointDto
             {
                 Time = today.AddHours(g.Key),
-                Value = g.Sum(x => x.kWh ?? 0)
+                Value = g.Sum(x => (double)(x.kWh ?? 0))
             })
             .OrderBy(c => c.Time)
             .ToList();
 
         var devices = await _deviceRepository.GetAllDevices();
-        var deviceLookup = devices.ToDictionary(d => d.DeviceID, d => d);
+        var deviceLookup = devices.Where(d => d.DeviceID.HasValue).ToDictionary(d => d.DeviceID!.Value, d => d);
 
         var locationGroups = todayData
-            .Where(d => deviceLookup.ContainsKey(d.MeterNo))
-            .GroupBy(d => deviceLookup[d.MeterNo].Location)
-            .Select(g => new { Location = g.Key, Total = g.Sum(x => x.kWh ?? 0) })
+            .Where(d => d.MeterNo.HasValue && deviceLookup.ContainsKey(d.MeterNo.Value))
+            .GroupBy(d => deviceLookup[d.MeterNo!.Value].Location)
+            .Select(g => new { Location = g.Key, Total = g.Sum(x => (double)(x.kWh ?? 0)) })
             .OrderByDescending(g => g.Total)
             .ToList();
 
@@ -196,18 +209,19 @@ public class WebDashboardService : IDashboardService
         }).ToList();
 
         var topConsumers = todayData
-            .GroupBy(d => d.MeterNo)
+            .Where(d => d.MeterNo.HasValue)
+            .GroupBy(d => d.MeterNo!.Value)
             .Select(g => new
             {
                 MeterNo = g.Key,
-                Total = g.Sum(x => x.kWh ?? 0)
+                Total = g.Sum(x => (double)(x.kWh ?? 0))
             })
             .OrderByDescending(g => g.Total)
             .Take(10)
             .Select((g, i) => new TopConsumerDto
             {
                 Rank = i + 1,
-                Name = deviceLookup.ContainsKey(g.MeterNo) ? deviceLookup[g.MeterNo].DeviceName : $"Meter-{g.MeterNo}",
+                Name = deviceLookup.ContainsKey(g.MeterNo) ? deviceLookup[g.MeterNo].DeviceName ?? $"Meter-{g.MeterNo}" : $"Meter-{g.MeterNo}",
                 Consumption = Math.Round(g.Total, 1)
             })
             .ToList();

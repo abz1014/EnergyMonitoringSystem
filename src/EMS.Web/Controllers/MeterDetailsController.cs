@@ -41,28 +41,28 @@ public class MeterDetailsController : Controller
             var model = new MeterDetailsViewModel
             {
                 MeterId = meterId,
-                MeterName = $"Meter-{meterId}",
+                MeterName = latestReading.MeterName ?? $"Meter-{meterId}",
                 Timeframe = timeframe,
                 DateFrom = dateFrom,
                 DateTo = dateTo,
-                LastUpdated = latestReading.DateTime,
+                LastUpdated = latestReading.DateTime ?? DateTime.Now,
                 CurrentValues = new MeterReadingViewModel
                 {
-                    VoltageL1 = latestReading.VoltL1N ?? 0,
-                    VoltageL2 = latestReading.VoltL2N ?? 0,
-                    VoltageL3 = latestReading.VoltL3N ?? 0,
-                    CurrentL1 = latestReading.CurrentL1 ?? 0,
-                    CurrentL2 = latestReading.CurrentL2 ?? 0,
-                    CurrentL3 = latestReading.CurrentL3 ?? 0,
-                    PowerkW = latestReading.kWtotal ?? 0,
-                    PowerFactor = latestReading.PFL1 ?? 0.96,
-                    Frequency = latestReading.MFreq ?? 50.0
+                    VoltageL1 = (double)(latestReading.VoltL1N ?? 0),
+                    VoltageL2 = (double)(latestReading.VoltL2N ?? 0),
+                    VoltageL3 = (double)(latestReading.VoltL3N ?? 0),
+                    CurrentL1 = (double)(latestReading.CurrentL1 ?? 0),
+                    CurrentL2 = (double)(latestReading.CurrentL2 ?? 0),
+                    CurrentL3 = (double)(latestReading.CurrentL3 ?? 0),
+                    PowerkW = (double)(latestReading.kWtotal ?? 0),
+                    PowerFactor = (double)(latestReading.PFL1 ?? 0),
+                    Frequency = (double)(latestReading.MFreq ?? 0)
                 },
                 Statistics = stats,
-                TotalConsumption = meterReadings.Sum(m => m.kWh ?? 0),
-                AverageConsumption = meterReadings.Average(m => m.kWh ?? 0),
-                PeakConsumption = meterReadings.Max(m => m.kWh ?? 0),
-                MinConsumption = meterReadings.Min(m => m.kWh ?? 0)
+                TotalConsumption = meterReadings.Sum(m => (double)(m.kWh ?? 0)),
+                AverageConsumption = meterReadings.Average(m => (double)(m.kWh ?? 0)),
+                PeakConsumption = meterReadings.Max(m => (double)(m.kWh ?? 0)),
+                MinConsumption = meterReadings.Min(m => (double)(m.kWh ?? 0))
             };
 
             return View(model);
@@ -89,7 +89,7 @@ public class MeterDetailsController : Controller
 
     private Dictionary<string, double> CalculateStats(List<EMS.Core.Models.EnergyMeterData> data)
     {
-        var values = data.Select(d => d.kWh ?? 0).ToList();
+        var values = data.Select(d => (double)(d.kWh ?? 0)).ToList();
         return new()
         {
             { "peak", values.Any() ? values.Max() : 0 },
