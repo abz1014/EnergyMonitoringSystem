@@ -13,7 +13,9 @@
     .fp-value { color: #FFFFFF; font-size: 20px; font-weight: 600; }
     .fp-unit { color: #64748B; font-size: 12px; margin-left: 4px; }
     .fp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .fp-cell { background: #0F172A; border-radius: 6px; padding: 12px; text-align: center; }
+    .fp-cell { background: #0F172A; border-radius: 6px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; }
+    .fp-cell:hover { border-color: #2563EB; background: #1a2744; }
+    .fp-cell:active { transform: scale(0.97); }
     .fp-status-online { color: #10B981; }
     .fp-status-offline { color: #EF4444; }
     .meter-select-card { cursor: pointer; transition: all 0.15s; border: 2px solid transparent; }
@@ -87,15 +89,15 @@
                     <div class="fp-card">
                         <div class="fp-label mb-2">Line-to-Neutral (V)</div>
                         <div class="fp-grid">
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('VoltL1N')">
                                 <div class="fp-label">L1-N</div>
                                 <div class="fp-value">@Model.VoltL1N.ToString("F1")<span class="fp-unit">V</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('VoltL2N')">
                                 <div class="fp-label">L2-N</div>
                                 <div class="fp-value">@Model.VoltL2N.ToString("F1")<span class="fp-unit">V</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('VoltL3N')">
                                 <div class="fp-label">L3-N</div>
                                 <div class="fp-value">@Model.VoltL3N.ToString("F1")<span class="fp-unit">V</span></div>
                             </div>
@@ -129,15 +131,15 @@
             <h5 class="mb-3" style="color: #F59E0B;">Current</h5>
             <div class="fp-card">
                 <div class="fp-grid">
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('CurrentL1')">
                         <div class="fp-label">L1</div>
                         <div class="fp-value">@Model.CurrentL1.ToString("F1")<span class="fp-unit">A</span></div>
                     </div>
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('CurrentL2')">
                         <div class="fp-label">L2</div>
                         <div class="fp-value">@Model.CurrentL2.ToString("F1")<span class="fp-unit">A</span></div>
                     </div>
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('CurrentL3')">
                         <div class="fp-label">L3</div>
                         <div class="fp-value">@Model.CurrentL3.ToString("F1")<span class="fp-unit">A</span></div>
                     </div>
@@ -153,15 +155,15 @@
                     <div class="fp-card">
                         <div class="fp-label mb-2">Active Power (kW)</div>
                         <div class="fp-grid">
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('PowerL1')">
                                 <div class="fp-label">L1</div>
                                 <div class="fp-value">@Model.PowerL1.ToString("F1")<span class="fp-unit">kW</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('PowerL2')">
                                 <div class="fp-label">L2</div>
                                 <div class="fp-value">@Model.PowerL2.ToString("F1")<span class="fp-unit">kW</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('PowerL3')">
                                 <div class="fp-label">L3</div>
                                 <div class="fp-value">@Model.PowerL3.ToString("F1")<span class="fp-unit">kW</span></div>
                             </div>
@@ -172,15 +174,15 @@
                     <div class="fp-card">
                         <div class="fp-label mb-2">Total Power</div>
                         <div class="fp-grid">
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('kWtotal')">
                                 <div class="fp-label">kW Total</div>
                                 <div class="fp-value">@Model.kWtotal.ToString("F2")<span class="fp-unit">kW</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('kVAtotal')">
                                 <div class="fp-label">kVA Total</div>
                                 <div class="fp-value">@Model.kVAtotal.ToString("F2")<span class="fp-unit">kVA</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('kVARtotal')">
                                 <div class="fp-label">kVAR Total</div>
                                 <div class="fp-value">@Model.kVARtotal.ToString("F2")<span class="fp-unit">kVAR</span></div>
                             </div>
@@ -195,19 +197,19 @@
             <h5 class="mb-3" style="color: #8B5CF6;">Power Factor & Frequency</h5>
             <div class="fp-card">
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('PFL1')">
                         <div class="fp-label">PF L1</div>
                         <div class="fp-value" style="color: @(Model.PFL1 >= 0.9 ? "#10B981" : "#F59E0B")">@Model.PFL1.ToString("F3")</div>
                     </div>
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('PFL1')">
                         <div class="fp-label">PF L2</div>
                         <div class="fp-value" style="color: @(Model.PFL2 >= 0.9 ? "#10B981" : "#F59E0B")">@Model.PFL2.ToString("F3")</div>
                     </div>
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('PFL1')">
                         <div class="fp-label">PF L3</div>
                         <div class="fp-value" style="color: @(Model.PFL3 >= 0.9 ? "#10B981" : "#F59E0B")">@Model.PFL3.ToString("F3")</div>
                     </div>
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('MFreq')">
                         <div class="fp-label">Frequency</div>
                         <div class="fp-value">@Model.Frequency.ToString("F2")<span class="fp-unit">Hz</span></div>
                     </div>
@@ -220,15 +222,15 @@
             <h5 class="mb-3" style="color: #EC4899;">Energy Counters</h5>
             <div class="fp-card">
                 <div class="fp-grid">
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('kWh')">
                         <div class="fp-label">Active Energy</div>
                         <div class="fp-value">@Model.kWh.ToString("F0")<span class="fp-unit">kWh</span></div>
                     </div>
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('kVAh')">
                         <div class="fp-label">Apparent Energy</div>
                         <div class="fp-value">@Model.kVAh.ToString("F0")<span class="fp-unit">kVAh</span></div>
                     </div>
-                    <div class="fp-cell">
+                    <div class="fp-cell" onclick="showTrend('kVARh')">
                         <div class="fp-label">Reactive Energy</div>
                         <div class="fp-value">@Model.kVARh.ToString("F0")<span class="fp-unit">kVARh</span></div>
                     </div>
@@ -244,15 +246,15 @@
                     <div class="fp-card">
                         <div class="fp-label mb-2">Voltage THD</div>
                         <div class="fp-grid">
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('HarmonicV1')">
                                 <div class="fp-label">V1</div>
                                 <div class="fp-value">@Model.HarmonicV1.ToString("F1")<span class="fp-unit">%</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('HarmonicV2')">
                                 <div class="fp-label">V2</div>
                                 <div class="fp-value">@Model.HarmonicV2.ToString("F1")<span class="fp-unit">%</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('HarmonicV3')">
                                 <div class="fp-label">V3</div>
                                 <div class="fp-value">@Model.HarmonicV3.ToString("F1")<span class="fp-unit">%</span></div>
                             </div>
@@ -263,15 +265,15 @@
                     <div class="fp-card">
                         <div class="fp-label mb-2">Current THD</div>
                         <div class="fp-grid">
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('HarmonicI1')">
                                 <div class="fp-label">I1</div>
                                 <div class="fp-value">@Model.HarmonicI1.ToString("F1")<span class="fp-unit">%</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('HarmonicI2')">
                                 <div class="fp-label">I2</div>
                                 <div class="fp-value">@Model.HarmonicI2.ToString("F1")<span class="fp-unit">%</span></div>
                             </div>
-                            <div class="fp-cell">
+                            <div class="fp-cell" onclick="showTrend('HarmonicI3')">
                                 <div class="fp-label">I3</div>
                                 <div class="fp-value">@Model.HarmonicI3.ToString("F1")<span class="fp-unit">%</span></div>
                             </div>
@@ -326,10 +328,114 @@
     }
 </div>
 
+<!-- Trend Modal -->
+<div id="trendModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:9999; display:none; justify-content:center; align-items:center; padding: 20px;">
+    <div style="background: #1E293B; border: 1px solid #334155; border-radius: 12px; width: 100%; max-width: 900px; max-height: 90vh; overflow: auto;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h4 id="trendTitle" style="color: #FFFFFF; margin: 0; font-size: 18px;"></h4>
+                <small id="trendStats" style="color: #94A3B8;"></small>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="trendRange" onchange="loadTrend(currentParam, this.value)" style="background: #0F172A; color: #E2E8F0; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; font-size: 13px;">
+                    <option value="6">6 Hours</option>
+                    <option value="24" selected>24 Hours</option>
+                    <option value="168">7 Days</option>
+                    <option value="720">30 Days</option>
+                </select>
+                <button onclick="closeTrend()" style="background: none; border: none; color: #94A3B8; font-size: 24px; cursor: pointer; padding: 0 8px;">&times;</button>
+            </div>
+        </div>
+        <div id="trendChartContainer" style="padding: 16px;">
+            <div id="trendChart" style="height: 350px;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+<style>
+    .apexcharts-menu { background: #1E293B !important; border-color: #334155 !important; }
+    .apexcharts-menu-item { color: #E2E8F0 !important; }
+    .apexcharts-menu-item:hover { background: #334155 !important; }
+</style>
 <script>
+    var currentParam = '';
+    var trendChartInstance = null;
+    var meterId = @(Model.MeterId);
+
     function filterByLocation(location) {
         var url = '/MeterFaceplate';
         if (location) url += '?location=' + encodeURIComponent(location);
         window.location.href = url;
+    }
+
+    function showTrend(param) {
+        if (meterId <= 0) return;
+        currentParam = param;
+        document.getElementById('trendModal').style.display = 'flex';
+        loadTrend(param, document.getElementById('trendRange').value);
+    }
+
+    function closeTrend() {
+        document.getElementById('trendModal').style.display = 'none';
+        if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+    }
+
+    document.getElementById('trendModal').addEventListener('click', function(e) {
+        if (e.target === this) closeTrend();
+    });
+
+    function loadTrend(param, hours) {
+        document.getElementById('trendTitle').textContent = param + ' — Loading...';
+        document.getElementById('trendStats').textContent = '';
+
+        fetch('/MeterFaceplate/Trend?meterId=' + meterId + '&parameter=' + param + '&hours=' + hours)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.points || data.points.length === 0) {
+                    document.getElementById('trendTitle').textContent = param + ' — No data';
+                    return;
+                }
+
+                document.getElementById('trendTitle').textContent = param + ' (' + data.unit + ')';
+                document.getElementById('trendStats').textContent = 'Min: ' + data.min + ' ' + data.unit + '  |  Avg: ' + data.avg + ' ' + data.unit + '  |  Max: ' + data.max + ' ' + data.unit + '  |  Points: ' + data.points.length;
+
+                if (trendChartInstance) trendChartInstance.destroy();
+
+                var annotations = [];
+                if (data.thresholdHigh > 0) {
+                    annotations.push({ y: data.thresholdHigh, borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'High: ' + data.thresholdHigh + ' ' + data.unit, style: { color: '#FFFFFF', background: '#EF4444', fontSize: '11px' } } });
+                }
+                if (data.thresholdLow > 0) {
+                    annotations.push({ y: data.thresholdLow, borderColor: '#F59E0B', strokeDashArray: 4, label: { text: 'Low: ' + data.thresholdLow + ' ' + data.unit, style: { color: '#FFFFFF', background: '#F59E0B', fontSize: '11px' } } });
+                }
+
+                var opts = {
+                    series: [{ name: param, data: data.points.map(function(p) { return p.value; }) }],
+                    chart: { type: 'line', height: 350, background: '#1E293B', toolbar: { show: true }, zoom: { enabled: true } },
+                    colors: ['#2563EB'],
+                    stroke: { curve: 'smooth', width: 2 },
+                    xaxis: {
+                        categories: data.points.map(function(p) { return p.time; }),
+                        labels: { style: { colors: '#94A3B8', fontSize: '10px' }, rotate: -45, rotateAlways: data.points.length > 30 },
+                        tickAmount: Math.min(data.points.length, 15)
+                    },
+                    yaxis: {
+                        labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toFixed(2); } },
+                        title: { text: data.unit, style: { color: '#94A3B8' } }
+                    },
+                    tooltip: { theme: 'dark' },
+                    grid: { borderColor: '#334155', strokeDashArray: 3 },
+                    annotations: { yaxis: annotations },
+                    markers: { size: 0, hover: { size: 5 } }
+                };
+
+                trendChartInstance = new ApexCharts(document.querySelector('#trendChart'), opts);
+                trendChartInstance.render();
+            })
+            .catch(function(err) {
+                document.getElementById('trendTitle').textContent = param + ' — Error loading';
+                console.error(err);
+            });
     }
 </script>
