@@ -24,10 +24,32 @@ builder.Services.AddScoped<IFlowmeterRepository, FlowmeterRepository>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ILiveMonitoringService, LiveMonitoringService>();
 
+// CORS configuration for external clients
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5045")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Energy Monitoring System API", Version = "v1" });
+});
 
 var app = builder.Build();
 
@@ -36,10 +58,18 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseCors("AllowLocalhost");
+}
+else
+{
+    app.UseCors("AllowAll");
 }
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
+    .WithName("Health")
+    .WithOpenApi();
 
 app.Run();
