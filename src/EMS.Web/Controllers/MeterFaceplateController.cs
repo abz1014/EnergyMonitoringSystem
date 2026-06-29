@@ -136,13 +136,11 @@ public class MeterFaceplateController : Controller
             var from = DateTime.Now.AddHours(-hours);
             var to = DateTime.Now.AddDays(1);
 
-            var data = await _meterRepo.GetByDateRange(from, to);
-            var meterData = data.Where(d => d.MeterNo == meterId && d.DateTime.HasValue).OrderBy(d => d.DateTime).ToList();
+            var meterData = await _meterRepo.GetConsumptionRange(meterId, from, to);
 
             if (meterData.Count == 0)
             {
-                var recentData = await _meterRepo.GetByDateRange(DateTime.Now.AddDays(-30), to);
-                meterData = recentData.Where(d => d.MeterNo == meterId && d.DateTime.HasValue).OrderBy(d => d.DateTime).ToList();
+                meterData = await _meterRepo.GetConsumptionRange(meterId, DateTime.Now.AddDays(-30), to);
             }
 
             var points = meterData.Select(d => new
@@ -151,7 +149,7 @@ public class MeterFaceplateController : Controller
                 value = ExtractParameter(d, parameter)
             }).ToList();
 
-            var values = points.Select(p => p.value).Where(v => v != 0).ToList();
+            var values = points.Select(p => p.value).ToList();
             var thresholds = GetThresholds(parameter);
 
             return Json(new

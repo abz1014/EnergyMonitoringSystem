@@ -64,6 +64,7 @@ public class BriefingService
 
             model.TotalConsumption = yesterdayData.Sum(d => (double)(d.kWh ?? 0));
 
+            weekAgo = yesterday.AddDays(-7);
             var weekData = await _meterRepo.GetByDateRange(weekAgo, yesterdayEnd);
             var dailyTotals = weekData
                 .Where(d => d.DateTime.HasValue)

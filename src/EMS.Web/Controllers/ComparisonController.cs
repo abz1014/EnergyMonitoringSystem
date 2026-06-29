@@ -36,10 +36,10 @@ public class ComparisonController : Controller
                 selectedIds = meters.Split(',').Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
 
             DateTime from, to;
-            if (timeframe == "custom" && !string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
+            if (timeframe == "custom" && DateTime.TryParse(dateFrom, out var parsedFrom) && DateTime.TryParse(dateTo, out var parsedTo))
             {
-                from = DateTime.Parse(dateFrom);
-                to = DateTime.Parse(dateTo).AddDays(1).AddTicks(-1);
+                from = parsedFrom;
+                to = parsedTo.AddDays(1).AddTicks(-1);
             }
             else
             {

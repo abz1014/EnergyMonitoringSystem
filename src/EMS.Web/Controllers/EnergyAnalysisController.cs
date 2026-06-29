@@ -22,10 +22,10 @@ public class EnergyAnalysisController : Controller
         try
         {
             DateTime? customFrom = null, customTo = null;
-            if (timeframe == "custom" && !string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
+            if (timeframe == "custom" && DateTime.TryParse(dateFrom, out var pFrom) && DateTime.TryParse(dateTo, out var pTo))
             {
-                customFrom = DateTime.Parse(dateFrom);
-                customTo = DateTime.Parse(dateTo).AddDays(1).AddTicks(-1);
+                customFrom = pFrom;
+                customTo = pTo.AddDays(1).AddTicks(-1);
             }
 
             var result = await _analysisService.GetAnalysisAsync(timeframe, metric, compareWith, customFrom, customTo);
