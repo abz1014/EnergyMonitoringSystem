@@ -1,0 +1,347 @@
+@model ExecutiveDashboardDto
+
+@{
+    ViewData["Title"] = "Executive Dashboard";
+}
+
+<div class="dashboard-container" style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <!-- Header -->
+    <div class="dashboard-header mb-4">
+        <h1 class="h2 mb-2">Energy Monitoring System</h1>
+        <p class="text-muted">Executive Dashboard › Dashboard</p>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">🏢 Plant</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option selected>All</option>
+                    <option>Plant-1</option>
+                    <option>Plant-2</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">🏗️ Building</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option selected>All</option>
+                    <option>Building A</option>
+                    <option>Building B</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">📍 Area</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option selected>All</option>
+                    <option>Floor 1</option>
+                    <option>Floor 2</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100" style="background-color: #2563EB;">
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards Section -->
+    <div class="kpi-section mb-5">
+        <div class="row g-3">
+            @if (Model?.KpiCards != null)
+            {
+                <!-- Today's Consumption -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">@Model.KpiCards.TodayConsumption.Title</small>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1" style="color: #FFFFFF;">@Model.KpiCards.TodayConsumption.Value.ToString("F0")</h4>
+                                    <small style="color: #94A3B8;">@Model.KpiCards.TodayConsumption.Unit</small>
+                                </div>
+                                <small style="color: #10B981;">@Model.KpiCards.TodayConsumption.Trend</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Load -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #3B82F6;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">@Model.KpiCards.CurrentLoad.Title</small>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1" style="color: #FFFFFF;">@Model.KpiCards.CurrentLoad.Value.ToString("F0")</h4>
+                                    <small style="color: #94A3B8;">@Model.KpiCards.CurrentLoad.Unit</small>
+                                </div>
+                                <small style="color: #94A3B8;">@Model.KpiCards.CurrentLoad.Trend</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Peak Demand -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #F59E0B;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">@Model.KpiCards.PeakDemand.Title</small>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1" style="color: #FFFFFF;">@Model.KpiCards.PeakDemand.Value.ToString("F0")</h4>
+                                    <small style="color: #94A3B8;">@Model.KpiCards.PeakDemand.Unit</small>
+                                </div>
+                                <small style="color: #94A3B8;">@Model.KpiCards.PeakDemand.Trend</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Total -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">@Model.KpiCards.MonthlyTotal.Title</small>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1" style="color: #FFFFFF;">@Model.KpiCards.MonthlyTotal.Value.ToString("F0")</h4>
+                                    <small style="color: #94A3B8;">@Model.KpiCards.MonthlyTotal.Unit</small>
+                                </div>
+                                <small style="color: #10B981;">@Model.KpiCards.MonthlyTotal.Trend</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Online Meters -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">@Model.KpiCards.OnlineMeters.Title</small>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1" style="color: #FFFFFF;">@Model.KpiCards.OnlineMeters.Value.ToString("F0")</h4>
+                                    <small style="color: #94A3B8;">@Model.KpiCards.OnlineMeters.Unit</small>
+                                </div>
+                                <small style="color: #10B981;">@Model.KpiCards.OnlineMeters.Trend</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estimated Cost -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #F59E0B;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">@Model.KpiCards.EstimatedCost.Title</small>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1" style="color: #FFFFFF;">@Model.KpiCards.EstimatedCost.Value.ToString("F2")</h4>
+                                    <small style="color: #94A3B8;">@Model.KpiCards.EstimatedCost.Unit</small>
+                                </div>
+                                <small style="color: #F59E0B;">@Model.KpiCards.EstimatedCost.Trend</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Power Factor -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">@Model.KpiCards.AvgPowerFactor.Title</small>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1" style="color: #FFFFFF;">@Model.KpiCards.AvgPowerFactor.Value.ToString("F2")</h4>
+                                    <small style="color: #94A3B8;">@Model.KpiCards.AvgPowerFactor.Unit</small>
+                                </div>
+                                <small style="color: #10B981;">@Model.KpiCards.AvgPowerFactor.Trend</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CO2 Emissions -->
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-2">@Model.KpiCards.Co2Emissions.Title</small>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1" style="color: #FFFFFF;">@Model.KpiCards.Co2Emissions.Value.ToString("F1")</h4>
+                                    <small style="color: #94A3B8;">@Model.KpiCards.Co2Emissions.Unit</small>
+                                </div>
+                                <small style="color: #10B981;">✓</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Main Chart Section -->
+    <div class="chart-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <h3 class="h5 mb-4 text-light">Daily Energy Consumption (Today's Breakdown)</h3>
+        <div id="consumptionChart" style="height: 400px;"></div>
+    </div>
+
+    <!-- Bottom Section - Two Columns -->
+    <div class="row g-4 mb-5">
+        <!-- Location Breakdown -->
+        <div class="col-12 col-lg-6">
+            <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                <h3 class="h5 mb-4 text-light">Consumption by Location</h3>
+                <div id="locationChart" style="height: 300px;"></div>
+            </div>
+        </div>
+
+        <!-- Top Consumers -->
+        <div class="col-12 col-lg-6">
+            <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                <h3 class="h5 mb-4 text-light">Top 10 Consumers</h3>
+                <div id="consumersChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="dashboard-footer text-muted text-center p-3 border-top" style="border-color: #334155;">
+        <small>Last updated: <span id="lastUpdated">2 minutes ago</span> | Data source: db_SCADA | © 2026 Company</small>
+    </div>
+</div>
+
+<!-- ApexCharts Library -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+
+<script>
+    // Main Consumption Chart
+    @if (Model?.Charts?.ConsumptionTrend != null)
+    {
+        <text>
+        var consumptionData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.ConsumptionTrend.Select(c => new { x = c.Time.ToString("HH:mm"), y = c.Value })
+        ));
+
+        var consumptionOptions = {
+            series: [{
+                name: 'Consumption',
+                data: consumptionData.map(d => d.y)
+            }],
+            chart: {
+                type: 'area',
+                stacked: false,
+                height: 400,
+                sparkline: { enabled: false },
+                toolbar: { show: true },
+                background: '#1E293B'
+            },
+            colors: ['#2563EB'],
+            stroke: {
+                curve: 'smooth',
+                width: 2
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    opacityFrom: 0.45,
+                    opacityTo: 0.05,
+                    colorStops: [
+                        { offset: 0, color: '#2563EB', opacity: 0.4 },
+                        { offset: 100, color: '#0284C7', opacity: 0 }
+                    ]
+                }
+            },
+            xaxis: {
+                categories: consumptionData.map(d => d.x),
+                labels: { style: { colors: '#94A3B8' } }
+            },
+            yaxis: {
+                labels: { style: { colors: '#94A3B8' } },
+                title: { text: 'Power (kW)' }
+            },
+            tooltip: { theme: 'dark' },
+            legend: { show: false }
+        };
+        var consumptionChart = new ApexCharts(document.querySelector("#consumptionChart"), consumptionOptions);
+        consumptionChart.render();
+        </text>
+    }
+
+    // Location Breakdown Chart
+    @if (Model?.Charts?.LocationBreakdown != null)
+    {
+        <text>
+        var locationData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.LocationBreakdown.Select(l => l.Percentage)
+        ));
+        var locationLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.LocationBreakdown.Select(l => l.Location)
+        ));
+
+        var locationOptions = {
+            series: locationData,
+            chart: {
+                type: 'donut',
+                height: 300,
+                background: '#1E293B'
+            },
+            labels: locationLabels,
+            colors: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'],
+            legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
+            tooltip: { theme: 'dark' }
+        };
+        var locationChart = new ApexCharts(document.querySelector("#locationChart"), locationOptions);
+        locationChart.render();
+        </text>
+    }
+
+    // Top Consumers Chart
+    @if (Model?.Charts?.TopConsumers != null)
+    {
+        <text>
+        var consumersData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.TopConsumers.Select(c => c.Consumption)
+        ));
+        var consumersLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.TopConsumers.Select(c => c.Name)
+        ));
+
+        var consumersOptions = {
+            series: [{
+                name: 'Consumption (kW)',
+                data: consumersData
+            }],
+            chart: {
+                type: 'bar',
+                height: 300,
+                background: '#1E293B',
+                toolbar: { show: false }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    distributed: true,
+                    dataLabels: { position: 'top' }
+                }
+            },
+            colors: ['#2563EB'],
+            xaxis: {
+                categories: consumersLabels,
+                labels: { style: { colors: '#94A3B8' } }
+            },
+            yaxis: {
+                labels: { style: { colors: '#94A3B8' } }
+            },
+            tooltip: { theme: 'dark' },
+            legend: { show: false }
+        };
+        var consumersChart = new ApexCharts(document.querySelector("#consumersChart"), consumersOptions);
+        consumersChart.render();
+        </text>
+    }
+</script>
+
