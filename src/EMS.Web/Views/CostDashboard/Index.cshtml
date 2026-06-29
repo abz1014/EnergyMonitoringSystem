@@ -150,7 +150,7 @@
         colors: ['#F59E0B', '#3B82F6'],
         legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
         tooltip: { theme: 'dark', y: { formatter: fmt } },
-        plotOptions: { pie: { donut: { labels: { show: true, total: { show: true, label: 'Total', color: '#94A3B8', formatter: function(w) { return fmt(w.globals.seriesTotals.reduce(function(a,b){return a+b},0)); } } } } } }
+        plotOptions: { pie: { donut: { size: '65%', labels: { show: true, name: { color: '#94A3B8', fontSize: '14px' }, value: { color: '#FFFFFF', fontSize: '22px', fontWeight: 700, fontFamily: 'Arial' }, total: { show: true, label: 'Total', color: '#94A3B8', fontSize: '14px', formatter: function(w) { return fmt(w.globals.seriesTotals.reduce(function(a,b){return a+b},0)); } } } } } }
     }).render();
 
     @if (Model.CostByLocation.Count > 0)
