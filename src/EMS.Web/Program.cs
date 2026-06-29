@@ -56,6 +56,7 @@ builder.Services.AddScoped<IFlowmeterRepository, FlowmeterRepository>();
 // Service dependency injection
 builder.Services.AddScoped<IDashboardService, WebDashboardService>();
 builder.Services.AddScoped<ILiveMonitoringService, LiveMonitoringService>();
+builder.Services.AddScoped<IEnergyAnalysisService, EnergyAnalysisService>();
 
 // Role and user seeding
 builder.Services.AddScoped<RoleSeederService>();

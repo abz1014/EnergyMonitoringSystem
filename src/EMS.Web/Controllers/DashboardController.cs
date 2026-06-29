@@ -9,15 +9,18 @@ using EMS.Core.Interfaces;
 public class DashboardController : Controller
 {
     private readonly IDashboardService _dashboardService;
+    private readonly IMonitoringDeviceRepository _deviceRepository;
     private readonly IValidator<DashboardFilterDto> _filterValidator;
     private readonly ILogger<DashboardController> _logger;
 
     public DashboardController(
         IDashboardService dashboardService,
+        IMonitoringDeviceRepository deviceRepository,
         IValidator<DashboardFilterDto> filterValidator,
         ILogger<DashboardController> logger)
     {
         _dashboardService = dashboardService;
+        _deviceRepository = deviceRepository;
         _filterValidator = filterValidator;
         _logger = logger;
     }
@@ -42,6 +45,10 @@ public class DashboardController : Controller
                 ModelState.AddModelError("filter", "Invalid filter parameters provided");
                 return BadRequest(ModelState);
             }
+
+            ViewBag.Plants = await _deviceRepository.GetAllPlants();
+            ViewBag.SelectedPlant = filter.Plant;
+            ViewBag.SelectedBuilding = filter.Building;
 
             var dashboard = await _dashboardService.GetExecutiveDashboardAsync(filter);
             return View(dashboard);

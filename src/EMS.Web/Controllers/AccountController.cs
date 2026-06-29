@@ -3,6 +3,7 @@ namespace EMS.Web.Controllers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Models;
+using EMS.Web.Models;
 
 public class AccountController : Controller
 {
@@ -127,20 +128,4 @@ public class AccountController : Controller
 
         return RedirectToAction("Index", "Dashboard");
     }
-}
-
-public class LoginViewModel
-{
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public bool RememberMe { get; set; }
-}
-
-public class RegisterViewModel
-{
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string ConfirmPassword { get; set; } = string.Empty;
-    public string? FullName { get; set; }
-    public string? Department { get; set; }
 }

@@ -16,27 +16,29 @@
     <div class="filter-bar mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
         <div class="row g-3">
             <div class="col-12 col-md-3">
-                <label class="form-label text-light">🏢 Plant</label>
+                <label class="form-label text-light">Plant</label>
                 <select id="filterPlant" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" onchange="applyFilters()">
-                    <option value="All" selected>All</option>
-                    <option value="Plant-1">Plant-1</option>
-                    <option value="Plant-2">Plant-2</option>
+                    @{
+                        var selectedPlant = ViewBag.SelectedPlant as string ?? "All";
+                        var plants = ViewBag.Plants as List<string> ?? new List<string>();
+                    }
+                    @if (selectedPlant == "All") { <option value="All" selected>All</option> } else { <option value="All">All</option> }
+                    @foreach (var p in plants)
+                    {
+                        if (p == selectedPlant) { <option value="@p" selected>@p</option> } else { <option value="@p">@p</option> }
+                    }
                 </select>
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label text-light">🏗️ Building</label>
+                <label class="form-label text-light">Building</label>
                 <select id="filterBuilding" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" onchange="applyFilters()">
                     <option value="All" selected>All</option>
-                    <option value="Building A">Building A</option>
-                    <option value="Building B">Building B</option>
                 </select>
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label text-light">📍 Area</label>
+                <label class="form-label text-light">Area</label>
                 <select id="filterArea" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" onchange="applyFilters()">
                     <option value="All" selected>All</option>
-                    <option value="Floor 1">Floor 1</option>
-                    <option value="Floor 2">Floor 2</option>
                 </select>
             </div>
             <div class="col-12 col-md-3 d-flex align-items-end">

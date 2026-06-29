@@ -75,21 +75,4 @@ public class EnergyMeterRepository : IEnergyMeterRepository
             .ToListAsync();
     }
 
-    public async Task<List<EnergyMeterData>> GetAggregatedByDay(DateTime from, DateTime to)
-    {
-        return await _context.EnergyMetersData
-            .AsNoTracking()
-            .Where(e => e.DateTime >= from && e.DateTime <= to)
-            .OrderBy(e => e.DateTime)
-            .ToListAsync();
-    }
-
-    public async Task<List<EnergyMeterData>> GetAggregatedByHour(DateTime from, DateTime to)
-    {
-        return await _context.EnergyMetersData
-            .AsNoTracking()
-            .Where(e => e.DateTime >= from && e.DateTime <= to)
-            .OrderBy(e => e.DateTime)
-            .ToListAsync();
-    }
 }

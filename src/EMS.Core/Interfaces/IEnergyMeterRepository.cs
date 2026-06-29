@@ -10,6 +10,4 @@ public interface IEnergyMeterRepository
     Task<double> GetTodaysTotalConsumption();
     Task<double> GetPeakDemandToday();
     Task<List<EnergyMeterData>> GetByDateRange(DateTime from, DateTime to);
-    Task<List<EnergyMeterData>> GetAggregatedByDay(DateTime from, DateTime to);
-    Task<List<EnergyMeterData>> GetAggregatedByHour(DateTime from, DateTime to);
 }
