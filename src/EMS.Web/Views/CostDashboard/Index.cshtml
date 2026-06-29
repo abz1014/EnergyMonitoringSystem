@@ -134,16 +134,23 @@
 @if (Model.HasData)
 {
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <style>
+        .apexcharts-menu { background: #1E293B !important; border-color: #334155 !important; }
+        .apexcharts-menu-item { color: #E2E8F0 !important; }
+        .apexcharts-menu-item:hover { background: #334155 !important; }
+    </style>
     <script>
-    // Peak vs Off-Peak donut
+    var R = '₹';
+    function fmt(v) { return R + Math.round(v).toLocaleString(); }
+
     new ApexCharts(document.querySelector('#peakSplitChart'), {
         series: [@Model.PeakCost.ToString("F0"), @Model.OffPeakCost.ToString("F0")],
-        labels: ['Peak (@c@Model.PeakRate/kWh)', 'Off-Peak (@c@Model.OffPeakRate/kWh)'],
+        labels: ['Peak (' + R + '@Model.PeakRate/kWh)', 'Off-Peak (' + R + '@Model.OffPeakRate/kWh)'],
         chart: { type: 'donut', height: 280, background: '#1E293B' },
         colors: ['#F59E0B', '#3B82F6'],
         legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
-        tooltip: { theme: 'dark', y: { formatter: function(v) { return '@c' + v.toLocaleString(); } } },
-        plotOptions: { pie: { donut: { labels: { show: true, total: { show: true, label: 'Total', color: '#94A3B8', formatter: function(w) { return '@c' + w.globals.seriesTotals.reduce(function(a,b){return a+b},0).toLocaleString(); } } } } } }
+        tooltip: { theme: 'dark', y: { formatter: fmt } },
+        plotOptions: { pie: { donut: { labels: { show: true, total: { show: true, label: 'Total', color: '#94A3B8', formatter: function(w) { return fmt(w.globals.seriesTotals.reduce(function(a,b){return a+b},0)); } } } } } }
     }).render();
 
     @if (Model.CostByLocation.Count > 0)
@@ -155,7 +162,7 @@
             chart: { type: 'donut', height: 280, background: '#1E293B' },
             colors: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
             legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
-            tooltip: { theme: 'dark', y: { formatter: function(v) { return '@c' + v.toLocaleString(); } } }
+            tooltip: { theme: 'dark', y: { formatter: fmt } }
         }).render();
         </text>
     }
@@ -168,8 +175,8 @@
             chart: { type: 'bar', height: 300, background: '#1E293B', toolbar: { show: true } },
             colors: ['#2563EB'],
             xaxis: { categories: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DailyTrend.Select(d => d.Date))), labels: { style: { colors: '#94A3B8' }, rotate: -45 } },
-            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return '@c' + v.toLocaleString(); } } },
-            tooltip: { theme: 'dark', y: { formatter: function(v) { return '@c' + v.toLocaleString(); } } },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: fmt } },
+            tooltip: { theme: 'dark', y: { formatter: fmt } },
             grid: { borderColor: '#334155' },
             plotOptions: { bar: { borderRadius: 4 } }
         }).render();
@@ -184,9 +191,9 @@
             chart: { type: 'bar', height: @(Math.Max(Model.CostByMeter.Count * 50, 200)), background: '#1E293B', toolbar: { show: false } },
             plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
             colors: ['#2563EB', '#3B82F6', '#60A5FA', '#10B981', '#F59E0B', '#EF4444'],
-            xaxis: { categories: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CostByMeter.Select(m => m.MeterName))), labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return '@c' + v.toLocaleString(); } } },
+            xaxis: { categories: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CostByMeter.Select(m => m.MeterName))), labels: { style: { colors: '#94A3B8' }, formatter: fmt } },
             yaxis: { labels: { style: { colors: '#94A3B8' } } },
-            tooltip: { theme: 'dark', y: { formatter: function(v) { return '@c' + v.toLocaleString(); } } },
+            tooltip: { theme: 'dark', y: { formatter: fmt } },
             legend: { show: false }
         }).render();
         </text>
