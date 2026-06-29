@@ -13,6 +13,7 @@ public class ExecutiveDashboardDto
 {
     public KpiCardsDto KpiCards { get; set; } = new();
     public ChartDataDto Charts { get; set; } = new();
+    public EnergyScoreDto EnergyScore { get; set; } = new();
 }
 
 public class KpiCardsDto
@@ -43,6 +44,26 @@ public class ChartDataDto
     public List<LocationBreakdownDto> LocationBreakdown { get; set; } = new();
     public List<TopConsumerDto> TopConsumers { get; set; } = new();
     public LoadProfileDto LoadProfile { get; set; } = new();
+    public MonthlyTrendDto MonthlyTrend { get; set; } = new();
+}
+
+public class MonthlyTrendDto
+{
+    public List<string> Months { get; set; } = new();
+    public List<double> Values { get; set; } = new();
+    public List<double> Costs { get; set; } = new();
+    public double Average { get; set; }
+}
+
+public class EnergyScoreDto
+{
+    public int Score { get; set; }
+    public int PfScore { get; set; }
+    public int ConsumptionScore { get; set; }
+    public int AlarmScore { get; set; }
+    public int PqScore { get; set; }
+    public int DataScore { get; set; }
+    public string Trend { get; set; } = "stable";
 }
 
 public class LoadProfileDto

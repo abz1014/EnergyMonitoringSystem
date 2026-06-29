@@ -6,10 +6,35 @@
 
 <div class="dashboard-container" style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
 
-    <!-- Header -->
+    <!-- Energy Score + Header -->
     <div class="dashboard-header mb-4">
-        <h1 class="h2 mb-2">Energy Monitoring System</h1>
-        <p class="text-muted">Executive Dashboard › Dashboard</p>
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">Energy Monitoring System</h1>
+                <p class="text-muted">Executive Dashboard</p>
+            </div>
+            @if (Model?.EnergyScore != null)
+            {
+                var es = Model.EnergyScore;
+                var sColor = es.Score >= 80 ? "#10B981" : es.Score >= 50 ? "#F59E0B" : "#EF4444";
+                var sLabel = es.Score >= 80 ? "Excellent" : es.Score >= 50 ? "Attention" : "Critical";
+                var tIcon = es.Trend == "improving" ? "&#9650;" : es.Trend == "declining" ? "&#9660;" : "&#8594;";
+                var tColor = es.Trend == "improving" ? "#10B981" : es.Trend == "declining" ? "#EF4444" : "#94A3B8";
+                <div class="col-md-4">
+                    <div class="p-3 d-flex align-items-center gap-3 justify-content-end" style="background: #1E293B; border-radius: 12px; border: 1px solid #334155;">
+                        <div style="width: 70px; height: 70px; border-radius: 50%; border: 4px solid @sColor; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                            <div style="font-size: 24px; font-weight: 800; color: @sColor; line-height: 1;">@es.Score</div>
+                            <div style="font-size: 8px; color: #94A3B8;">/100</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; color: @sColor;">@sLabel</div>
+                            <div style="font-size: 11px; color: #94A3B8;">Plant Health Score</div>
+                            <div style="font-size: 11px; color: @tColor;">@Html.Raw(tIcon) @es.Trend</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
 
     <!-- Filter Bar -->
@@ -161,6 +186,15 @@
         </div>
     </div>
 
+    <!-- Monthly Trend -->
+    @if (Model?.Charts?.MonthlyTrend != null && Model.Charts.MonthlyTrend.Values.Any(v => v > 0))
+    {
+        <div class="mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h3 class="h5 mb-4 text-light">Monthly Consumption Trend</h3>
+            <div id="monthlyChart" style="height: 300px;"></div>
+        </div>
+    }
+
     <!-- Footer -->
     <div class="dashboard-footer text-muted text-center p-3 border-top" style="border-color: #334155;">
         <small>Last updated: <span id="lastUpdated">@DateTime.Now.ToString("HH:mm:ss")</span> | Data source: db_SCADA</small>
@@ -297,6 +331,28 @@
             legend: { show: false }
         };
         new ApexCharts(document.querySelector("#consumersChart"), consumersOptions).render();
+        </text>
+    }
+
+    // Monthly Trend
+    @if (Model?.Charts?.MonthlyTrend != null && Model.Charts.MonthlyTrend.Values.Any(v => v > 0))
+    {
+        var mt = Model.Charts.MonthlyTrend;
+        <text>
+        var monthlyAvg = @mt.Average;
+        new ApexCharts(document.querySelector('#monthlyChart'), {
+            series: [{ name: 'Consumption (kWh)', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(mt.Values)) }],
+            chart: { type: 'bar', height: 300, background: '#1E293B', toolbar: { show: true } },
+            colors: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(mt.Values.Select(v => v > mt.Average * 1.2 ? "#EF4444" : v > mt.Average ? "#F59E0B" : "#10B981"))),
+            plotOptions: { bar: { borderRadius: 4, distributed: true, dataLabels: { position: 'top' } } },
+            dataLabels: { enabled: true, formatter: function(v) { return v > 0 ? v.toLocaleString() : ''; }, style: { colors: ['#94A3B8'], fontSize: '10px' }, offsetY: -20 },
+            xaxis: { categories: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(mt.Months)), labels: { style: { colors: '#94A3B8' } } },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toLocaleString() + ' kWh'; } } },
+            annotations: { yaxis: [{ y: monthlyAvg, borderColor: '#94A3B8', strokeDashArray: 5, label: { text: 'Average: ' + monthlyAvg.toLocaleString() + ' kWh', style: { color: '#FFF', background: '#64748B', fontSize: '11px' } } }] },
+            tooltip: { theme: 'dark', y: { formatter: function(v, opts) { var costs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(mt.Costs)); return v.toLocaleString() + ' kWh (Rs. ' + costs[opts.dataPointIndex].toLocaleString() + ')'; } } },
+            legend: { show: false },
+            grid: { borderColor: '#334155' }
+        }).render();
         </text>
     }
 

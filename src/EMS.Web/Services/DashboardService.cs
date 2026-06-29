@@ -8,6 +8,7 @@ public class WebDashboardService : IDashboardService
 {
     private readonly IEnergyMeterRepository _energyMeterRepository;
     private readonly IMonitoringDeviceRepository _deviceRepository;
+    private readonly IAlarmRepository _alarmRepository;
     private readonly IMemoryCache _cache;
     private readonly ILogger<WebDashboardService> _logger;
 
@@ -17,11 +18,13 @@ public class WebDashboardService : IDashboardService
     public WebDashboardService(
         IEnergyMeterRepository energyMeterRepository,
         IMonitoringDeviceRepository deviceRepository,
+        IAlarmRepository alarmRepository,
         IMemoryCache cache,
         ILogger<WebDashboardService> logger)
     {
         _energyMeterRepository = energyMeterRepository;
         _deviceRepository = deviceRepository;
+        _alarmRepository = alarmRepository;
         _cache = cache;
         _logger = logger;
     }
@@ -152,11 +155,15 @@ public class WebDashboardService : IDashboardService
 
             var charts = await BuildChartDataAsync(today, tomorrow, todayData);
             charts.LoadProfile = await BuildLoadProfileAsync(today);
+            charts.MonthlyTrend = await BuildMonthlyTrendAsync();
+
+            var energyScore = BuildEnergyScore(todaysConsumption, peakDemand, avgPowerFactor, await _alarmRepository.GetActiveAlarmCount(), onlineMeters, totalDevices);
 
             var dashboard = new ExecutiveDashboardDto
             {
                 KpiCards = kpiCards,
-                Charts = charts
+                Charts = charts,
+                EnergyScore = energyScore
             };
 
             _cache.Set(cacheKey, dashboard, KpiCacheDuration);
@@ -232,6 +239,57 @@ public class WebDashboardService : IDashboardService
             ConsumptionTrend = consumptionTrend,
             LocationBreakdown = locationBreakdown,
             TopConsumers = topConsumers
+        };
+    }
+
+    private async Task<MonthlyTrendDto> BuildMonthlyTrendAsync()
+    {
+        var result = new MonthlyTrendDto();
+        var tariffRate = 52.0;
+        var now = DateTime.Now;
+
+        var twelveMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-11);
+        var data = await _energyMeterRepository.GetByDateRange(twelveMonthsAgo, now.AddDays(1));
+
+        var grouped = data.Where(d => d.DateTime.HasValue)
+            .GroupBy(d => new { d.DateTime!.Value.Year, d.DateTime.Value.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Kwh = g.Sum(x => (double)(x.kWh ?? 0)) })
+            .OrderBy(g => g.Year).ThenBy(g => g.Month)
+            .ToList();
+
+        for (int i = 0; i < 12; i++)
+        {
+            var monthDate = twelveMonthsAgo.AddMonths(i);
+            var match = grouped.FirstOrDefault(g => g.Year == monthDate.Year && g.Month == monthDate.Month);
+            var kwh = match?.Kwh ?? 0;
+
+            result.Months.Add(monthDate.ToString("MMM yy"));
+            result.Values.Add(Math.Round(kwh, 0));
+            result.Costs.Add(Math.Round(kwh * tariffRate, 0));
+        }
+
+        result.Average = result.Values.Count > 0 ? Math.Round(result.Values.Where(v => v > 0).DefaultIfEmpty(0).Average(), 0) : 0;
+        return result;
+    }
+
+    private static EnergyScoreDto BuildEnergyScore(double consumption, double peakDemand, double avgPf, int alarmCount, int onlineMeters, int totalDevices)
+    {
+        var pfScore = avgPf >= 0.95 ? 30 : avgPf >= 0.90 ? 20 : avgPf >= 0.85 ? 10 : 0;
+        var consumptionScore = 25; // baseline — no historical target yet
+        var alarmScore = alarmCount == 0 ? 20 : alarmCount <= 3 ? 15 : alarmCount <= 10 ? 5 : 0;
+        var pqScore = avgPf >= 0.92 ? 15 : avgPf >= 0.85 ? 10 : 5;
+        var dataRatio = totalDevices > 0 ? (double)onlineMeters / totalDevices : 0;
+        var dataScore = dataRatio >= 0.95 ? 10 : dataRatio >= 0.80 ? 5 : 0;
+
+        return new EnergyScoreDto
+        {
+            Score = pfScore + consumptionScore + alarmScore + pqScore + dataScore,
+            PfScore = pfScore,
+            ConsumptionScore = consumptionScore,
+            AlarmScore = alarmScore,
+            PqScore = pqScore,
+            DataScore = dataScore,
+            Trend = alarmCount == 0 && avgPf >= 0.90 ? "improving" : alarmCount > 5 ? "declining" : "stable"
         };
     }
 
