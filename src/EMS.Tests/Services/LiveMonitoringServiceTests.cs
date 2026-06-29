@@ -26,8 +26,8 @@ public class LiveMonitoringServiceTests
         };
         var devices = new List<MonitoringDevice>
         {
-            new() { DeviceID = 1, DeviceName = "EM-001", DeviceType = "EM", Location = "L1", GroupName = "P1", IsActive = true },
-            new() { DeviceID = 2, DeviceName = "EM-002", DeviceType = "EM", Location = "L2", GroupName = "P1", IsActive = true }
+            new() { DeviceID = 1, DeviceName = "EM-001", DeviceType = "EM", Location = "L1", GroupName = "P1", IsActive = 1 },
+            new() { DeviceID = 2, DeviceName = "EM-002", DeviceType = "EM", Location = "L2", GroupName = "P1", IsActive = 1 }
         };
 
         _meterRepo.Setup(r => r.GetByDateRange(It.IsAny<DateTime>(), It.IsAny<DateTime>())).ReturnsAsync(liveData);
@@ -106,7 +106,7 @@ public class LiveMonitoringServiceTests
     {
         var alarms = new List<Alarm>
         {
-            new() { AlarmID = 1, DeviceID = 1, DeviceName = "EM-001", Severity = "warning", Message = "Voltage low", TagName = "VoltL1N", IsActive = true, CreatedAt = DateTime.Now }
+            new() { AlarmID = 1, DeviceID = 1, DeviceName = "EM-001", Severity = 2, Message = "Voltage low", TagName = "VoltL1N", IsActive = true, CreatedAt = DateTime.Now }
         };
 
         _meterRepo.Setup(r => r.GetByDateRange(It.IsAny<DateTime>(), It.IsAny<DateTime>())).ReturnsAsync(new List<EnergyMeterData>());

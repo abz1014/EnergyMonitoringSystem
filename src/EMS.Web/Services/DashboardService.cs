@@ -10,6 +10,7 @@ public class WebDashboardService : IDashboardService
     private readonly IMonitoringDeviceRepository _deviceRepository;
     private readonly IAlarmRepository _alarmRepository;
     private readonly IMemoryCache _cache;
+    private readonly IConfiguration _config;
     private readonly ILogger<WebDashboardService> _logger;
 
     private static readonly TimeSpan KpiCacheDuration = TimeSpan.FromSeconds(30);
@@ -20,12 +21,14 @@ public class WebDashboardService : IDashboardService
         IMonitoringDeviceRepository deviceRepository,
         IAlarmRepository alarmRepository,
         IMemoryCache cache,
+        IConfiguration config,
         ILogger<WebDashboardService> logger)
     {
         _energyMeterRepository = energyMeterRepository;
         _deviceRepository = deviceRepository;
         _alarmRepository = alarmRepository;
         _cache = cache;
+        _config = config;
         _logger = logger;
     }
 
@@ -71,7 +74,7 @@ public class WebDashboardService : IDashboardService
             var co2Factor = 0.82;
             var co2Emissions = (todaysConsumption / 1000.0) * co2Factor;
 
-            var tariffRate = 52.0;
+            var tariffRate = _config.GetValue<double>("TariffRates:DefaultRate", 52.0);
             var estimatedCost = (monthlyTotal * tariffRate) / 100_000;
 
             var latestReadings = todayData.Where(d => d.MeterNo.HasValue).GroupBy(d => d.MeterNo!.Value).Select(g => g.OrderByDescending(d => d.DateTime).First()).ToList();
@@ -245,7 +248,7 @@ public class WebDashboardService : IDashboardService
     private async Task<MonthlyTrendDto> BuildMonthlyTrendAsync()
     {
         var result = new MonthlyTrendDto();
-        var tariffRate = 52.0;
+        var tariffRate = _config?.GetValue<double>("TariffRates:DefaultRate", 52.0) ?? 52.0;
         var now = DateTime.Now;
 
         var twelveMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-11);

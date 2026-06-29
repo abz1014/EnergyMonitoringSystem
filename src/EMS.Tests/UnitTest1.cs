@@ -164,8 +164,8 @@ public class ModelTests
     {
         var data = new EnergyMeterData();
 
-        Assert.Equal(0, data.SrNo);
-        Assert.Equal(0, data.MeterNo);
+        Assert.Equal(0L, data.SrNo);
+        Assert.Null(data.MeterNo);
         Assert.Null(data.kWh);
         Assert.Null(data.kWtotal);
         Assert.Null(data.VoltL1N);
@@ -179,14 +179,14 @@ public class ModelTests
             DeviceID = 5,
             DeviceName = "Test Meter",
             TagName = "VoltL1N",
-            Severity = "Critical",
+            Severity = 3,
             Message = "Voltage exceeds threshold",
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
 
         Assert.Equal(5, alarm.DeviceID);
-        Assert.Equal("Critical", alarm.Severity);
+        Assert.Equal((byte)3, alarm.Severity);
         Assert.True(alarm.IsActive);
         Assert.Null(alarm.AckBy);
     }
@@ -201,10 +201,10 @@ public class ModelTests
             DeviceType = "Energy Meter",
             Location = "Panel A",
             GroupName = "Plant-1",
-            IsActive = true
+            IsActive = 1
         };
 
         Assert.Equal("Plant-1", device.GroupName);
-        Assert.True(device.IsActive);
+        Assert.Equal(1, device.IsActive);
     }
 }

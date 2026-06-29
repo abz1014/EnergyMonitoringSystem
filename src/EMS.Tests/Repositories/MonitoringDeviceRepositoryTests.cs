@@ -18,9 +18,9 @@ public class MonitoringDeviceRepositoryTests
     private void SeedDevices(ScadaDbContext context)
     {
         context.MonitoringDevices.AddRange(
-            new MonitoringDevice { SrNo = 1, DeviceID = 1, DeviceName = "EM-001", DeviceType = "Energy Meter", Location = "Floor 1", GroupName = "Plant-1", IsActive = true },
-            new MonitoringDevice { SrNo = 2, DeviceID = 2, DeviceName = "EM-002", DeviceType = "Energy Meter", Location = "Floor 2", GroupName = "Plant-1", IsActive = true },
-            new MonitoringDevice { SrNo = 3, DeviceID = 3, DeviceName = "FM-001", DeviceType = "Flowmeter", Location = "Utility", GroupName = "Plant-2", IsActive = false }
+            new MonitoringDevice { SrNo = 1, DeviceID = 1, DeviceName = "EM-001", DeviceType = "Energy Meter", Location = "Floor 1", GroupName = "Plant-1", IsActive = 1 },
+            new MonitoringDevice { SrNo = 2, DeviceID = 2, DeviceName = "EM-002", DeviceType = "Energy Meter", Location = "Floor 2", GroupName = "Plant-1", IsActive = 1 },
+            new MonitoringDevice { SrNo = 3, DeviceID = 3, DeviceName = "FM-001", DeviceType = "Flowmeter", Location = "Utility", GroupName = "Plant-2", IsActive = 0 }
         );
         context.SaveChanges();
     }

@@ -20,8 +20,8 @@ public class AlarmRepositoryTests
     {
         using var context = CreateContext();
         context.Alarms.AddRange(
-            new Alarm { AlarmID = 1, DeviceID = 1, DeviceName = "M1", TagName = "V", Severity = "warning", Message = "Low", IsActive = true, CreatedAt = DateTime.UtcNow },
-            new Alarm { AlarmID = 2, DeviceID = 2, DeviceName = "M2", TagName = "V", Severity = "critical", Message = "High", IsActive = false, CreatedAt = DateTime.UtcNow }
+            new Alarm { AlarmID = 1, DeviceID = 1, DeviceName = "M1", TagName = "V", Severity = 2, Message = "Low", IsActive = true, CreatedAt = DateTime.UtcNow },
+            new Alarm { AlarmID = 2, DeviceID = 2, DeviceName = "M2", TagName = "V", Severity = 3, Message = "High", IsActive = false, CreatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
@@ -36,7 +36,7 @@ public class AlarmRepositoryTests
     public async Task AcknowledgeAlarm_DeactivatesAndSetsAckInfo()
     {
         using var context = CreateContext();
-        context.Alarms.Add(new Alarm { AlarmID = 1, DeviceID = 1, DeviceName = "M1", TagName = "V", Severity = "warning", Message = "Test", IsActive = true, CreatedAt = DateTime.UtcNow });
+        context.Alarms.Add(new Alarm { AlarmID = 1, DeviceID = 1, DeviceName = "M1", TagName = "V", Severity = 2, Message = "Test", IsActive = true, CreatedAt = DateTime.UtcNow });
         await context.SaveChangesAsync();
 
         var repo = new AlarmRepository(context);
@@ -53,9 +53,9 @@ public class AlarmRepositoryTests
     {
         using var context = CreateContext();
         context.Alarms.AddRange(
-            new Alarm { AlarmID = 1, DeviceID = 1, DeviceName = "M1", TagName = "V", Severity = "w", Message = "1", IsActive = true, CreatedAt = DateTime.UtcNow },
-            new Alarm { AlarmID = 2, DeviceID = 2, DeviceName = "M2", TagName = "V", Severity = "w", Message = "2", IsActive = true, CreatedAt = DateTime.UtcNow },
-            new Alarm { AlarmID = 3, DeviceID = 3, DeviceName = "M3", TagName = "V", Severity = "w", Message = "3", IsActive = false, CreatedAt = DateTime.UtcNow }
+            new Alarm { AlarmID = 1, DeviceID = 1, DeviceName = "M1", TagName = "V", Severity = 2, Message = "1", IsActive = true, CreatedAt = DateTime.UtcNow },
+            new Alarm { AlarmID = 2, DeviceID = 2, DeviceName = "M2", TagName = "V", Severity = 2, Message = "2", IsActive = true, CreatedAt = DateTime.UtcNow },
+            new Alarm { AlarmID = 3, DeviceID = 3, DeviceName = "M3", TagName = "V", Severity = 2, Message = "3", IsActive = false, CreatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
@@ -76,7 +76,7 @@ public class AlarmRepositoryTests
             DeviceID = 5,
             DeviceName = "EM-005",
             TagName = "CurrentL1",
-            Severity = "critical",
+            Severity = 3,
             Message = "Overcurrent detected",
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -90,16 +90,16 @@ public class AlarmRepositoryTests
     {
         using var context = CreateContext();
         context.Alarms.AddRange(
-            new Alarm { AlarmID = 1, DeviceID = 1, DeviceName = "M1", TagName = "V", Severity = "critical", Message = "A", IsActive = true, CreatedAt = DateTime.UtcNow },
-            new Alarm { AlarmID = 2, DeviceID = 2, DeviceName = "M2", TagName = "V", Severity = "warning", Message = "B", IsActive = true, CreatedAt = DateTime.UtcNow },
-            new Alarm { AlarmID = 3, DeviceID = 3, DeviceName = "M3", TagName = "V", Severity = "critical", Message = "C", IsActive = true, CreatedAt = DateTime.UtcNow }
+            new Alarm { AlarmID = 1, DeviceID = 1, DeviceName = "M1", TagName = "V", Severity = 3, Message = "A", IsActive = true, CreatedAt = DateTime.UtcNow },
+            new Alarm { AlarmID = 2, DeviceID = 2, DeviceName = "M2", TagName = "V", Severity = 2, Message = "B", IsActive = true, CreatedAt = DateTime.UtcNow },
+            new Alarm { AlarmID = 3, DeviceID = 3, DeviceName = "M3", TagName = "V", Severity = 3, Message = "C", IsActive = true, CreatedAt = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
         var repo = new AlarmRepository(context);
-        var result = await repo.GetAlarmsBySeverity("critical");
+        var result = await repo.GetAlarmsBySeverity(3);
 
         Assert.Equal(2, result.Count);
-        Assert.All(result, a => Assert.Equal("critical", a.Severity));
+        Assert.All(result, a => Assert.Equal((byte)3, a.Severity));
     }
 }

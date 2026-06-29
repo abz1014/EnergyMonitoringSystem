@@ -13,7 +13,7 @@
                 <h1 class="h2 mb-2">Energy Monitoring System</h1>
                 <p class="text-muted">Executive Dashboard</p>
             </div>
-            @if (Model?.EnergyScore != null)
+            @if (Model?.EnergyScore != null && Model.EnergyScore.Score > 0)
             {
                 var es = Model.EnergyScore;
                 var sColor = es.Score >= 80 ? "#10B981" : es.Score >= 50 ? "#F59E0B" : "#EF4444";

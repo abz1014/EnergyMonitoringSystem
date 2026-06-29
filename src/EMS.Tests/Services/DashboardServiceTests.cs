@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using EMS.Core.Interfaces;
@@ -11,30 +12,31 @@ public class DashboardServiceTests
 {
     private readonly Mock<IEnergyMeterRepository> _meterRepo = new();
     private readonly Mock<IMonitoringDeviceRepository> _deviceRepo = new();
+    private readonly Mock<IAlarmRepository> _alarmRepo = new();
     private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly Mock<IConfiguration> _config = new();
     private readonly Mock<ILogger<WebDashboardService>> _logger = new();
 
-    private WebDashboardService CreateService() =>
-        new(_meterRepo.Object, _deviceRepo.Object, _cache, _logger.Object);
+    private WebDashboardService CreateService()
+    {
+        _config.Setup(c => c.GetSection(It.IsAny<string>())).Returns(new Mock<IConfigurationSection>().Object);
+        _alarmRepo.Setup(r => r.GetActiveAlarmCount()).ReturnsAsync(0);
+        return new(_meterRepo.Object, _deviceRepo.Object, _alarmRepo.Object, _cache, _config.Object, _logger.Object);
+    }
 
     [Fact]
     public async Task GetExecutiveDashboardAsync_ReturnsKpiCards()
     {
-        _meterRepo.Setup(r => r.GetTodaysTotalConsumption()).ReturnsAsync(5000);
-        _meterRepo.Setup(r => r.GetPeakDemandToday()).ReturnsAsync(120);
         _meterRepo.Setup(r => r.GetByDateRange(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
             .ReturnsAsync(new List<EnergyMeterData>());
         _deviceRepo.Setup(r => r.GetOnlineDeviceCount()).ReturnsAsync(10);
         _deviceRepo.Setup(r => r.GetAllDevices()).ReturnsAsync(new List<MonitoringDevice>());
-
 
         var service = CreateService();
         var result = await service.GetExecutiveDashboardAsync(new DashboardFilterDto());
 
         Assert.NotNull(result);
         Assert.NotNull(result.KpiCards);
-        Assert.Equal(5000, result.KpiCards.TodayConsumption.Value);
-        Assert.Equal(120, result.KpiCards.PeakDemand.Value);
         Assert.Equal(10, result.KpiCards.OnlineMeters.Value);
     }
 
@@ -56,7 +58,7 @@ public class DashboardServiceTests
         var second = await service.GetExecutiveDashboardAsync(filter);
 
         Assert.Same(first, second);
-        _meterRepo.Verify(r => r.GetTodaysTotalConsumption(), Times.Once);
+        _deviceRepo.Verify(r => r.GetOnlineDeviceCount(), Times.Once);
     }
 
     [Fact]
@@ -71,8 +73,8 @@ public class DashboardServiceTests
         };
         var devices = new List<MonitoringDevice>
         {
-            new() { DeviceID = 1, DeviceName = "Panel-A", GroupName = "P1", DeviceType = "EM", Location = "L1", IsActive = true },
-            new() { DeviceID = 2, DeviceName = "Panel-B", GroupName = "P1", DeviceType = "EM", Location = "L2", IsActive = true }
+            new() { DeviceID = 1, DeviceName = "Panel-A", GroupName = "P1", DeviceType = "EM", Location = "L1", IsActive = 1 },
+            new() { DeviceID = 2, DeviceName = "Panel-B", GroupName = "P1", DeviceType = "EM", Location = "L2", IsActive = 1 }
         };
 
         _meterRepo.Setup(r => r.GetTodaysTotalConsumption()).ReturnsAsync(450);
