@@ -28,7 +28,7 @@ public class ReportsController : Controller
 
     public async Task<IActionResult> Index(string? dateFrom = null, string? dateTo = null, int? meterId = null)
     {
-        var from = DateTime.TryParse(dateFrom, out var pf1) ? pf1 : DateTime.Now.Date.AddDays(-7);
+        var from = DateTime.TryParse(dateFrom, out var pf1) ? pf1 : DateTime.Now.Date.AddDays(-30);
         var to = DateTime.TryParse(dateTo, out var pt1) ? pt1.AddDays(1).AddTicks(-1) : DateTime.Now.Date.AddDays(1).AddTicks(-1);
 
         var data = await _meterRepo.GetByDateRange(from, to);
