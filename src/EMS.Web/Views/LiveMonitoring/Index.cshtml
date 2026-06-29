@@ -91,50 +91,54 @@
     <!-- Live Meters Table -->
     @if (Model?.Meters != null && Model.Meters.Count > 0)
     {
+        <style>
+            .meter-row { cursor: pointer; transition: background-color 0.15s; }
+            .meter-row:hover { background-color: #334155 !important; }
+        </style>
         <div class="meters-table mb-5 p-4" style="background-color: #1E293B; border-radius: 8px; overflow-x: auto;">
-            <h3 class="h5 mb-3 text-light">📊 Live Meters (@Model.Meters.Count)</h3>
+            <h3 class="h5 mb-3 text-light">Live Meters (@Model.Meters.Count)</h3>
 
             <table class="table table-dark table-hover" style="color: #E2E8F0; border-color: #334155;">
                 <thead style="background-color: #0F172A; border-bottom: 2px solid #334155;">
                     <tr>
                         <th style="color: #94A3B8;">Meter</th>
                         <th style="color: #94A3B8;">Status</th>
-                        <th style="color: #94A3B8;">Voltage (V)</th>
-                        <th style="color: #94A3B8;">Current (A)</th>
+                        <th style="color: #94A3B8;">V L1 / L2 / L3</th>
+                        <th style="color: #94A3B8;">A L1 / L2 / L3</th>
                         <th style="color: #94A3B8;">Power (kW)</th>
                         <th style="color: #94A3B8;">PF</th>
                         <th style="color: #94A3B8;">Freq (Hz)</th>
-                        <th style="color: #94A3B8;">Trend (24h)</th>
                         <th style="color: #94A3B8;">Last Update</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var meter in Model.Meters)
                     {
-                        <tr style="border-bottom: 1px solid #334155;">
+                        <tr class="meter-row" style="border-bottom: 1px solid #334155;" onclick="window.location.href='/MeterDetails?meterId=@meter.MeterId'">
                             <td style="color: #E2E8F0; font-weight: 500;">@meter.Name</td>
                             <td>
                                 @if (meter.Status == "online")
                                 {
-                                    <span style="color: #10B981; font-weight: bold;">🟢 Online</span>
+                                    <span style="color: #10B981; font-weight: bold;">Online</span>
                                 }
                                 else if (meter.Status == "warning")
                                 {
-                                    <span style="color: #F59E0B; font-weight: bold;">🟡 Warning</span>
+                                    <span style="color: #F59E0B; font-weight: bold;">Warning</span>
                                 }
                                 else
                                 {
-                                    <span style="color: #EF4444; font-weight: bold;">🔴 Offline</span>
+                                    <span style="color: #EF4444; font-weight: bold;">Offline</span>
                                 }
                             </td>
-                            <td style="color: #CBD5E1;">@(meter.Voltage?.L1.ToString("F1") ?? "—")</td>
-                            <td style="color: #CBD5E1;">@(meter.Current?.L1.ToString("F1") ?? "—")</td>
-                            <td style="color: #CBD5E1;">@(meter.Power?.kW.ToString("F2") ?? "—")</td>
-                            <td style="color: #CBD5E1;">@(meter.PowerFactor.ToString("F2") ?? "—")</td>
-                            <td style="color: #CBD5E1;">@(meter.Frequency.ToString("F1") ?? "—")</td>
-                            <td>
-                                <div id="sparkline_@meter.MeterId" style="height: 20px; width: 60px;"></div>
+                            <td style="color: #CBD5E1;">
+                                <small>@(meter.Voltage?.L1.ToString("F0")) / @(meter.Voltage?.L2.ToString("F0")) / @(meter.Voltage?.L3.ToString("F0"))</small>
                             </td>
+                            <td style="color: #CBD5E1;">
+                                <small>@(meter.Current?.L1.ToString("F1")) / @(meter.Current?.L2.ToString("F1")) / @(meter.Current?.L3.ToString("F1"))</small>
+                            </td>
+                            <td style="color: #CBD5E1;">@(meter.Power?.kW.ToString("F2"))</td>
+                            <td style="color: #CBD5E1;">@(meter.PowerFactor.ToString("F2"))</td>
+                            <td style="color: #CBD5E1;">@(meter.Frequency.ToString("F1"))</td>
                             <td style="color: #94A3B8;">
                                 <small>@meter.LastUpdated.ToString("HH:mm:ss")</small>
                             </td>
@@ -144,34 +148,6 @@
             </table>
         </div>
 
-        <!-- Sparklines Script -->
-        <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
-        <script>
-            @foreach (var meter in Model.Meters)
-            {
-                <text>
-                var sparklineData_@meter.MeterId = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(meter.Sparkline));
-                var sparklineOptions_@meter.MeterId = {
-                    series: [{
-                        data: sparklineData_@meter.MeterId
-                    }],
-                    chart: {
-                        type: 'area',
-                        height: 20,
-                        sparkline: { enabled: true }
-                    },
-                    colors: ['#2563EB'],
-                    stroke: { curve: 'smooth', width: 1 },
-                    fill: {
-                        type: 'gradient',
-                        gradient: { opacityFrom: 0.3, opacityTo: 0 }
-                    },
-                    tooltip: { theme: 'dark' }
-                };
-                new ApexCharts(document.querySelector("#sparkline_@meter.MeterId"), sparklineOptions_@meter.MeterId).render();
-                </text>
-            }
-        </script>
     }
 
     <!-- Active Alerts -->
@@ -190,9 +166,13 @@
                             </div>
                             <small style="color: #94A3B8;">@alarm.Message</small>
                         </div>
-                        <button class="btn btn-sm" style="background-color: #2563EB; color: white; padding: 4px 8px; font-size: 12px;">
-                            Acknowledge
-                        </button>
+                        <form asp-controller="LiveMonitoring" asp-action="AcknowledgeAlarm" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="alarmId" value="@alarm.Id" />
+                            <button type="submit" class="btn btn-sm" style="background-color: #2563EB; color: white; padding: 4px 8px; font-size: 12px;">
+                                Acknowledge
+                            </button>
+                        </form>
                     </div>
                     <small style="color: #64748B; margin-top: 8px; display: block;">
                         @alarm.CreatedAt.ToString("g")

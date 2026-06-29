@@ -9,15 +9,18 @@ using EMS.Core.Interfaces;
 public class LiveMonitoringController : Controller
 {
     private readonly ILiveMonitoringService _liveMonitoringService;
+    private readonly IAlarmRepository _alarmRepository;
     private readonly IValidator<LiveMonitoringFilterDto> _filterValidator;
     private readonly ILogger<LiveMonitoringController> _logger;
 
     public LiveMonitoringController(
         ILiveMonitoringService liveMonitoringService,
+        IAlarmRepository alarmRepository,
         IValidator<LiveMonitoringFilterDto> filterValidator,
         ILogger<LiveMonitoringController> logger)
     {
         _liveMonitoringService = liveMonitoringService;
+        _alarmRepository = alarmRepository;
         _filterValidator = filterValidator;
         _logger = logger;
     }
@@ -50,5 +53,24 @@ public class LiveMonitoringController : Controller
             _logger.LogError(ex, "Error loading live monitoring data");
             return View("Error");
         }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin,Operator")]
+    public async Task<IActionResult> AcknowledgeAlarm(int alarmId)
+    {
+        try
+        {
+            var userName = User.Identity?.Name ?? "unknown";
+            await _alarmRepository.AcknowledgeAlarm(alarmId, userName);
+            _logger.LogInformation("Alarm {AlarmId} acknowledged by {User}", alarmId, userName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error acknowledging alarm {AlarmId}", alarmId);
+        }
+
+        return RedirectToAction("Index");
     }
 }

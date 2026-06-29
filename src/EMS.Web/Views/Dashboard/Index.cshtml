@@ -50,137 +50,45 @@
     </div>
 
     <!-- KPI Cards Section -->
+    <style>
+        .kpi-card { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; text-decoration: none !important; display: block; }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    </style>
     <div class="kpi-section mb-5">
         <div class="row g-3">
             @if (Model?.KpiCards != null)
             {
-                <!-- Today's Consumption -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-2">@(Model?.KpiCards?.TodayConsumption?.Title ?? "—")</small>
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h4 class="mb-1" style="color: #FFFFFF;">@(Model?.KpiCards?.TodayConsumption?.Value.ToString("F0") ?? "—")</h4>
-                                    <small style="color: #94A3B8;">@(Model?.KpiCards?.TodayConsumption?.Unit ?? "—")</small>
+                var kpis = new[] {
+                        (Card: Model.KpiCards.TodayConsumption, Color: "#10B981", Link: "/EnergyAnalysis?timeframe=daily"),
+                        (Card: Model.KpiCards.CurrentLoad, Color: "#3B82F6", Link: "/LiveMonitoring"),
+                        (Card: Model.KpiCards.PeakDemand, Color: "#F59E0B", Link: "/EnergyAnalysis?timeframe=daily&metric=peak"),
+                        (Card: Model.KpiCards.MonthlyTotal, Color: "#10B981", Link: "/EnergyAnalysis?timeframe=monthly"),
+                        (Card: Model.KpiCards.OnlineMeters, Color: "#10B981", Link: "/LiveMonitoring"),
+                        (Card: Model.KpiCards.EstimatedCost, Color: "#F59E0B", Link: "/EnergyAnalysis?timeframe=monthly"),
+                        (Card: Model.KpiCards.AvgPowerFactor, Color: "#10B981", Link: "/LiveMonitoring"),
+                        (Card: Model.KpiCards.Co2Emissions, Color: "#10B981", Link: "/EnergyAnalysis?timeframe=daily")
+                    };
+                @foreach (var kpi in kpis)
+                {
+                    var fmt = kpi.Card.Unit == "PF" ? "F2" : kpi.Card.Unit == "Million ₹" ? "F2" : "F0";
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <a href="@kpi.Link" class="kpi-card">
+                            <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid @kpi.Color;">
+                                <div class="card-body">
+                                    <small class="text-muted d-block mb-2">@(kpi.Card.Title ?? "—")</small>
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h4 class="mb-1" style="color: #FFFFFF;">@(kpi.Card.Value.ToString(fmt))</h4>
+                                            <small style="color: #94A3B8;">@(kpi.Card.Unit ?? "—")</small>
+                                        </div>
+                                        <small style="color: @kpi.Color;">@(kpi.Card.Trend ?? "—")</small>
+                                    </div>
                                 </div>
-                                <small style="color: #10B981;">@(Model?.KpiCards?.TodayConsumption?.Trend ?? "—")</small>
                             </div>
-                        </div>
+                        </a>
                     </div>
-                </div>
+                }
 
-                <!-- Current Load -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #3B82F6;">
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-2">@(Model?.KpiCards?.CurrentLoad?.Title ?? "—")</small>
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h4 class="mb-1" style="color: #FFFFFF;">@(Model?.KpiCards?.CurrentLoad?.Value.ToString("F0") ?? "—")</h4>
-                                    <small style="color: #94A3B8;">@(Model?.KpiCards?.CurrentLoad?.Unit ?? "—")</small>
-                                </div>
-                                <small style="color: #94A3B8;">@(Model?.KpiCards?.CurrentLoad?.Trend ?? "—")</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Peak Demand -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #F59E0B;">
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-2">@(Model?.KpiCards?.PeakDemand?.Title ?? "—")</small>
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h4 class="mb-1" style="color: #FFFFFF;">@(Model?.KpiCards?.PeakDemand?.Value.ToString("F0") ?? "—")</h4>
-                                    <small style="color: #94A3B8;">@(Model?.KpiCards?.PeakDemand?.Unit ?? "—")</small>
-                                </div>
-                                <small style="color: #94A3B8;">@(Model?.KpiCards?.PeakDemand?.Trend ?? "—")</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Monthly Total -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-2">@(Model?.KpiCards?.MonthlyTotal?.Title ?? "—")</small>
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h4 class="mb-1" style="color: #FFFFFF;">@(Model?.KpiCards?.MonthlyTotal?.Value.ToString("F0") ?? "—")</h4>
-                                    <small style="color: #94A3B8;">@(Model?.KpiCards?.MonthlyTotal?.Unit ?? "—")</small>
-                                </div>
-                                <small style="color: #10B981;">@(Model?.KpiCards?.MonthlyTotal?.Trend ?? "—")</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Online Meters -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-2">@(Model?.KpiCards?.OnlineMeters?.Title ?? "—")</small>
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h4 class="mb-1" style="color: #FFFFFF;">@(Model?.KpiCards?.OnlineMeters?.Value.ToString("F0") ?? "—")</h4>
-                                    <small style="color: #94A3B8;">@(Model?.KpiCards?.OnlineMeters?.Unit ?? "—")</small>
-                                </div>
-                                <small style="color: #10B981;">@(Model?.KpiCards?.OnlineMeters?.Trend ?? "—")</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Estimated Cost -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #F59E0B;">
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-2">@(Model?.KpiCards?.EstimatedCost?.Title ?? "—")</small>
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h4 class="mb-1" style="color: #FFFFFF;">@(Model?.KpiCards?.EstimatedCost?.Value.ToString("F2") ?? "—")</h4>
-                                    <small style="color: #94A3B8;">@(Model?.KpiCards?.EstimatedCost?.Unit ?? "—")</small>
-                                </div>
-                                <small style="color: #F59E0B;">@(Model?.KpiCards?.EstimatedCost?.Trend ?? "—")</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Power Factor -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-2">@(Model?.KpiCards?.AvgPowerFactor?.Title ?? "—")</small>
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h4 class="mb-1" style="color: #FFFFFF;">@(Model?.KpiCards?.AvgPowerFactor?.Value.ToString("F2") ?? "—")</h4>
-                                    <small style="color: #94A3B8;">@(Model?.KpiCards?.AvgPowerFactor?.Unit ?? "—")</small>
-                                </div>
-                                <small style="color: #10B981;">@(Model?.KpiCards?.AvgPowerFactor?.Trend ?? "—")</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CO2 Emissions -->
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid #10B981;">
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-2">@(Model?.KpiCards?.Co2Emissions?.Title ?? "—")</small>
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h4 class="mb-1" style="color: #FFFFFF;">@(Model?.KpiCards?.Co2Emissions?.Value.ToString("F1") ?? "—")</h4>
-                                    <small style="color: #94A3B8;">@(Model?.KpiCards?.Co2Emissions?.Unit ?? "—")</small>
-                                </div>
-                                <small style="color: #10B981;">✓</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             }
         </div>
     </div>

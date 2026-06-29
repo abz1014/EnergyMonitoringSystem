@@ -54,15 +54,21 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    @{
+                        var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+                    }
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                            <a class="nav-link @(controller == "Dashboard" ? "active" : "")" asp-area="" asp-controller="Dashboard" asp-action="Index"
+                               style="@(controller == "Dashboard" ? "color: #2563EB !important; font-weight: 600;" : "")">Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="LiveMonitoring" asp-action="Index">Live</a>
+                            <a class="nav-link @(controller == "LiveMonitoring" || controller == "MeterDetails" ? "active" : "")" asp-area="" asp-controller="LiveMonitoring" asp-action="Index"
+                               style="@(controller == "LiveMonitoring" || controller == "MeterDetails" ? "color: #2563EB !important; font-weight: 600;" : "")">Live</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="EnergyAnalysis" asp-action="Index">Analysis</a>
+                            <a class="nav-link @(controller == "EnergyAnalysis" ? "active" : "")" asp-area="" asp-controller="EnergyAnalysis" asp-action="Index"
+                               style="@(controller == "EnergyAnalysis" ? "color: #2563EB !important; font-weight: 600;" : "")">Analysis</a>
                         </li>
                     </ul>
                     <ul class="navbar-nav">
