@@ -151,6 +151,7 @@ public class WebDashboardService : IDashboardService
             };
 
             var charts = await BuildChartDataAsync(today, tomorrow, todayData);
+            charts.LoadProfile = await BuildLoadProfileAsync(today);
 
             var dashboard = new ExecutiveDashboardDto
             {
@@ -232,6 +233,74 @@ public class WebDashboardService : IDashboardService
             LocationBreakdown = locationBreakdown,
             TopConsumers = topConsumers
         };
+    }
+
+    private async Task<LoadProfileDto> BuildLoadProfileAsync(DateTime today)
+    {
+        var profile = new LoadProfileDto();
+        var hours = Enumerable.Range(0, 24).ToList();
+        profile.Hours = hours.Select(h => $"{h:D2}:00").ToList();
+
+        var tomorrow = today.AddDays(1);
+        var yesterday = today.AddDays(-1);
+        var weekAgo = today.AddDays(-7);
+
+        var todayData = await _energyMeterRepository.GetByDateRange(today, tomorrow);
+        var yesterdayData = await _energyMeterRepository.GetByDateRange(yesterday, today.AddTicks(-1));
+
+        if (todayData.Count == 0 && yesterdayData.Count == 0)
+        {
+            var recentData = await _energyMeterRepository.GetByDateRange(today.AddDays(-30), tomorrow);
+            if (recentData.Count > 0)
+            {
+                var dates = recentData.Where(d => d.DateTime.HasValue).Select(d => d.DateTime!.Value.Date).Distinct().OrderByDescending(d => d).ToList();
+                if (dates.Count >= 1)
+                {
+                    var latestDate = dates[0];
+                    today = latestDate;
+                    tomorrow = latestDate.AddDays(1);
+                    yesterday = latestDate.AddDays(-1);
+                    weekAgo = latestDate.AddDays(-7);
+
+                    todayData = recentData.Where(d => d.DateTime.HasValue && d.DateTime.Value.Date == latestDate).ToList();
+                    yesterdayData = dates.Count >= 2
+                        ? recentData.Where(d => d.DateTime.HasValue && d.DateTime.Value.Date == dates[1]).ToList()
+                        : new();
+
+                    profile.TodayLabel = latestDate.ToString("MMM dd");
+                    profile.YesterdayLabel = dates.Count >= 2 ? dates[1].ToString("MMM dd") : "No data";
+                }
+            }
+        }
+
+        var todayByHour = todayData
+            .Where(d => d.DateTime.HasValue)
+            .GroupBy(d => d.DateTime!.Value.Hour)
+            .ToDictionary(g => g.Key, g => g.Sum(x => (double)(x.kWh ?? 0)));
+
+        var yesterdayByHour = yesterdayData
+            .Where(d => d.DateTime.HasValue)
+            .GroupBy(d => d.DateTime!.Value.Hour)
+            .ToDictionary(g => g.Key, g => g.Sum(x => (double)(x.kWh ?? 0)));
+
+        var weekData = await _energyMeterRepository.GetByDateRange(weekAgo, tomorrow);
+        var weekDays = weekData
+            .Where(d => d.DateTime.HasValue)
+            .GroupBy(d => d.DateTime!.Value.Date)
+            .Count();
+        var weekByHour = weekData
+            .Where(d => d.DateTime.HasValue)
+            .GroupBy(d => d.DateTime!.Value.Hour)
+            .ToDictionary(g => g.Key, g => weekDays > 0 ? g.Sum(x => (double)(x.kWh ?? 0)) / weekDays : 0);
+
+        foreach (var h in hours)
+        {
+            profile.Today.Add(Math.Round(todayByHour.GetValueOrDefault(h, 0), 1));
+            profile.Yesterday.Add(Math.Round(yesterdayByHour.GetValueOrDefault(h, 0), 1));
+            profile.WeeklyAverage.Add(Math.Round(weekByHour.GetValueOrDefault(h, 0), 1));
+        }
+
+        return profile;
     }
 
     private KpiCardsDto GenerateFallbackKpiCards()

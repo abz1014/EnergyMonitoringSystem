@@ -42,6 +42,17 @@ public class ChartDataDto
     public List<ConsumptionChartPointDto> ConsumptionTrend { get; set; } = new();
     public List<LocationBreakdownDto> LocationBreakdown { get; set; } = new();
     public List<TopConsumerDto> TopConsumers { get; set; } = new();
+    public LoadProfileDto LoadProfile { get; set; } = new();
+}
+
+public class LoadProfileDto
+{
+    public List<double> Today { get; set; } = new();
+    public List<double> Yesterday { get; set; } = new();
+    public List<double> WeeklyAverage { get; set; } = new();
+    public List<string> Hours { get; set; } = new();
+    public string TodayLabel { get; set; } = "Today";
+    public string YesterdayLabel { get; set; } = "Yesterday";
 }
 
 public class ConsumptionChartPointDto

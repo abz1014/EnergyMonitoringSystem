@@ -93,19 +93,25 @@
         </div>
     </div>
 
-    <!-- Main Chart Section -->
+    <!-- Load Profile Chart (24h Overlay) -->
     <div class="chart-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
-        <h3 class="h5 mb-4 text-light">Daily Energy Consumption (Today's Breakdown)</h3>
-        @if (Model?.Charts?.ConsumptionTrend != null && Model.Charts.ConsumptionTrend.Count > 0)
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="h5 mb-0 text-light">Load Profile (24h)</h3>
+            @if (Model?.Charts?.LoadProfile != null)
+            {
+                <small style="color: #64748B;">@Model.Charts.LoadProfile.TodayLabel vs @Model.Charts.LoadProfile.YesterdayLabel vs 7-Day Avg</small>
+            }
+        </div>
+        @if (Model?.Charts?.LoadProfile != null && Model.Charts.LoadProfile.Today.Any(v => v > 0))
         {
-            <div id="consumptionChart" style="height: 400px;"></div>
+            <div id="loadProfileChart" style="height: 400px;"></div>
         }
         else
         {
             <div style="height: 400px; display: flex; align-items: center; justify-content: center; color: #64748B;">
                 <div style="text-align: center;">
-                    <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
-                    <p style="font-size: 16px;">No consumption data available for today</p>
+                    <div style="font-size: 48px; margin-bottom: 16px;">&#128200;</div>
+                    <p style="font-size: 16px;">No consumption data available</p>
                     <small>Data will appear once meters start reporting</small>
                 </div>
             </div>
@@ -165,48 +171,50 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
 
 <script>
-    // Main Consumption Chart
-    @if (Model?.Charts?.ConsumptionTrend != null)
+    // Load Profile Chart (24h Overlay)
+    @if (Model?.Charts?.LoadProfile != null && Model.Charts.LoadProfile.Today.Any(v => v > 0))
     {
         <text>
-        var consumptionData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-            Model.Charts.ConsumptionTrend.Select(c => new { x = c.Time.ToString("HH:mm"), y = c.Value })
-        ));
-
-        var consumptionOptions = {
-            series: [{
-                name: 'Consumption (kWh)',
-                data: consumptionData.map(d => d.y)
-            }],
+        var loadProfileOptions = {
+            series: [
+                { name: '@Model.Charts.LoadProfile.TodayLabel', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Charts.LoadProfile.Today)) },
+                { name: '@Model.Charts.LoadProfile.YesterdayLabel', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Charts.LoadProfile.Yesterday)) },
+                { name: '7-Day Average', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Charts.LoadProfile.WeeklyAverage)) }
+            ],
             chart: {
-                type: 'area',
+                type: 'line',
                 height: 400,
                 toolbar: { show: true },
                 background: '#1E293B',
                 events: {
-                    dataPointSelection: function() {
-                        window.location.href = '/EnergyAnalysis?timeframe=daily';
-                    }
+                    dataPointSelection: function() { window.location.href = '/EnergyAnalysis?timeframe=daily'; }
                 }
             },
-            colors: ['#2563EB'],
-            stroke: { curve: 'smooth', width: 2 },
+            colors: ['#2563EB', '#94A3B8', '#10B981'],
+            stroke: {
+                curve: 'smooth',
+                width: [3, 2, 2],
+                dashArray: [0, 5, 8]
+            },
             fill: {
-                type: 'gradient',
-                gradient: { opacityFrom: 0.4, opacityTo: 0.05 }
+                type: ['gradient', 'none', 'none'],
+                gradient: { opacityFrom: 0.3, opacityTo: 0.0 }
             },
             xaxis: {
-                categories: consumptionData.map(d => d.x),
-                labels: { style: { colors: '#94A3B8' } }
+                categories: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Charts.LoadProfile.Hours)),
+                labels: { style: { colors: '#94A3B8' }, rotate: -45, rotateAlways: false },
+                tickAmount: 12
             },
             yaxis: {
-                labels: { style: { colors: '#94A3B8' } },
+                labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toFixed(0); } },
                 title: { text: 'kWh', style: { color: '#94A3B8' } }
             },
-            tooltip: { theme: 'dark' },
-            legend: { show: false }
+            tooltip: { theme: 'dark', shared: true, intersect: false },
+            legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+            grid: { borderColor: '#334155', strokeDashArray: 3 },
+            markers: { size: 0, hover: { size: 5 } }
         };
-        new ApexCharts(document.querySelector("#consumptionChart"), consumptionOptions).render();
+        new ApexCharts(document.querySelector('#loadProfileChart'), loadProfileOptions).render();
         </text>
     }
 
