@@ -1,0 +1,179 @@
+@using EMS.Core.Models
+@{
+    ViewData["Title"] = "Meter Comparison";
+    var energyMeters = ViewBag.EnergyMeters as List<MonitoringDevice> ?? new List<MonitoringDevice>();
+    var selectedIds = ViewBag.SelectedIds as List<int> ?? new List<int>();
+    var timeframe = ViewBag.Timeframe as string ?? "daily";
+    var dateFrom = ViewBag.DateFrom as string ?? "";
+    var dateTo = ViewBag.DateTo as string ?? "";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var meterTotals = ViewBag.MeterTotals as List<object> ?? new List<object>();
+}
+
+<style>
+    .meter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 2px solid #334155; background: #0F172A; color: #E2E8F0; transition: all 0.15s; margin: 3px; }
+    .meter-chip:hover { border-color: #2563EB; }
+    .meter-chip.selected { border-color: #2563EB; background: rgba(37,99,235,0.15); color: #60A5FA; }
+    .meter-chip input { display: none; }
+</style>
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Meter Comparison</h1>
+        <p class="text-muted">Select meters to compare their consumption side by side</p>
+    </div>
+
+    <!-- Controls -->
+    <form method="get" asp-action="Index">
+        <div class="p-4 mb-4" style="background-color: #1E293B; border-radius: 8px;">
+
+            <!-- Meter Selection -->
+            <div class="mb-3">
+                <label class="form-label text-light" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Select Meters (click to toggle)</label>
+                <div class="d-flex flex-wrap">
+                    @foreach (var meter in energyMeters)
+                    {
+                        var isSelected = selectedIds.Contains(meter.DeviceID ?? 0);
+                        <label class="meter-chip @(isSelected ? "selected" : "")">
+                            <input type="checkbox" name="meterList" value="@meter.DeviceID" @(isSelected ? "checked" : "") onchange="updateMeters()" />
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: @(isSelected ? "#2563EB" : "#64748B"); display: inline-block;"></span>
+                            @meter.DeviceName
+                            <small style="color: #64748B;">(@meter.Location)</small>
+                        </label>
+                    }
+                </div>
+            </div>
+
+            <input type="hidden" name="meters" id="metersInput" value="@string.Join(",", selectedIds)" />
+
+            <!-- Timeframe + Dates -->
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label text-light">Timeframe</label>
+                    <select name="timeframe" id="timeframeSelect" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;"
+                            onchange="document.getElementById('customDates').style.display = this.value === 'custom' ? 'flex' : 'none';">
+                        @foreach (var (val, label) in new[] { ("daily","Today"), ("weekly","Last 7 Days"), ("monthly","Last 30 Days"), ("custom","Custom Range") })
+                        {
+                            if (timeframe == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-5 gap-2" id="customDates" style="display: @(timeframe == "custom" ? "flex" : "none");">
+                    <div class="flex-grow-1">
+                        <label class="form-label text-light">From</label>
+                        <input type="date" name="dateFrom" value="@dateFrom" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" />
+                    </div>
+                    <div class="flex-grow-1">
+                        <label class="form-label text-light">To</label>
+                        <input type="date" name="dateTo" value="@dateTo" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB; height: 38px;">Compare</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        <!-- Chart -->
+        <div class="p-4 mb-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Consumption Overlay</h5>
+            <div id="comparisonChart" style="height: 450px;"></div>
+        </div>
+
+        <!-- Totals Table -->
+        @if (meterTotals.Count > 0)
+        {
+            <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                <h5 class="text-light mb-3">Period Totals</h5>
+                <div class="row g-3">
+                    @{ var colors = new[] { "#2563EB", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6" }; var idx = 0; }
+                    @foreach (dynamic mt in meterTotals)
+                    {
+                        var color = colors[idx % colors.Length];
+                        <div class="col-md-4">
+                            <div class="p-3" style="background: #0F172A; border-radius: 8px; border-left: 4px solid @color;">
+                                <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">@mt.name</div>
+                                <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@(((double)mt.total).ToString("N0")) <span style="color: #64748B; font-size: 14px;">kWh</span></div>
+                            </div>
+                        </div>
+                        idx++;
+                    }
+                </div>
+            </div>
+        }
+    }
+    else if (selectedIds.Count > 0)
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128200;</div>
+            <h4 style="color: #E2E8F0;">No data for selected period</h4>
+            <p style="color: #64748B;">Try a different timeframe or date range.</p>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#9881;</div>
+            <h4 style="color: #E2E8F0;">Select meters above to compare</h4>
+            <p style="color: #64748B;">Choose 2-5 meters and click Compare to see their consumption overlaid on the same chart.</p>
+        </div>
+    }
+</div>
+
+<script>
+    function updateMeters() {
+        var checked = document.querySelectorAll('input[name="meterList"]:checked');
+        var ids = Array.from(checked).map(function(cb) { return cb.value; });
+        document.getElementById('metersInput').value = ids.join(',');
+
+        document.querySelectorAll('.meter-chip').forEach(function(chip) {
+            var cb = chip.querySelector('input');
+            chip.classList.toggle('selected', cb.checked);
+            chip.querySelector('span').style.background = cb.checked ? '#2563EB' : '#64748B';
+        });
+    }
+</script>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <style>
+        .apexcharts-menu { background: #1E293B !important; border-color: #334155 !important; }
+        .apexcharts-menu-item { color: #E2E8F0 !important; }
+        .apexcharts-menu-item:hover { background: #334155 !important; }
+    </style>
+    <script>
+        var series = @Html.Raw(ViewBag.ChartSeries);
+        var categories = @Html.Raw(ViewBag.Categories);
+
+        new ApexCharts(document.querySelector('#comparisonChart'), {
+            series: series,
+            chart: {
+                type: 'line',
+                height: 450,
+                background: '#1E293B',
+                toolbar: { show: true },
+                zoom: { enabled: true }
+            },
+            colors: ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
+            stroke: { curve: 'smooth', width: 3 },
+            xaxis: {
+                categories: categories,
+                labels: { style: { colors: '#94A3B8' }, rotate: -45, rotateAlways: categories.length > 15 },
+                tickAmount: Math.min(categories.length, 15)
+            },
+            yaxis: {
+                labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toFixed(0) + ' kWh'; } },
+                title: { text: 'kWh', style: { color: '#94A3B8' } }
+            },
+            tooltip: { theme: 'dark', shared: true, intersect: false },
+            legend: { labels: { colors: '#94A3B8' }, position: 'top', fontSize: '13px' },
+            grid: { borderColor: '#334155', strokeDashArray: 3 },
+            markers: { size: 0, hover: { size: 6 } }
+        }).render();
+    </script>
+}
