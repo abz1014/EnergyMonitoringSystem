@@ -157,7 +157,7 @@
 
     <!-- Footer -->
     <div class="dashboard-footer text-muted text-center p-3 border-top" style="border-color: #334155;">
-        <small>Last updated: <span id="lastUpdated">2 minutes ago</span> | Data source: db_SCADA | © 2026 Company</small>
+        <small>Last updated: <span id="lastUpdated">@DateTime.Now.ToString("HH:mm:ss")</span> | Data source: db_SCADA</small>
     </div>
 </div>
 
@@ -175,32 +175,25 @@
 
         var consumptionOptions = {
             series: [{
-                name: 'Consumption',
+                name: 'Consumption (kWh)',
                 data: consumptionData.map(d => d.y)
             }],
             chart: {
                 type: 'area',
-                stacked: false,
                 height: 400,
-                sparkline: { enabled: false },
                 toolbar: { show: true },
-                background: '#1E293B'
+                background: '#1E293B',
+                events: {
+                    dataPointSelection: function() {
+                        window.location.href = '/EnergyAnalysis?timeframe=daily';
+                    }
+                }
             },
             colors: ['#2563EB'],
-            stroke: {
-                curve: 'smooth',
-                width: 2
-            },
+            stroke: { curve: 'smooth', width: 2 },
             fill: {
                 type: 'gradient',
-                gradient: {
-                    opacityFrom: 0.45,
-                    opacityTo: 0.05,
-                    colorStops: [
-                        { offset: 0, color: '#2563EB', opacity: 0.4 },
-                        { offset: 100, color: '#0284C7', opacity: 0 }
-                    ]
-                }
+                gradient: { opacityFrom: 0.4, opacityTo: 0.05 }
             },
             xaxis: {
                 categories: consumptionData.map(d => d.x),
@@ -208,13 +201,12 @@
             },
             yaxis: {
                 labels: { style: { colors: '#94A3B8' } },
-                title: { text: 'Power (kW)' }
+                title: { text: 'kWh', style: { color: '#94A3B8' } }
             },
             tooltip: { theme: 'dark' },
             legend: { show: false }
         };
-        var consumptionChart = new ApexCharts(document.querySelector("#consumptionChart"), consumptionOptions);
-        consumptionChart.render();
+        new ApexCharts(document.querySelector("#consumptionChart"), consumptionOptions).render();
         </text>
     }
 
@@ -234,15 +226,20 @@
             chart: {
                 type: 'donut',
                 height: 300,
-                background: '#1E293B'
+                background: '#1E293B',
+                events: {
+                    dataPointSelection: function(event, chartContext, config) {
+                        var building = locationLabels[config.dataPointIndex];
+                        window.location.href = '/LiveMonitoring?building=' + encodeURIComponent(building);
+                    }
+                }
             },
             labels: locationLabels,
-            colors: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'],
+            colors: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
             legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
             tooltip: { theme: 'dark' }
         };
-        var locationChart = new ApexCharts(document.querySelector("#locationChart"), locationOptions);
-        locationChart.render();
+        new ApexCharts(document.querySelector("#locationChart"), locationOptions).render();
         </text>
     }
 
@@ -259,14 +256,19 @@
 
         var consumersOptions = {
             series: [{
-                name: 'Consumption (kW)',
+                name: 'Consumption (kWh)',
                 data: consumersData
             }],
             chart: {
                 type: 'bar',
                 height: 300,
                 background: '#1E293B',
-                toolbar: { show: false }
+                toolbar: { show: false },
+                events: {
+                    dataPointSelection: function(event, chartContext, config) {
+                        window.location.href = '/EnergyAnalysis?timeframe=daily';
+                    }
+                }
             },
             plotOptions: {
                 bar: {
@@ -275,19 +277,18 @@
                     dataLabels: { position: 'end' }
                 }
             },
-            colors: ['#2563EB'],
+            colors: ['#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE', '#10B981', '#34D399', '#6EE7B7', '#F59E0B', '#FBBF24'],
             xaxis: {
+                categories: consumersLabels,
                 labels: { style: { colors: '#94A3B8' } }
             },
             yaxis: {
-                categories: consumersLabels,
                 labels: { style: { colors: '#94A3B8' } }
             },
             tooltip: { theme: 'dark' },
             legend: { show: false }
         };
-        var consumersChart = new ApexCharts(document.querySelector("#consumersChart"), consumersOptions);
-        consumersChart.render();
+        new ApexCharts(document.querySelector("#consumersChart"), consumersOptions).render();
         </text>
     }
 

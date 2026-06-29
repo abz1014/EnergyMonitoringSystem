@@ -156,9 +156,10 @@
         <div class="alerts-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
             <h3 class="h5 mb-3 text-light">⚠️ Active Alerts (@Model.ActiveAlarms.Count)</h3>
 
-            @foreach (var alarm in Model.ActiveAlarms.Take(5))
+            @{ var alarmIndex = 0; }
+            @foreach (var alarm in Model.ActiveAlarms)
             {
-                <div class="alert-item mb-3" style="padding: 12px; background-color: #0F172A; border-radius: 6px; border-left: 3px solid @GetSeverityColor(alarm.Severity);">
+                <div class="alert-item mb-3 @(alarmIndex >= 5 ? "alarm-hidden" : "")" style="padding: 12px; background-color: #0F172A; border-radius: 6px; border-left: 3px solid @GetSeverityColor(alarm.Severity); @(alarmIndex >= 5 ? "display:none;" : "")">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <div style="color: #E2E8F0; font-weight: 500;">
@@ -178,11 +179,15 @@
                         @alarm.CreatedAt.ToString("g")
                     </small>
                 </div>
+                alarmIndex++;
             }
 
             @if (Model.ActiveAlarms.Count > 5)
             {
-                <small style="color: #2563EB; cursor: pointer;">+ @(Model.ActiveAlarms.Count - 5) more alerts</small>
+                <a href="#" onclick="document.querySelectorAll('.alarm-hidden').forEach(e => e.style.display='block'); this.style.display='none'; return false;"
+                   style="color: #2563EB; cursor: pointer; text-decoration: none;">
+                    + @(Model.ActiveAlarms.Count - 5) more alerts
+                </a>
             }
         </div>
     }

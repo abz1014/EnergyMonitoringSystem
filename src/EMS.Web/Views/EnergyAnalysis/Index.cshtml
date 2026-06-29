@@ -187,9 +187,7 @@
     {
         <div class="trend-chart mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
             <h3 class="h5 mb-3 text-light">Consumption Trend (@unit)</h3>
-            <div id="trendChart" style="height: 400px; display: flex; align-items: center; justify-content: center; color: #94A3B8;">
-                Chart - @Model.ConsumptionData.Count data points loaded
-            </div>
+            <div id="trendChart" style="height: 400px;"></div>
         </div>
     }
 
@@ -256,7 +254,65 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
 <script>
+    @if (Model.ConsumptionData != null && Model.ConsumptionData.Count > 0)
+    {
+        <text>
+        (function() {
+            var chartData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.ConsumptionData.Select(c => new { x = c.Item1.ToString("yyyy-MM-dd HH:mm"), y = Math.Round(c.Item2, 1) })
+            ));
+
+            var series = [{
+                name: '@unit',
+                data: chartData.map(function(d) { return d.y; })
+            }];
+
+            @if (Model.ComparisonData != null && Model.ComparisonData.Count > 0)
+            {
+                <text>
+                var compData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                    Model.ComparisonData.Select(c => new { x = c.Item1.ToString("yyyy-MM-dd HH:mm"), y = Math.Round(c.Item2, 1) })
+                ));
+                series.push({
+                    name: 'Previous (@Model.CompareWith)',
+                    data: compData.map(function(d) { return d.y; })
+                });
+                </text>
+            }
+
+            var options = {
+                series: series,
+                chart: {
+                    type: 'area',
+                    height: 400,
+                    background: '#1E293B',
+                    toolbar: { show: true }
+                },
+                colors: ['#2563EB', '#F59E0B'],
+                stroke: { curve: 'smooth', width: 2 },
+                fill: {
+                    type: 'gradient',
+                    gradient: { opacityFrom: 0.4, opacityTo: 0.05 }
+                },
+                xaxis: {
+                    categories: chartData.map(function(d) { return d.x; }),
+                    labels: { style: { colors: '#94A3B8' }, rotate: -45, rotateAlways: chartData.length > 12 }
+                },
+                yaxis: {
+                    labels: { style: { colors: '#94A3B8' } },
+                    title: { text: '@unit', style: { color: '#94A3B8' } }
+                },
+                tooltip: { theme: 'dark' },
+                legend: { labels: { colors: '#94A3B8' } }
+            };
+
+            new ApexCharts(document.querySelector('#trendChart'), options).render();
+        })();
+        </text>
+    }
+
     function applyAnalysisFilters() {
         var overlay = document.getElementById('loadingOverlay');
         overlay.style.display = 'flex';
