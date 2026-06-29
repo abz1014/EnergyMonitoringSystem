@@ -14,15 +14,15 @@ public class DashboardController : Controller
         _logger = logger;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string plant = "All", string building = "All", string area = "All")
     {
         try
         {
             var filter = new DashboardFilterDto
             {
-                Plant = "All",
-                Building = "All",
-                Area = "All",
+                Plant = plant ?? "All",
+                Building = building ?? "All",
+                Area = area ?? "All",
                 DateFrom = DateTime.Now.Date,
                 DateTo = DateTime.Now.Date.AddDays(1).AddTicks(-1)
             };
