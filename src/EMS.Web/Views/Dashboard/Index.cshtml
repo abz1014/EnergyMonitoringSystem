@@ -1,0 +1,314 @@
+@model ExecutiveDashboardDto
+
+@{
+    ViewData["Title"] = "Executive Dashboard";
+}
+
+<div class="dashboard-container" style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <!-- Header -->
+    <div class="dashboard-header mb-4">
+        <h1 class="h2 mb-2">Energy Monitoring System</h1>
+        <p class="text-muted">Executive Dashboard › Dashboard</p>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">Plant</label>
+                <select id="filterPlant" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" onchange="applyFilters()">
+                    @{
+                        var selectedPlant = ViewBag.SelectedPlant as string ?? "All";
+                        var plants = ViewBag.Plants as List<string> ?? new List<string>();
+                    }
+                    @if (selectedPlant == "All") { <option value="All" selected>All</option> } else { <option value="All">All</option> }
+                    @foreach (var p in plants)
+                    {
+                        if (p == selectedPlant) { <option value="@p" selected>@p</option> } else { <option value="@p">@p</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">Building</label>
+                <select id="filterBuilding" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" onchange="applyFilters()">
+                    <option value="All" selected>All</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">Area</label>
+                <select id="filterArea" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" onchange="applyFilters()">
+                    <option value="All" selected>All</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100" style="background-color: #2563EB;" onclick="refreshDashboard()">
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards Section -->
+    <style>
+        .kpi-card { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; text-decoration: none !important; display: block; }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    </style>
+    <div class="kpi-section mb-5">
+        <div class="row g-3">
+            @if (Model?.KpiCards != null)
+            {
+                var kpis = new[] {
+                        (Card: Model.KpiCards.TodayConsumption, Color: "#10B981", Link: "/EnergyAnalysis?timeframe=daily"),
+                        (Card: Model.KpiCards.CurrentLoad, Color: "#3B82F6", Link: "/LiveMonitoring"),
+                        (Card: Model.KpiCards.PeakDemand, Color: "#F59E0B", Link: "/EnergyAnalysis?timeframe=daily&metric=peak"),
+                        (Card: Model.KpiCards.MonthlyTotal, Color: "#10B981", Link: "/EnergyAnalysis?timeframe=monthly"),
+                        (Card: Model.KpiCards.OnlineMeters, Color: "#10B981", Link: "/LiveMonitoring"),
+                        (Card: Model.KpiCards.EstimatedCost, Color: "#F59E0B", Link: "/EnergyAnalysis?timeframe=monthly"),
+                        (Card: Model.KpiCards.AvgPowerFactor, Color: "#10B981", Link: "/LiveMonitoring"),
+                        (Card: Model.KpiCards.Co2Emissions, Color: "#10B981", Link: "/EnergyAnalysis?timeframe=daily")
+                    };
+                @foreach (var kpi in kpis)
+                {
+                    var fmt = kpi.Card.Unit == "PF" ? "F2" : kpi.Card.Unit == "Million ₹" ? "F2" : "F0";
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <a href="@kpi.Link" class="kpi-card">
+                            <div class="card" style="background-color: #1E293B; border: 1px solid #334155; border-left: 4px solid @kpi.Color;">
+                                <div class="card-body">
+                                    <small class="text-muted d-block mb-2">@(kpi.Card.Title ?? "—")</small>
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h4 class="mb-1" style="color: #FFFFFF;">@(kpi.Card.Value.ToString(fmt))</h4>
+                                            <small style="color: #94A3B8;">@(kpi.Card.Unit ?? "—")</small>
+                                        </div>
+                                        <small style="color: @kpi.Color;">@(kpi.Card.Trend ?? "—")</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+
+            }
+        </div>
+    </div>
+
+    <!-- Main Chart Section -->
+    <div class="chart-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <h3 class="h5 mb-4 text-light">Daily Energy Consumption (Today's Breakdown)</h3>
+        @if (Model?.Charts?.ConsumptionTrend != null && Model.Charts.ConsumptionTrend.Count > 0)
+        {
+            <div id="consumptionChart" style="height: 400px;"></div>
+        }
+        else
+        {
+            <div style="height: 400px; display: flex; align-items: center; justify-content: center; color: #64748B;">
+                <div style="text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                    <p style="font-size: 16px;">No consumption data available for today</p>
+                    <small>Data will appear once meters start reporting</small>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Bottom Section - Two Columns -->
+    <div class="row g-4 mb-5">
+        <!-- Location Breakdown -->
+        <div class="col-12 col-lg-6">
+            <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                <h3 class="h5 mb-4 text-light">Consumption by Location</h3>
+                @if (Model?.Charts?.LocationBreakdown != null && Model.Charts.LocationBreakdown.Count > 0)
+                {
+                    <div id="locationChart" style="height: 300px;"></div>
+                }
+                else
+                {
+                    <div style="height: 300px; display: flex; align-items: center; justify-content: center; color: #64748B;">
+                        <div style="text-align: center;">
+                            <p>No location data available</p>
+                            <small>Assign meters to buildings to see breakdown</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Top Consumers -->
+        <div class="col-12 col-lg-6">
+            <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                <h3 class="h5 mb-4 text-light">Top 10 Consumers</h3>
+                @if (Model?.Charts?.TopConsumers != null && Model.Charts.TopConsumers.Count > 0)
+                {
+                    <div id="consumersChart" style="height: 300px;"></div>
+                }
+                else
+                {
+                    <div style="height: 300px; display: flex; align-items: center; justify-content: center; color: #64748B;">
+                        <div style="text-align: center;">
+                            <p>No consumer data available</p>
+                            <small>Data will appear once meters report consumption</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="dashboard-footer text-muted text-center p-3 border-top" style="border-color: #334155;">
+        <small>Last updated: <span id="lastUpdated">@DateTime.Now.ToString("HH:mm:ss")</span> | Data source: db_SCADA</small>
+    </div>
+</div>
+
+<!-- ApexCharts Library -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+
+<script>
+    // Main Consumption Chart
+    @if (Model?.Charts?.ConsumptionTrend != null)
+    {
+        <text>
+        var consumptionData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.ConsumptionTrend.Select(c => new { x = c.Time.ToString("HH:mm"), y = c.Value })
+        ));
+
+        var consumptionOptions = {
+            series: [{
+                name: 'Consumption (kWh)',
+                data: consumptionData.map(d => d.y)
+            }],
+            chart: {
+                type: 'area',
+                height: 400,
+                toolbar: { show: true },
+                background: '#1E293B',
+                events: {
+                    dataPointSelection: function() {
+                        window.location.href = '/EnergyAnalysis?timeframe=daily';
+                    }
+                }
+            },
+            colors: ['#2563EB'],
+            stroke: { curve: 'smooth', width: 2 },
+            fill: {
+                type: 'gradient',
+                gradient: { opacityFrom: 0.4, opacityTo: 0.05 }
+            },
+            xaxis: {
+                categories: consumptionData.map(d => d.x),
+                labels: { style: { colors: '#94A3B8' } }
+            },
+            yaxis: {
+                labels: { style: { colors: '#94A3B8' } },
+                title: { text: 'kWh', style: { color: '#94A3B8' } }
+            },
+            tooltip: { theme: 'dark' },
+            legend: { show: false }
+        };
+        new ApexCharts(document.querySelector("#consumptionChart"), consumptionOptions).render();
+        </text>
+    }
+
+    // Location Breakdown Chart
+    @if (Model?.Charts?.LocationBreakdown != null)
+    {
+        <text>
+        var locationData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.LocationBreakdown.Select(l => l.Percentage)
+        ));
+        var locationLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.LocationBreakdown.Select(l => l.Location)
+        ));
+
+        var locationOptions = {
+            series: locationData,
+            chart: {
+                type: 'donut',
+                height: 300,
+                background: '#1E293B',
+                events: {
+                    dataPointSelection: function(event, chartContext, config) {
+                        var building = locationLabels[config.dataPointIndex];
+                        window.location.href = '/LiveMonitoring?building=' + encodeURIComponent(building);
+                    }
+                }
+            },
+            labels: locationLabels,
+            colors: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
+            legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
+            tooltip: { theme: 'dark' }
+        };
+        new ApexCharts(document.querySelector("#locationChart"), locationOptions).render();
+        </text>
+    }
+
+    // Top Consumers Chart
+    @if (Model?.Charts?.TopConsumers != null)
+    {
+        <text>
+        var consumersData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.TopConsumers.Select(c => c.Consumption)
+        ));
+        var consumersLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Charts.TopConsumers.Select(c => c.Name)
+        ));
+
+        var consumersOptions = {
+            series: [{
+                name: 'Consumption (kWh)',
+                data: consumersData
+            }],
+            chart: {
+                type: 'bar',
+                height: 300,
+                background: '#1E293B',
+                toolbar: { show: false },
+                events: {
+                    dataPointSelection: function(event, chartContext, config) {
+                        window.location.href = '/EnergyAnalysis?timeframe=daily';
+                    }
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    distributed: true,
+                    dataLabels: { position: 'end' }
+                }
+            },
+            colors: ['#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE', '#10B981', '#34D399', '#6EE7B7', '#F59E0B', '#FBBF24'],
+            xaxis: {
+                categories: consumersLabels,
+                labels: { style: { colors: '#94A3B8' } }
+            },
+            yaxis: {
+                labels: { style: { colors: '#94A3B8' } }
+            },
+            tooltip: { theme: 'dark' },
+            legend: { show: false }
+        };
+        new ApexCharts(document.querySelector("#consumersChart"), consumersOptions).render();
+        </text>
+    }
+
+    // Filter and refresh handlers
+    function applyFilters() {
+        const plant = document.getElementById('filterPlant')?.value || 'All';
+        const building = document.getElementById('filterBuilding')?.value || 'All';
+        const area = document.getElementById('filterArea')?.value || 'All';
+
+        const url = new URL(window.location);
+        url.searchParams.set('plant', plant);
+        url.searchParams.set('building', building);
+        url.searchParams.set('area', area);
+        window.location.href = url.toString();
+    }
+
+    function refreshDashboard() {
+        var btn = document.querySelector('.btn-primary');
+        if (btn) { btn.disabled = true; btn.textContent = 'Refreshing...'; }
+        location.reload();
+    }
+</script>
+

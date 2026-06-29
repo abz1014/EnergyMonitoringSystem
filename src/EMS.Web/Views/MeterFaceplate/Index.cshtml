@@ -1,0 +1,335 @@
+@using EMS.Web.Models
+@model MeterFaceplateViewModel
+
+@{
+    ViewData["Title"] = Model.MeterId > 0 ? $"Faceplate — {Model.MeterName}" : "Meter Faceplate";
+    var hasMeter = Model.MeterId > 0;
+}
+
+<style>
+    .fp-card { background-color: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 16px; }
+    .fp-section { margin-bottom: 20px; }
+    .fp-label { color: #94A3B8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .fp-value { color: #FFFFFF; font-size: 20px; font-weight: 600; }
+    .fp-unit { color: #64748B; font-size: 12px; margin-left: 4px; }
+    .fp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .fp-cell { background: #0F172A; border-radius: 6px; padding: 12px; text-align: center; }
+    .fp-status-online { color: #10B981; }
+    .fp-status-offline { color: #EF4444; }
+    .meter-select-card { cursor: pointer; transition: all 0.15s; border: 2px solid transparent; }
+    .meter-select-card:hover { border-color: #2563EB; transform: translateY(-2px); }
+    .meter-select-card.active { border-color: #2563EB; background-color: #1E3A5F !important; }
+</style>
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Meter Faceplate</h1>
+        <p class="text-muted">Select a meter to view detailed real-time parameters</p>
+    </div>
+
+    <!-- Meter Picker -->
+    <div class="fp-card mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="fp-label d-block mb-1">Location</label>
+                <select id="locationFilter" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;"
+                        onchange="filterByLocation(this.value)">
+                    <option value="">All Locations</option>
+                    @foreach (var loc in Model.Locations)
+                    {
+                        if (loc == Model.SelectedLocation) { <option value="@loc" selected>@loc</option> } else { <option value="@loc">@loc</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-9">
+                <label class="fp-label d-block mb-1">Select Device (@Model.AvailableMeters.Count available)</label>
+                <div class="d-flex gap-2 flex-wrap">
+                    @foreach (var meter in Model.AvailableMeters)
+                    {
+                        <a href="/MeterFaceplate?meterId=@meter.DeviceID&location=@Model.SelectedLocation"
+                           class="meter-select-card fp-card p-2 text-decoration-none @(meter.DeviceID == Model.MeterId ? "active" : "")"
+                           style="min-width: 140px; background-color: #0F172A;">
+                            <div style="color: #E2E8F0; font-weight: 600; font-size: 13px;">@meter.DeviceName</div>
+                            <div style="color: #64748B; font-size: 11px;">@meter.Location — @meter.DeviceType</div>
+                            <div style="color: #94A3B8; font-size: 10px;">@meter.Model</div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (hasMeter)
+    {
+        <!-- Meter Header -->
+        <div class="fp-card mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h4 mb-1" style="color: #FFFFFF;">@Model.MeterName</h2>
+                    <span class="fp-label">@Model.MeterLocation — @Model.MeterBrand @Model.MeterModel — @Model.DeviceType</span>
+                </div>
+                <div class="text-end">
+                    <div class="@(Model.Status == "online" ? "fp-status-online" : "fp-status-offline")" style="font-size: 18px; font-weight: 700;">
+                        @(Model.Status == "online" ? "ONLINE" : "OFFLINE")
+                    </div>
+                    <small class="fp-label">Last: @Model.LastUpdated.ToString("yyyy-MM-dd HH:mm:ss")</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Voltage Section -->
+        <div class="fp-section">
+            <h5 class="mb-3" style="color: #3B82F6;">Voltage</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="fp-card">
+                        <div class="fp-label mb-2">Line-to-Neutral (V)</div>
+                        <div class="fp-grid">
+                            <div class="fp-cell">
+                                <div class="fp-label">L1-N</div>
+                                <div class="fp-value">@Model.VoltL1N.ToString("F1")<span class="fp-unit">V</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">L2-N</div>
+                                <div class="fp-value">@Model.VoltL2N.ToString("F1")<span class="fp-unit">V</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">L3-N</div>
+                                <div class="fp-value">@Model.VoltL3N.ToString("F1")<span class="fp-unit">V</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="fp-card">
+                        <div class="fp-label mb-2">Line-to-Line (V)</div>
+                        <div class="fp-grid">
+                            <div class="fp-cell">
+                                <div class="fp-label">L1-L2</div>
+                                <div class="fp-value">@Model.VoltL1L2.ToString("F1")<span class="fp-unit">V</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">L2-L3</div>
+                                <div class="fp-value">@Model.VoltL2L3.ToString("F1")<span class="fp-unit">V</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">L1-L3</div>
+                                <div class="fp-value">@Model.VoltL1L3.ToString("F1")<span class="fp-unit">V</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Section -->
+        <div class="fp-section">
+            <h5 class="mb-3" style="color: #F59E0B;">Current</h5>
+            <div class="fp-card">
+                <div class="fp-grid">
+                    <div class="fp-cell">
+                        <div class="fp-label">L1</div>
+                        <div class="fp-value">@Model.CurrentL1.ToString("F1")<span class="fp-unit">A</span></div>
+                    </div>
+                    <div class="fp-cell">
+                        <div class="fp-label">L2</div>
+                        <div class="fp-value">@Model.CurrentL2.ToString("F1")<span class="fp-unit">A</span></div>
+                    </div>
+                    <div class="fp-cell">
+                        <div class="fp-label">L3</div>
+                        <div class="fp-value">@Model.CurrentL3.ToString("F1")<span class="fp-unit">A</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Power Section -->
+        <div class="fp-section">
+            <h5 class="mb-3" style="color: #10B981;">Power</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="fp-card">
+                        <div class="fp-label mb-2">Active Power (kW)</div>
+                        <div class="fp-grid">
+                            <div class="fp-cell">
+                                <div class="fp-label">L1</div>
+                                <div class="fp-value">@Model.PowerL1.ToString("F1")<span class="fp-unit">kW</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">L2</div>
+                                <div class="fp-value">@Model.PowerL2.ToString("F1")<span class="fp-unit">kW</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">L3</div>
+                                <div class="fp-value">@Model.PowerL3.ToString("F1")<span class="fp-unit">kW</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="fp-card">
+                        <div class="fp-label mb-2">Total Power</div>
+                        <div class="fp-grid">
+                            <div class="fp-cell">
+                                <div class="fp-label">kW Total</div>
+                                <div class="fp-value">@Model.kWtotal.ToString("F2")<span class="fp-unit">kW</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">kVA Total</div>
+                                <div class="fp-value">@Model.kVAtotal.ToString("F2")<span class="fp-unit">kVA</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">kVAR Total</div>
+                                <div class="fp-value">@Model.kVARtotal.ToString("F2")<span class="fp-unit">kVAR</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Power Factor & Frequency -->
+        <div class="fp-section">
+            <h5 class="mb-3" style="color: #8B5CF6;">Power Factor & Frequency</h5>
+            <div class="fp-card">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                    <div class="fp-cell">
+                        <div class="fp-label">PF L1</div>
+                        <div class="fp-value" style="color: @(Model.PFL1 >= 0.9 ? "#10B981" : "#F59E0B")">@Model.PFL1.ToString("F3")</div>
+                    </div>
+                    <div class="fp-cell">
+                        <div class="fp-label">PF L2</div>
+                        <div class="fp-value" style="color: @(Model.PFL2 >= 0.9 ? "#10B981" : "#F59E0B")">@Model.PFL2.ToString("F3")</div>
+                    </div>
+                    <div class="fp-cell">
+                        <div class="fp-label">PF L3</div>
+                        <div class="fp-value" style="color: @(Model.PFL3 >= 0.9 ? "#10B981" : "#F59E0B")">@Model.PFL3.ToString("F3")</div>
+                    </div>
+                    <div class="fp-cell">
+                        <div class="fp-label">Frequency</div>
+                        <div class="fp-value">@Model.Frequency.ToString("F2")<span class="fp-unit">Hz</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Energy Counters -->
+        <div class="fp-section">
+            <h5 class="mb-3" style="color: #EC4899;">Energy Counters</h5>
+            <div class="fp-card">
+                <div class="fp-grid">
+                    <div class="fp-cell">
+                        <div class="fp-label">Active Energy</div>
+                        <div class="fp-value">@Model.kWh.ToString("F0")<span class="fp-unit">kWh</span></div>
+                    </div>
+                    <div class="fp-cell">
+                        <div class="fp-label">Apparent Energy</div>
+                        <div class="fp-value">@Model.kVAh.ToString("F0")<span class="fp-unit">kVAh</span></div>
+                    </div>
+                    <div class="fp-cell">
+                        <div class="fp-label">Reactive Energy</div>
+                        <div class="fp-value">@Model.kVARh.ToString("F0")<span class="fp-unit">kVARh</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Harmonics -->
+        <div class="fp-section">
+            <h5 class="mb-3" style="color: #EF4444;">Harmonics (THD %)</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="fp-card">
+                        <div class="fp-label mb-2">Voltage THD</div>
+                        <div class="fp-grid">
+                            <div class="fp-cell">
+                                <div class="fp-label">V1</div>
+                                <div class="fp-value">@Model.HarmonicV1.ToString("F1")<span class="fp-unit">%</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">V2</div>
+                                <div class="fp-value">@Model.HarmonicV2.ToString("F1")<span class="fp-unit">%</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">V3</div>
+                                <div class="fp-value">@Model.HarmonicV3.ToString("F1")<span class="fp-unit">%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="fp-card">
+                        <div class="fp-label mb-2">Current THD</div>
+                        <div class="fp-grid">
+                            <div class="fp-cell">
+                                <div class="fp-label">I1</div>
+                                <div class="fp-value">@Model.HarmonicI1.ToString("F1")<span class="fp-unit">%</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">I2</div>
+                                <div class="fp-value">@Model.HarmonicI2.ToString("F1")<span class="fp-unit">%</span></div>
+                            </div>
+                            <div class="fp-cell">
+                                <div class="fp-label">I3</div>
+                                <div class="fp-value">@Model.HarmonicI3.ToString("F1")<span class="fp-unit">%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Device Tags from Database -->
+        @if (Model.Tags.Count > 0)
+        {
+            <div class="fp-section">
+                <h5 class="mb-3" style="color: #06B6D4;">Device Tags (from tblDevicesTags)</h5>
+                <div class="fp-card">
+                    <table class="table table-dark table-sm" style="color: #E2E8F0; margin: 0;">
+                        <thead>
+                            <tr>
+                                <th style="color: #94A3B8;">Tag Name</th>
+                                <th style="color: #94A3B8;">Address</th>
+                                <th style="color: #94A3B8;">Data Type</th>
+                                <th style="color: #94A3B8;">Size (bits)</th>
+                                <th style="color: #94A3B8;">Scale Factor</th>
+                                <th style="color: #94A3B8;">Registers</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tag in Model.Tags)
+                            {
+                                <tr>
+                                    <td style="font-weight: 500;">@tag.TagName</td>
+                                    <td style="color: #94A3B8; font-family: monospace;">@tag.TagAddress</td>
+                                    <td>@tag.DataType</td>
+                                    <td>@tag.SizeBits</td>
+                                    <td>@tag.ScaleFactor</td>
+                                    <td>@tag.RegisterCount</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="fp-card p-5 text-center">
+            <div style="font-size: 48px; color: #64748B; margin-bottom: 16px;">&#9889;</div>
+            <h4 style="color: #E2E8F0;">Select a meter above to view its faceplate</h4>
+            <p style="color: #64748B;">Choose a location and device to see all electrical parameters, power quality data, and device tag configuration.</p>
+        </div>
+    }
+</div>
+
+<script>
+    function filterByLocation(location) {
+        var url = '/MeterFaceplate';
+        if (location) url += '?location=' + encodeURIComponent(location);
+        window.location.href = url;
+    }
+</script>

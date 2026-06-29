@@ -1,0 +1,152 @@
+@model MeterDetailsViewModel
+
+@{
+    ViewData["Title"] = "Meter Details";
+}
+
+<div class="dashboard-container" style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <!-- Header with Back Button -->
+    <div class="dashboard-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="/LiveMonitoring" class="btn btn-secondary btn-sm" style="background-color: #475569;">← Back to Live Monitoring</a>
+                <h1 class="h2 mt-3 mb-2">@Model?.MeterName</h1>
+                <p class="text-muted">Detailed consumption analysis and live readings</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeframe Filter -->
+    <div class="filter-bar mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label text-light">📅 Timeframe</label>
+                <select class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;"
+                        onchange="window.location.href='/MeterDetails/Index?meterId=@Model?.MeterId&timeframe=' + this.value;">
+                    <option value="daily" selected="@(Model?.Timeframe == "daily" ? "selected" : "")">Today</option>
+                    <option value="weekly" selected="@(Model?.Timeframe == "weekly" ? "selected" : "")">This Week</option>
+                    <option value="monthly" selected="@(Model?.Timeframe == "monthly" ? "selected" : "")">This Month</option>
+                    <option value="yearly" selected="@(Model?.Timeframe == "yearly" ? "selected" : "")">This Year</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-9">
+                <small style="color: #94A3B8;">
+                    Period: <strong>@Model?.DateFrom.ToString("yyyy-MM-dd")</strong> to <strong>@Model?.DateTo.ToString("yyyy-MM-dd")</strong>
+                    | Last Updated: <strong>@Model?.LastUpdated.ToString("g")</strong>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Readings -->
+    @if (Model?.CurrentValues != null)
+    {
+        <div class="readings-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h3 class="h5 mb-4 text-light">⚡ Current Readings</h3>
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <div class="stat-card">
+                        <small class="text-muted">Voltage L1</small>
+                        <div class="h5" style="color: #2563EB;">@(Model.CurrentValues.VoltageL1.ToString("F1"))V</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-card">
+                        <small class="text-muted">Voltage L2</small>
+                        <div class="h5" style="color: #2563EB;">@(Model.CurrentValues.VoltageL2.ToString("F1"))V</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-card">
+                        <small class="text-muted">Voltage L3</small>
+                        <div class="h5" style="color: #2563EB;">@(Model.CurrentValues.VoltageL3.ToString("F1"))V</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-card">
+                        <small class="text-muted">Current L1</small>
+                        <div class="h5" style="color: #10B981;">@(Model.CurrentValues.CurrentL1.ToString("F1"))A</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-card">
+                        <small class="text-muted">Current L2</small>
+                        <div class="h5" style="color: #10B981;">@(Model.CurrentValues.CurrentL2.ToString("F1"))A</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-card">
+                        <small class="text-muted">Current L3</small>
+                        <div class="h5" style="color: #10B981;">@(Model.CurrentValues.CurrentL3.ToString("F1"))A</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-3 mt-3">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <small class="text-muted">Power</small>
+                        <div class="h5" style="color: #F59E0B;">@(Model.CurrentValues.PowerkW.ToString("F2"))kW</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <small class="text-muted">Power Factor</small>
+                        <div class="h5" style="color: #F59E0B;">@(Model.CurrentValues.PowerFactor.ToString("F3"))PF</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <small class="text-muted">Frequency</small>
+                        <div class="h5" style="color: #F59E0B;">@(Model.CurrentValues.Frequency.ToString("F1"))Hz</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Consumption Statistics -->
+    @if (Model?.Statistics != null)
+    {
+        <div class="stats-section mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h3 class="h5 mb-4 text-light">📊 Consumption Statistics</h3>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <small class="text-muted">Total</small>
+                        <div class="h5" style="color: #10B981;">@(Model.TotalConsumption.ToString("F0"))kWh</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <small class="text-muted">Average</small>
+                        <div class="h5" style="color: #3B82F6;">@(Model.AverageConsumption.ToString("F2"))kWh</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <small class="text-muted">Peak</small>
+                        <div class="h5" style="color: #F59E0B;">@(Model.PeakConsumption.ToString("F2"))kWh</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <small class="text-muted">Minimum</small>
+                        <div class="h5" style="color: #94A3B8;">@(Model.MinConsumption.ToString("F2"))kWh</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+
+<style>
+    .stat-card {
+        background-color: #0F172A;
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid #334155;
+        text-align: center;
+    }
+</style>

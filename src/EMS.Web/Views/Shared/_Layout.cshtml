@@ -1,46 +1,176 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - EMS.Web</title>
+    <title>@ViewData["Title"] - Energy Monitoring System</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/EMS.Web.styles.css" asp-append-version="true" />
+    <style>
+        :root {
+            --sidebar-width: 220px;
+            --topbar-height: 50px;
+            --bg-primary: #0F172A;
+            --bg-secondary: #1E293B;
+            --bg-tertiary: #334155;
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --accent: #2563EB;
+            --border: #334155;
+        }
+
+        body { background-color: var(--bg-primary); color: var(--text-primary); margin: 0; overflow-x: hidden; }
+
+        .sidebar {
+            position: fixed; top: 0; left: 0; bottom: 0;
+            width: var(--sidebar-width);
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            z-index: 1000;
+            transition: transform 0.2s;
+        }
+
+        .sidebar-brand {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 18px; font-weight: 700;
+            color: var(--accent);
+            text-decoration: none; display: block;
+        }
+
+        .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+
+        .sidebar-section { padding: 8px 20px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+
+        .sidebar-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 20px;
+            color: var(--text-secondary);
+            text-decoration: none; font-size: 14px;
+            transition: background-color 0.15s, color 0.15s;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-link:hover { background-color: var(--bg-tertiary); color: var(--text-primary); }
+        .sidebar-link.active { color: var(--accent); background-color: rgba(37, 99, 235, 0.1); border-left-color: var(--accent); font-weight: 600; }
+
+        .sidebar-icon { width: 18px; text-align: center; font-size: 14px; }
+
+        .sidebar-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        .sidebar-user { color: var(--text-secondary); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .topbar {
+            position: fixed; top: 0; left: var(--sidebar-width); right: 0;
+            height: var(--topbar-height);
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            z-index: 999;
+        }
+
+        .topbar-title { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+        .topbar-actions { display: flex; align-items: center; gap: 12px; }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--topbar-height);
+            min-height: calc(100vh - var(--topbar-height));
+        }
+
+        .footer {
+            margin-left: var(--sidebar-width);
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .sidebar-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 20px; cursor: pointer; }
+
+        @@media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content, .footer, .topbar { margin-left: 0; left: 0; }
+            .sidebar-toggle { display: block; }
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">EMS.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+    @{
+        var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    }
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <a class="sidebar-brand" asp-controller="Dashboard" asp-action="Index">EMS</a>
+
+        <div class="sidebar-nav">
+            <div class="sidebar-section">Monitoring</div>
+            <a class="sidebar-link @(ctrl == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
+                <span class="sidebar-icon">&#9632;</span> Dashboard
+            </a>
+            <a class="sidebar-link @(ctrl == "LiveMonitoring" || ctrl == "MeterDetails" ? "active" : "")" asp-controller="LiveMonitoring" asp-action="Index">
+                <span class="sidebar-icon">&#9673;</span> Live Monitoring
+            </a>
+
+            <div class="sidebar-section">Devices</div>
+            <a class="sidebar-link @(ctrl == "MeterFaceplate" ? "active" : "")" asp-controller="MeterFaceplate" asp-action="Index">
+                <span class="sidebar-icon">&#9889;</span> Meter Faceplate
+            </a>
+
+            <div class="sidebar-section">Analysis</div>
+            <a class="sidebar-link @(ctrl == "EnergyAnalysis" ? "active" : "")" asp-controller="EnergyAnalysis" asp-action="Index">
+                <span class="sidebar-icon">&#9650;</span> Energy Analysis
+            </a>
+            <a class="sidebar-link @(ctrl == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index">
+                <span class="sidebar-icon">&#9776;</span> Reports
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="sidebar-user" title="@User.Identity.Name">@User.Identity.Name</div>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100" style="font-size: 12px;">Logout</button>
+                </form>
+            }
+            else
+            {
+                <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-primary w-100" style="font-size: 12px;">Login</a>
+            }
+        </div>
+    </nav>
+
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+            <span class="topbar-title">@ViewData["Title"]</span>
+        </div>
+        <div class="topbar-actions">
+            <a asp-controller="Dashboard" asp-action="Index" style="color: var(--text-secondary); text-decoration: none; font-size: 13px;">Home</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <main role="main">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - EMS.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
+    <footer class="footer text-center py-3">
+        <small>&copy; 2026 Energy Monitoring System. All rights reserved.</small>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

@@ -1,0 +1,145 @@
+@using EMS.Core.Models
+@{
+    ViewData["Title"] = "Reports";
+    var data = ViewBag.Data as List<EnergyMeterData> ?? new List<EnergyMeterData>();
+    var devices = ViewBag.Devices as List<MonitoringDevice> ?? new List<MonitoringDevice>();
+    var dateFrom = ViewBag.DateFrom as string ?? "";
+    var dateTo = ViewBag.DateTo as string ?? "";
+    var selectedMeterId = ViewBag.SelectedMeterId as int?;
+    var totalKwh = (double)(ViewBag.TotalKwh ?? 0.0);
+    var peakKw = (double)(ViewBag.PeakKw ?? 0.0);
+    var avgPf = (double)(ViewBag.AvgPf ?? 0.0);
+    var recordCount = (int)(ViewBag.RecordCount ?? 0);
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Reports</h1>
+        <p class="text-muted">Generate and export energy consumption reports</p>
+    </div>
+
+    <!-- Report Filters -->
+    <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <form method="get" asp-action="Index" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">From Date</label>
+                <input type="date" name="dateFrom" value="@dateFrom" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-light">To Date</label>
+                <input type="date" name="dateTo" value="@dateTo" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-light">Meter</label>
+                <select name="meterId" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    <option value="">All Meters</option>
+                    @foreach (var d in devices)
+                    {
+                        if (selectedMeterId.HasValue && d.DeviceID == selectedMeterId.Value)
+                        {
+                            <option value="@d.DeviceID" selected>@d.DeviceName (@d.Location)</option>
+                        }
+                        else
+                        {
+                            <option value="@d.DeviceID">@d.DeviceName (@d.Location)</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1" style="background-color: #2563EB;">Generate</button>
+                <a href="/Reports/ExportCsv?dateFrom=@dateFrom&dateTo=@dateTo@(selectedMeterId.HasValue ? $"&meterId={selectedMeterId}" : "")"
+                   class="btn btn-success flex-grow-1">Export CSV</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Report Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                <div style="color: #94A3B8; font-size: 12px;">Total Consumption</div>
+                <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@totalKwh.ToString("F0")<span style="color: #64748B; font-size: 14px; margin-left: 4px;">kWh</span></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                <div style="color: #94A3B8; font-size: 12px;">Peak Demand</div>
+                <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@peakKw.ToString("F1")<span style="color: #64748B; font-size: 14px; margin-left: 4px;">kW</span></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #3B82F6;">
+                <div style="color: #94A3B8; font-size: 12px;">Avg Power Factor</div>
+                <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@avgPf.ToString("F3")</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                <div style="color: #94A3B8; font-size: 12px;">Records</div>
+                <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@recordCount</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    @if (data.Count > 0)
+    {
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px; overflow-x: auto;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-light mb-0">Data (@data.Count rows)</h5>
+                <span style="color: #64748B; font-size: 12px;">Showing first 100 rows</span>
+            </div>
+            <table class="table table-dark table-sm table-hover" style="color: #E2E8F0; font-size: 13px;">
+                <thead style="background-color: #0F172A;">
+                    <tr>
+                        <th style="color: #94A3B8;">DateTime</th>
+                        <th style="color: #94A3B8;">Meter</th>
+                        <th style="color: #94A3B8;">Location</th>
+                        <th style="color: #94A3B8;">V L1N</th>
+                        <th style="color: #94A3B8;">V L2N</th>
+                        <th style="color: #94A3B8;">V L3N</th>
+                        <th style="color: #94A3B8;">I L1</th>
+                        <th style="color: #94A3B8;">I L2</th>
+                        <th style="color: #94A3B8;">I L3</th>
+                        <th style="color: #94A3B8;">kW</th>
+                        <th style="color: #94A3B8;">kVA</th>
+                        <th style="color: #94A3B8;">PF</th>
+                        <th style="color: #94A3B8;">Hz</th>
+                        <th style="color: #94A3B8;">kWh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in data.Take(100))
+                    {
+                        <tr>
+                            <td>@(row.DateTime?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                            <td style="font-weight: 500;">@(row.MeterName ?? $"Meter-{row.MeterNo}")</td>
+                            <td style="color: #94A3B8;">@row.MeterLocation</td>
+                            <td>@(row.VoltL1N?.ToString("F0") ?? "—")</td>
+                            <td>@(row.VoltL2N?.ToString("F0") ?? "—")</td>
+                            <td>@(row.VoltL3N?.ToString("F0") ?? "—")</td>
+                            <td>@(row.CurrentL1?.ToString("F1") ?? "—")</td>
+                            <td>@(row.CurrentL2?.ToString("F1") ?? "—")</td>
+                            <td>@(row.CurrentL3?.ToString("F1") ?? "—")</td>
+                            <td>@(row.kWtotal?.ToString("F1") ?? "—")</td>
+                            <td>@(row.kVAtotal?.ToString("F1") ?? "—")</td>
+                            <td>@(row.PFL1?.ToString("F2") ?? "—")</td>
+                            <td>@(row.MFreq?.ToString("F1") ?? "—")</td>
+                            <td>@(row.kWh?.ToString("F0") ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B; margin-bottom: 16px;">&#128202;</div>
+            <h4 style="color: #E2E8F0;">No data for selected period</h4>
+            <p style="color: #64748B;">Adjust the date range or meter filter and click Generate.</p>
+        </div>
+    }
+</div>

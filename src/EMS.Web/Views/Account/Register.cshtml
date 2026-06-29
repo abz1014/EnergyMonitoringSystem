@@ -1,0 +1,81 @@
+@using EMS.Web.Models
+@model RegisterViewModel
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg border-0" style="background-color: #1E293B; border-radius: 12px;">
+                <div class="card-body p-4">
+                    <h1 class="h3 text-center mb-4" style="color: #FFFFFF;">Create Account</h1>
+                    <p class="text-center text-muted mb-4">Join Energy Monitoring System</p>
+
+                    <form method="post" asp-action="Register">
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>Registration Error</strong>
+                                <ul class="mb-0 mt-2">
+                                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <li>@error.ErrorMessage</li>
+                                    }
+                                </ul>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label" style="color: #E2E8F0;">Email</label>
+                            <input asp-for="Email" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" placeholder="Enter your email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label" style="color: #E2E8F0;">Full Name</label>
+                            <input asp-for="FullName" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" placeholder="Enter your full name" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Department" class="form-label" style="color: #E2E8F0;">Department (Optional)</label>
+                            <input asp-for="Department" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" placeholder="Enter your department" />
+                            <span asp-validation-for="Department" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label" style="color: #E2E8F0;">Password</label>
+                            <input asp-for="Password" type="password" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" placeholder="At least 8 characters" />
+                            <small class="text-muted d-block mt-1">
+                                Must contain: uppercase, lowercase, digit, 8+ characters
+                            </small>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label" style="color: #E2E8F0;">Confirm Password</label>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" placeholder="Repeat your password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2" style="background-color: #2563EB; border-color: #2563EB;">Create Account</button>
+                    </form>
+
+                    <hr style="border-color: #334155; margin: 20px 0;">
+
+                    <p class="text-center text-muted mb-0">
+                        Already have an account?
+                        <a asp-action="Login" style="color: #2563EB; text-decoration: none;">Sign in here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
