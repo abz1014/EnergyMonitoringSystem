@@ -1,9 +1,10 @@
 ﻿namespace EMS.Infrastructure.Data;
 
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using EMS.Core.Models;
 
-public class ScadaDbContext : DbContext
+public class ScadaDbContext : IdentityDbContext<AppUser>
 {
     public ScadaDbContext(DbContextOptions<ScadaDbContext> options) : base(options)
     {

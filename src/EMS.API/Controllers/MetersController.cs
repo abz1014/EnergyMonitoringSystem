@@ -1,10 +1,12 @@
 namespace EMS.API.Controllers;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Interfaces;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class MetersController : ControllerBase
 {
     private readonly ILiveMonitoringService _liveMonitoringService;

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using EMS.Core.Interfaces;
+using EMS.Core.Models;
 using EMS.Infrastructure.Data;
 using EMS.Infrastructure.Repositories;
 using EMS.API.Services;
@@ -13,6 +15,20 @@ var connectionString = builder.Configuration.GetConnectionString("ScadaDb")
 builder.Services.AddDbContext<ScadaDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// Identity configuration
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 8;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+})
+.AddEntityFrameworkStores<ScadaDbContext>()
+.AddDefaultTokenProviders();
+
 // Repository dependency injection
 builder.Services.AddScoped<IEnergyMeterRepository, EnergyMeterRepository>();
 builder.Services.AddScoped<IEnergyMeterLiveRepository, EnergyMeterLiveRepository>();
@@ -23,6 +39,7 @@ builder.Services.AddScoped<IFlowmeterRepository, FlowmeterRepository>();
 // Service dependency injection
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ILiveMonitoringService, LiveMonitoringService>();
+builder.Services.AddScoped<RoleSeederService>();
 
 // CORS configuration for external clients
 builder.Services.AddCors(options =>
@@ -66,10 +83,19 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapIdentityApi<AppUser>();
 app.MapGet("/api/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
     .WithName("Health")
     .WithOpenApi();
+
+// Seed roles and default users
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<RoleSeederService>();
+    await seeder.InitializeRolesAsync();
+}
 
 app.Run();
