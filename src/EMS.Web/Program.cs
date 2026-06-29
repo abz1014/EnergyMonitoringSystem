@@ -12,6 +12,9 @@ using EMS.Web.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// File logging
+builder.Logging.AddFile("Logs/ems-web-{Date}.log");
+
 // Database configuration
 var connectionString = builder.Configuration.GetConnectionString("ScadaDb")
     ?? throw new InvalidOperationException("Connection string 'ScadaDb' not found in configuration.");
@@ -72,6 +75,10 @@ builder.Services.AddResponseCompression(options =>
     options.Providers.Add<GzipCompressionProvider>();
 });
 
+// Health checks
+builder.Services.AddHealthChecks()
+    .AddSqlServer(connectionString, name: "database", timeout: TimeSpan.FromSeconds(5));
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -84,6 +91,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseMiddleware<RateLimitingMiddleware>();
 app.UseMiddleware<RequestTimingMiddleware>();
 app.UseHttpsRedirection();
 app.UseResponseCompression();
@@ -97,6 +105,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHealthChecks("/health");
 
 // Seed roles and default users
 using (var scope = app.Services.CreateScope())

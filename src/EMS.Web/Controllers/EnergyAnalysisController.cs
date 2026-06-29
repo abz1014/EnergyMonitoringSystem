@@ -40,12 +40,7 @@ public class EnergyAnalysisController : Controller
             }
             catch (Exception dbEx)
             {
-                _logger.LogWarning(dbEx, "Database query failed, using mock data instead");
-            }
-
-            if (consumptionData == null || consumptionData.Count == 0)
-            {
-                consumptionData = GenerateMockData(dateFrom, dateTo, timeframe);
+                _logger.LogWarning(dbEx, "Database query failed for date range {From} to {To}", dateFrom, dateTo);
             }
 
             consumptionData ??= new();
@@ -114,13 +109,13 @@ public class EnergyAnalysisController : Controller
         {
             var data = await _energyMeterRepository.GetByDateRange(compFrom, compTo);
             if (data == null || data.Count == 0)
-                data = GenerateMockData(compFrom, compTo, timeframe);
+                return new();
             return AggregateByTimeframe(data, timeframe, metric);
         }
-        catch
+        catch (Exception ex)
         {
-            var mockData = GenerateMockData(compFrom, compTo, timeframe);
-            return AggregateByTimeframe(mockData, timeframe, metric);
+            _logger.LogWarning(ex, "Failed to fetch comparison data");
+            return new();
         }
     }
 
@@ -162,33 +157,4 @@ public class EnergyAnalysisController : Controller
         };
     }
 
-    private List<EMS.Core.Models.EnergyMeterData> GenerateMockData(DateTime from, DateTime to, string timeframe)
-    {
-        var data = new List<EMS.Core.Models.EnergyMeterData>();
-        var current = from;
-        var random = new Random(42);
-
-        while (current <= to)
-        {
-            var hourlyConsumption = random.Next(150, 450);
-            data.Add(new EMS.Core.Models.EnergyMeterData
-            {
-                Id = data.Count + 1,
-                DateTime = current,
-                kWh = hourlyConsumption,
-                kWtotal = hourlyConsumption * 1.05,
-                MeterNo = 1,
-                VoltL1N = 230 + random.Next(-5, 5),
-                VoltL2N = 230 + random.Next(-5, 5),
-                VoltL3N = 230 + random.Next(-5, 5),
-                CurrentL1 = 10 + random.Next(-2, 2),
-                CurrentL2 = 10 + random.Next(-2, 2),
-                CurrentL3 = 10 + random.Next(-2, 2)
-            });
-
-            current = current.AddHours(1);
-        }
-
-        return data;
-    }
 }

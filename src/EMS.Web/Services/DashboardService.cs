@@ -120,9 +120,9 @@ public class WebDashboardService : IDashboardService
 
         var charts = new ChartDataDto
         {
-            ConsumptionTrend = GenerateMockConsumptionTrend(),
-            LocationBreakdown = GenerateMockLocationBreakdown(),
-            TopConsumers = GenerateMockTopConsumers()
+            ConsumptionTrend = new List<ConsumptionChartPointDto>(),
+            LocationBreakdown = new List<LocationBreakdownDto>(),
+            TopConsumers = new List<TopConsumerDto>()
         };
 
             var dashboard = new ExecutiveDashboardDto
@@ -145,51 +145,6 @@ public class WebDashboardService : IDashboardService
         }
     }
 
-    private List<ConsumptionChartPointDto> GenerateMockConsumptionTrend()
-    {
-        var result = new List<ConsumptionChartPointDto>();
-        var now = DateTime.Now.Date;
-
-        for (int i = 0; i < 24; i++)
-        {
-            result.Add(new ConsumptionChartPointDto
-            {
-                Time = now.AddHours(i),
-                Value = 400 + (Math.Sin(i / 24.0 * Math.PI * 2) * 150) + (new Random(i).NextDouble() * 50)
-            });
-        }
-
-        return result;
-    }
-
-    private List<LocationBreakdownDto> GenerateMockLocationBreakdown()
-    {
-        return new List<LocationBreakdownDto>
-        {
-            new() { Location = "Production", Consumption = 15840, Percentage = 45 },
-            new() { Location = "Warehouse", Consumption = 8800, Percentage = 25 },
-            new() { Location = "Utilities", Consumption = 7040, Percentage = 20 },
-            new() { Location = "Admin", Consumption = 3520, Percentage = 10 }
-        };
-    }
-
-    private List<TopConsumerDto> GenerateMockTopConsumers()
-    {
-        return new List<TopConsumerDto>
-        {
-            new() { Rank = 1, Name = "Machine A", Consumption = 12.5 },
-            new() { Rank = 2, Name = "Machine B", Consumption = 10.8 },
-            new() { Rank = 3, Name = "Building 2", Consumption = 8.2 },
-            new() { Rank = 4, Name = "HVAC", Consumption = 7.5 },
-            new() { Rank = 5, Name = "Pump-A", Consumption = 6.3 },
-            new() { Rank = 6, Name = "Compressor", Consumption = 5.8 },
-            new() { Rank = 7, Name = "Boiler", Consumption = 5.2 },
-            new() { Rank = 8, Name = "Lighting", Consumption = 4.1 },
-            new() { Rank = 9, Name = "Process Ctrl", Consumption = 3.8 },
-            new() { Rank = 10, Name = "Misc. Load", Consumption = 2.9 }
-        };
-    }
-
     private KpiCardsDto GenerateFallbackKpiCards()
     {
         return new KpiCardsDto
@@ -209,9 +164,9 @@ public class WebDashboardService : IDashboardService
     {
         return new ChartDataDto
         {
-            ConsumptionTrend = GenerateMockConsumptionTrend(),
-            LocationBreakdown = GenerateMockLocationBreakdown(),
-            TopConsumers = GenerateMockTopConsumers()
+            ConsumptionTrend = new List<ConsumptionChartPointDto>(),
+            LocationBreakdown = new List<LocationBreakdownDto>(),
+            TopConsumers = new List<TopConsumerDto>()
         };
     }
 }
