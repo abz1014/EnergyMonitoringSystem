@@ -1,27 +1,43 @@
 namespace EMS.Web.Services;
 
+using Microsoft.Extensions.Caching.Memory;
 using EMS.Core.Interfaces;
 
 public class WebDashboardService : IDashboardService
 {
     private readonly IEnergyMeterRepository _energyMeterRepository;
     private readonly IMonitoringDeviceRepository _deviceRepository;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<WebDashboardService> _logger;
+
+    private static readonly TimeSpan KpiCacheDuration = TimeSpan.FromSeconds(30);
+    private const string CacheKeyDashboard = "dashboard_kpi";
 
     public WebDashboardService(
         IEnergyMeterRepository energyMeterRepository,
         IMonitoringDeviceRepository deviceRepository,
+        IMemoryCache cache,
         ILogger<WebDashboardService> logger)
     {
         _energyMeterRepository = energyMeterRepository;
         _deviceRepository = deviceRepository;
+        _cache = cache;
         _logger = logger;
     }
 
     public async Task<ExecutiveDashboardDto> GetExecutiveDashboardAsync(DashboardFilterDto filter)
     {
+        var cacheKey = $"{CacheKeyDashboard}_{filter.Plant}_{filter.Building}_{filter.Area}";
+
+        if (_cache.TryGetValue(cacheKey, out ExecutiveDashboardDto? cached) && cached != null)
+        {
+            _logger.LogDebug("Dashboard cache hit for {CacheKey}", cacheKey);
+            return cached;
+        }
+
         try
         {
+            _logger.LogDebug("Dashboard cache miss, querying database");
             var todaysConsumption = await _energyMeterRepository.GetTodaysTotalConsumption();
             var peakDemand = await _energyMeterRepository.GetPeakDemandToday();
             var onlineMeters = await _deviceRepository.GetOnlineDeviceCount();
@@ -109,11 +125,14 @@ public class WebDashboardService : IDashboardService
             TopConsumers = GenerateMockTopConsumers()
         };
 
-            return new ExecutiveDashboardDto
+            var dashboard = new ExecutiveDashboardDto
             {
                 KpiCards = kpiCards,
                 Charts = charts
             };
+
+            _cache.Set(cacheKey, dashboard, KpiCacheDuration);
+            return dashboard;
         }
         catch (Exception ex)
         {

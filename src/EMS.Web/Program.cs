@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.ResponseCompression;
 using FluentValidation;
 using EMS.Core.Interfaces;
 using EMS.Core.Models;
@@ -7,6 +8,7 @@ using EMS.Infrastructure.Data;
 using EMS.Infrastructure.Repositories;
 using EMS.Web.Services;
 using EMS.Web.Validators;
+using EMS.Web.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +61,17 @@ builder.Services.AddScoped<RoleSeederService>();
 builder.Services.AddScoped<IValidator<DashboardFilterDto>, DashboardFilterValidator>();
 builder.Services.AddScoped<IValidator<LiveMonitoringFilterDto>, LiveMonitoringFilterValidator>();
 
+// In-memory caching
+builder.Services.AddMemoryCache();
+
+// Response compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -71,13 +84,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Security headers
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHsts(); // HTTP Strict-Transport-Security
-}
-
-app.UseHttpsRedirection(); // Enforce HTTPS
+app.UseMiddleware<RequestTimingMiddleware>();
+app.UseHttpsRedirection();
+app.UseResponseCompression();
 app.UseStaticFiles();
 
 app.UseRouting();

@@ -16,13 +16,13 @@ public class EnergyMeterLiveRepository : IEnergyMeterLiveRepository
 
     public async Task<List<EnergyMeterLive>> GetAllLive()
     {
-        return await _context.EnergyMeterLive.ToListAsync();
+        return await _context.EnergyMeterLive.AsNoTracking().ToListAsync();
     }
 
     public async Task<List<EnergyMeterLive>> GetLiveByPlant(string plant)
     {
-        return await _context.EnergyMeterLive
-            .Join(_context.MonitoringDevices,
+        return await _context.EnergyMeterLive.AsNoTracking()
+            .Join(_context.MonitoringDevices.AsNoTracking(),
                 live => live.MeterNo,
                 device => device.DeviceID,
                 (live, device) => new { live, device })
@@ -33,8 +33,8 @@ public class EnergyMeterLiveRepository : IEnergyMeterLiveRepository
 
     public async Task<List<EnergyMeterLive>> GetLiveByBuilding(string building)
     {
-        return await _context.EnergyMeterLive
-            .Join(_context.MonitoringDevices,
+        return await _context.EnergyMeterLive.AsNoTracking()
+            .Join(_context.MonitoringDevices.AsNoTracking(),
                 live => live.MeterNo,
                 device => device.DeviceID,
                 (live, device) => new { live, device })
@@ -45,7 +45,7 @@ public class EnergyMeterLiveRepository : IEnergyMeterLiveRepository
 
     public async Task<EnergyMeterLive?> GetLiveByMeterId(int meterId)
     {
-        return await _context.EnergyMeterLive
+        return await _context.EnergyMeterLive.AsNoTracking()
             .FirstOrDefaultAsync(e => e.MeterNo == meterId);
     }
 
