@@ -11,17 +11,21 @@ public class EnergyMeterData
     public string? Type1 { get; set; }
     public DateTime? DateTime { get; set; }
 
+    // float columns in DB
     public double? VoltL1N { get; set; }
     public double? VoltL2N { get; set; }
     public double? VoltL3N { get; set; }
-    public double? VoltL1L2 { get; set; }
-    public double? VoltL2L3 { get; set; }
-    public double? VoltL1L3 { get; set; }
+    // decimal columns in DB
+    public decimal? VoltL1L2 { get; set; }
+    public decimal? VoltL2L3 { get; set; }
+    public decimal? VoltL1L3 { get; set; }
 
+    // float columns in DB
     public double? CurrentL1 { get; set; }
     public double? CurrentL2 { get; set; }
     public double? CurrentL3 { get; set; }
 
+    // float columns in DB
     public double? PowerL1 { get; set; }
     public double? PowerL2 { get; set; }
     public double? PowerL3 { get; set; }
@@ -29,21 +33,23 @@ public class EnergyMeterData
     public double? kVAtotal { get; set; }
     public double? kVARtotal { get; set; }
 
+    // PFL1 is float, PFL2/PFL3 are decimal
     public double? PFL1 { get; set; }
-    public double? PFL2 { get; set; }
-    public double? PFL3 { get; set; }
-    public double? MFreq { get; set; }
+    public decimal? PFL2 { get; set; }
+    public decimal? PFL3 { get; set; }
+    public decimal? MFreq { get; set; }
 
-    public double? kWh { get; set; }
-    public double? kVAh { get; set; }
-    public double? kVARh { get; set; }
+    // decimal columns in DB
+    public decimal? kWh { get; set; }
+    public decimal? kVAh { get; set; }
+    public decimal? kVARh { get; set; }
 
-    public double? HarmonicV1 { get; set; }
-    public double? HarmonicV2 { get; set; }
-    public double? HarmonicV3 { get; set; }
-    public double? HarmonicI1 { get; set; }
-    public double? HarmonicI2 { get; set; }
-    public double? HarmonicI3 { get; set; }
+    public decimal? HarmonicV1 { get; set; }
+    public decimal? HarmonicV2 { get; set; }
+    public decimal? HarmonicV3 { get; set; }
+    public decimal? HarmonicI1 { get; set; }
+    public decimal? HarmonicI2 { get; set; }
+    public decimal? HarmonicI3 { get; set; }
 }
 
 
@@ -98,7 +104,7 @@ public class FlowmeterData
     public DateTime? DateTime { get; set; }
     public int? MeterNo { get; set; }
     public string? InformationType { get; set; }
-    public double? Data { get; set; }
+    public decimal? Data { get; set; }
     public string? DataUnit { get; set; }
     public string? Area { get; set; }
 }

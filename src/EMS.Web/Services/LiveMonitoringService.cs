@@ -75,7 +75,7 @@ public class LiveMonitoringService : ILiveMonitoringService
                         kVAR = live.kVARtotal ?? 0
                     },
                     PowerFactor = live.PFL1 ?? 0,
-                    Frequency = live.MFreq ?? 0,
+                    Frequency = (double)(live.MFreq ?? 0),
                     LastUpdated = live.DateTime ?? DateTime.MinValue,
                     Sparkline = new List<double>()
                 };
