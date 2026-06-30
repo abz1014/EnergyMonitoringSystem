@@ -109,6 +109,14 @@ public class FlowmeterData
     public string? Area { get; set; }
 }
 
+public class UserDashboardWidget
+{
+    public int SrNo { get; set; }
+    public string UserId { get; set; } = "";
+    public string WidgetKey { get; set; } = "";
+    public int Position { get; set; }
+}
+
 public class DailyTemperature
 {
     public DateTime TempDate { get; set; }

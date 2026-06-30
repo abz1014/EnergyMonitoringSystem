@@ -46,6 +46,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
 });
 
+// Allow antiforgery validation for AJAX/fetch POSTs that send the token via a header
+// instead of a form field (e.g. MyDashboardController.SaveLayout)
+builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
+
 // Repository dependency injection
 builder.Services.AddScoped<IEnergyMeterRepository, EnergyMeterRepository>();
 builder.Services.AddScoped<IMonitoringDeviceRepository, MonitoringDeviceRepository>();

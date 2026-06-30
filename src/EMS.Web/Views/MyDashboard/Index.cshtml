@@ -1,0 +1,98 @@
+@{
+    ViewData["Title"] = "My Dashboard";
+    var layout = ViewBag.Layout as List<EMS.Core.Models.UserDashboardWidget> ?? new();
+    var values = ViewBag.WidgetValues as Dictionary<string, string> ?? new();
+    var catalog = ViewBag.Catalog as Dictionary<string, string> ?? new();
+    var availableToAdd = ViewBag.AvailableToAdd as List<string> ?? new();
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4 d-flex justify-content-between align-items-start">
+        <div>
+            <h1 class="h2 mb-2">My Dashboard</h1>
+            <p class="text-muted">Drag widgets to reorder. Changes save automatically.</p>
+        </div>
+        @if (availableToAdd.Count > 0)
+        {
+            <div class="dropdown">
+                <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">+ Add Widget</button>
+                <ul class="dropdown-menu dropdown-menu-end" style="background-color: #1E293B; border-color: #334155;">
+                    @foreach (var key in availableToAdd)
+                    {
+                        <li><a class="dropdown-item text-light" href="#" onclick="addWidget('@key'); return false;" style="background-color: transparent;">@catalog[key]</a></li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+
+    <div id="widgetGrid" class="row g-3">
+        @foreach (var w in layout)
+        {
+            if (!catalog.ContainsKey(w.WidgetKey)) { continue; }
+            <div class="col-md-3 widget-card" draggable="true" data-key="@w.WidgetKey" style="cursor: grab;">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #2563EB; position: relative;">
+                    <button onclick="removeWidget('@w.WidgetKey')" class="btn-close btn-close-white" style="position: absolute; top: 10px; right: 10px; font-size: 10px;" title="Remove"></button>
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">@catalog[w.WidgetKey]</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700; margin-top: 8px;">@(values.GetValueOrDefault(w.WidgetKey, "—"))</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (layout.Count == 0)
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128202;</div>
+            <h4 style="color: #E2E8F0;">No widgets yet</h4>
+            <p style="color: #64748B;">Use "+ Add Widget" to build your custom dashboard.</p>
+        </div>
+    }
+</div>
+
+@Html.AntiForgeryToken()
+<script>
+    var grid = document.getElementById('widgetGrid');
+    var dragged = null;
+
+    document.querySelectorAll('.widget-card').forEach(attachDragEvents);
+
+    function attachDragEvents(card) {
+        card.addEventListener('dragstart', function(e) { dragged = card; e.dataTransfer.effectAllowed = 'move'; });
+        card.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            var target = e.target.closest('.widget-card');
+            if (!target || target === dragged) return;
+            var rect = target.getBoundingClientRect();
+            var next = (e.clientX - rect.left) / rect.width > 0.5;
+            grid.insertBefore(dragged, next ? target.nextSibling : target);
+        });
+        card.addEventListener('dragend', function() { saveLayout(); });
+    }
+
+    function getToken() { return document.querySelector('input[name="__RequestVerificationToken"]').value; }
+
+    function saveLayout() {
+        var keys = Array.from(document.querySelectorAll('.widget-card')).map(function(c) { return c.dataset.key; });
+        fetch('/MyDashboard/SaveLayout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+            body: JSON.stringify(keys)
+        });
+    }
+
+    function removeWidget(key) {
+        var card = document.querySelector('.widget-card[data-key="' + key + '"]');
+        if (card) card.remove();
+        saveLayout();
+        setTimeout(function() { location.reload(); }, 200);
+    }
+
+    function addWidget(key) {
+        fetch('/MyDashboard/SaveLayout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+            body: JSON.stringify(Array.from(document.querySelectorAll('.widget-card')).map(function(c) { return c.dataset.key; }).concat([key]))
+        }).then(function() { location.reload(); });
+    }
+</script>

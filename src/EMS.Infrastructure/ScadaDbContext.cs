@@ -17,6 +17,7 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
     public DbSet<DeviceTag> DeviceTags { get; set; }
     public DbSet<AppSetting> AppSettings { get; set; }
     public DbSet<DailyTemperature> DailyTemperatures { get; set; }
+    public DbSet<UserDashboardWidget> UserDashboardWidgets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,6 +31,7 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
         modelBuilder.Entity<DeviceTag>().ToTable("tblDevicesTags");
         modelBuilder.Entity<AppSetting>().ToTable("tblAppSettings");
         modelBuilder.Entity<DailyTemperature>().ToTable("tblDailyTemperature");
+        modelBuilder.Entity<UserDashboardWidget>().ToTable("tblUserDashboardWidgets");
 
         // EnergyMeterData configurations
         modelBuilder.Entity<EnergyMeterData>()
@@ -71,6 +73,12 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
 
         modelBuilder.Entity<DailyTemperature>()
             .HasKey(e => e.TempDate);
+
+        modelBuilder.Entity<UserDashboardWidget>()
+            .HasKey(e => e.SrNo);
+        modelBuilder.Entity<UserDashboardWidget>()
+            .HasIndex(e => new { e.UserId, e.WidgetKey })
+            .IsUnique();
 
         // DeviceTag configurations
         modelBuilder.Entity<DeviceTag>()
