@@ -1,0 +1,170 @@
+@{
+    ViewData["Title"] = "Demand Duration Curve";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "30d";
+    var contractedDemand = ViewBag.ContractedDemand as double?;
+    var pctAboveContract = ViewBag.PctAboveContract as double?;
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Demand Duration Curve</h1>
+        <p class="text-muted">Sorted demand levels showing how often each kW level is reached — useful for demand charge optimization</p>
+    </div>
+
+    <!-- Controls -->
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-light">Contracted Demand (kW)</label>
+                <input type="number" name="contractedDemand" value="@contractedDemand" step="0.1" placeholder="Optional"
+                       class="form-control" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" />
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">
+            Period: @ViewBag.DateRangeLabel | @ViewBag.DataPoints data points analyzed
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Peak</div>
+                    <div style="color: #EF4444; font-size: 22px; font-weight: 700;">@ViewBag.PeakKw <span style="font-size:11px;color:#64748B;">kW</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Average</div>
+                    <div style="color: #10B981; font-size: 22px; font-weight: 700;">@ViewBag.AvgKw <span style="font-size:11px;color:#64748B;">kW</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #3B82F6;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Minimum</div>
+                    <div style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@ViewBag.MinKw <span style="font-size:11px;color:#64748B;">kW</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Load Factor</div>
+                    <div style="color: #F59E0B; font-size: 22px; font-weight: 700;">@ViewBag.LoadFactor%</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">P90 (90% time below)</div>
+                    <div style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@ViewBag.P90 <span style="font-size:11px;color:#64748B;">kW</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #06B6D4;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">P10 (10% time below)</div>
+                    <div style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@ViewBag.P10 <span style="font-size:11px;color:#64748B;">kW</span></div>
+                </div>
+            </div>
+        </div>
+
+        @if (pctAboveContract.HasValue)
+        {
+            <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @(pctAboveContract > 10 ? "#EF4444" : "#10B981");">
+                <span style="color: #E2E8F0;">
+                    Demand exceeded your contracted level of <strong>@contractedDemand kW</strong> for
+                    <strong style="color: @(pctAboveContract > 10 ? "#EF4444" : "#10B981");">@pctAboveContract%</strong> of the time during this period.
+                    @if (pctAboveContract > 10)
+                    {
+                        <text> Consider reviewing your contracted demand level or implementing load shedding during peak periods.</text>
+                    }
+                </span>
+            </div>
+        }
+
+        <!-- Load Factor Explanation -->
+        <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+            <span style="color: #E2E8F0;">
+                Load Factor of <strong>@ViewBag.LoadFactor%</strong> means your average demand is @ViewBag.LoadFactor% of your peak demand.
+                @{ var lf = (double)ViewBag.LoadFactor; }
+                @if (lf < 50)
+                {
+                    <text>A low load factor indicates significant demand variability — your peak periods are much higher than your typical usage, which may result in demand charge penalties.</text>
+                }
+                else
+                {
+                    <text>A higher load factor indicates more consistent usage, which is generally more cost-efficient for demand-based billing.</text>
+                }
+            </span>
+        </div>
+
+        <!-- Duration Curve Chart -->
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Demand Duration Curve</h5>
+            <div id="durationCurveChart" style="height: 400px;"></div>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128202;</div>
+            <h4 style="color: #E2E8F0;">No data available for this period</h4>
+            <p style="color: #64748B;">Try selecting a longer time range.</p>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        var annotations = { yaxis: [] };
+        @if (contractedDemand.HasValue)
+        {
+            <text>
+            annotations.yaxis.push({
+                y: @contractedDemand,
+                borderColor: '#EF4444',
+                strokeDashArray: 4,
+                label: { text: 'Contracted: @contractedDemand kW', style: { color: '#FFF', background: '#EF4444', fontSize: '11px' } }
+            });
+            </text>
+        }
+
+        new ApexCharts(document.querySelector('#durationCurveChart'), {
+            series: [{ name: 'Demand (kW)', data: @Html.Raw(ViewBag.CurvePoints) }],
+            chart: { type: 'area', height: 400, background: '#1E293B', toolbar: { show: true }, zoom: { enabled: true } },
+            colors: ['#2563EB'],
+            stroke: { curve: 'stepline', width: 2 },
+            fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
+            xaxis: {
+                categories: @Html.Raw(ViewBag.CurveLabels),
+                title: { text: '% of Time', style: { color: '#94A3B8' } },
+                labels: { style: { colors: '#94A3B8' }, rotate: 0 },
+                tickAmount: 10
+            },
+            yaxis: {
+                title: { text: 'Demand (kW)', style: { color: '#94A3B8' } },
+                labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toFixed(0); } }
+            },
+            annotations: annotations,
+            tooltip: { theme: 'dark', x: { formatter: function(v, opts) { return 'At ' + opts.w.globals.labels[opts.dataPointIndex] + ' of the time'; } } },
+            grid: { borderColor: '#334155' },
+            markers: { size: 0 }
+        }).render();
+    </script>
+}
