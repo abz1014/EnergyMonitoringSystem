@@ -167,13 +167,16 @@
                             </div>
                             <small style="color: #94A3B8;">@alarm.Message</small>
                         </div>
-                        <form asp-controller="LiveMonitoring" asp-action="AcknowledgeAlarm" method="post" style="display:inline;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="alarmId" value="@alarm.Id" />
-                            <button type="submit" class="btn btn-sm" style="background-color: #2563EB; color: white; padding: 4px 8px; font-size: 12px;">
-                                Acknowledge
-                            </button>
-                        </form>
+                        @if (User.IsInRole("Admin") || User.IsInRole("Operator"))
+                        {
+                            <form asp-controller="LiveMonitoring" asp-action="AcknowledgeAlarm" method="post" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="alarmId" value="@alarm.Id" />
+                                <button type="submit" class="btn btn-sm" style="background-color: #2563EB; color: white; padding: 4px 8px; font-size: 12px;">
+                                    Acknowledge
+                                </button>
+                            </form>
+                        }
                     </div>
                     <small style="color: #64748B; margin-top: 8px; display: block;">
                         @alarm.CreatedAt.ToString("g")

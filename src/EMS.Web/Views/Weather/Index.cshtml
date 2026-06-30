@@ -32,15 +32,24 @@
             </form>
         </div>
         <div class="col-md-4">
-            <form method="post" asp-action="AddTemperature" class="p-4" style="background-color: #1E293B; border-radius: 8px;">
-                @Html.AntiForgeryToken()
-                <label class="form-label text-light" style="font-size:12px;">Add/Update Daily Temperature</label>
-                <div class="d-flex gap-2">
-                    <input type="date" name="tempDate" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" required />
-                    <input type="number" name="avgTempC" step="0.1" placeholder="°C" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155; width: 80px;" required />
-                    <button type="submit" class="btn btn-sm btn-outline-light">Save</button>
+            @if (User.IsInRole("Admin") || User.IsInRole("Operator"))
+            {
+                <form method="post" asp-action="AddTemperature" class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    @Html.AntiForgeryToken()
+                    <label class="form-label text-light" style="font-size:12px;">Add/Update Daily Temperature</label>
+                    <div class="d-flex gap-2">
+                        <input type="date" name="tempDate" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" required />
+                        <input type="number" name="avgTempC" step="0.1" placeholder="°C" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155; width: 80px;" required />
+                        <button type="submit" class="btn btn-sm btn-outline-light">Save</button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <small style="color: #64748B;">Adding temperature data requires Admin or Operator role.</small>
                 </div>
-            </form>
+            }
         </div>
     </div>
 

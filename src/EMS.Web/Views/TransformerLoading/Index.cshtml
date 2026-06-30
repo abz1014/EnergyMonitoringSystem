@@ -24,25 +24,41 @@
     </div>
 
     <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
-        <h6 class="text-light mb-3">Transformer Nameplate Ratings (Admin)</h6>
+        <h6 class="text-light mb-3">Transformer Nameplate Ratings @(User.IsInRole("Admin") ? "(Admin)" : "(read-only — Admin role required to edit)")</h6>
         <div class="d-none d-md-flex" style="color: #94A3B8; font-size: 11px; text-transform: uppercase; gap: 12px; padding: 4px 0; border-bottom: 1px solid #334155; margin-bottom: 8px;">
             <div style="width: 60px;">Meter</div>
             <div style="width: 160px;">Name</div>
             <div style="width: 120px;">Nameplate kVA</div>
             <div style="width: 120px;">Cooling Class</div>
         </div>
-        @foreach (var meterNo in new[] { 1, 2, 3 })
+        @if (User.IsInRole("Admin"))
         {
-            var r = ratings.FirstOrDefault(x => x.MeterNo == meterNo);
-            <form method="post" asp-action="SaveRating" class="d-flex flex-wrap mb-2" style="gap: 12px; align-items: center;">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="meterNo" value="@meterNo" />
-                <div style="width: 60px; color: #E2E8F0; font-size: 13px;">@meterNo</div>
-                <input type="text" name="transformerName" value="@(r?.TransformerName ?? $"TX-{meterNo}")" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155; width: 160px;" />
-                <input type="number" name="nameplateKva" value="@(r?.NameplateKva ?? 0)" step="0.1" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155; width: 120px;" />
-                <input type="text" name="coolingClass" value="@(r?.CoolingClass ?? "")" placeholder="e.g. ONAN" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155; width: 120px;" />
-                <button type="submit" class="btn btn-sm btn-outline-light">Save</button>
-            </form>
+            @foreach (var meterNo in new[] { 1, 2, 3 })
+            {
+                var r = ratings.FirstOrDefault(x => x.MeterNo == meterNo);
+                <form method="post" asp-action="SaveRating" class="d-flex flex-wrap mb-2" style="gap: 12px; align-items: center;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="meterNo" value="@meterNo" />
+                    <div style="width: 60px; color: #E2E8F0; font-size: 13px;">@meterNo</div>
+                    <input type="text" name="transformerName" value="@(r?.TransformerName ?? $"TX-{meterNo}")" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155; width: 160px;" />
+                    <input type="number" name="nameplateKva" value="@(r?.NameplateKva ?? 0)" step="0.1" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155; width: 120px;" />
+                    <input type="text" name="coolingClass" value="@(r?.CoolingClass ?? "")" placeholder="e.g. ONAN" class="form-control form-control-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155; width: 120px;" />
+                    <button type="submit" class="btn btn-sm btn-outline-light">Save</button>
+                </form>
+            }
+        }
+        else
+        {
+            @foreach (var meterNo in new[] { 1, 2, 3 })
+            {
+                var r = ratings.FirstOrDefault(x => x.MeterNo == meterNo);
+                <div class="d-flex flex-wrap mb-2" style="gap: 12px; align-items: center; font-size: 13px;">
+                    <div style="width: 60px; color: #E2E8F0;">@meterNo</div>
+                    <div style="width: 160px; color: #E2E8F0;">@(r?.TransformerName ?? $"TX-{meterNo}")</div>
+                    <div style="width: 120px; color: #E2E8F0;">@(r?.NameplateKva.ToString() ?? "—") kVA</div>
+                    <div style="width: 120px; color: #E2E8F0;">@(r?.CoolingClass ?? "—")</div>
+                </div>
+            }
         }
     </div>
 

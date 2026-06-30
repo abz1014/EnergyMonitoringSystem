@@ -71,6 +71,10 @@ public class RootCauseController : Controller
 
             var results = new List<AlarmContext>();
 
+            // N+1 query pattern: one GetByDateRange call per alarm. Acceptable at the current
+            // scale (single digits to low dozens of alarms) -- would need batching if alarm
+            // volume grows into the hundreds (e.g. fetch one wide date range covering all
+            // alarms up front, then filter per-alarm in memory instead of querying per-alarm).
             foreach (var alarm in allAlarms.OrderByDescending(a => a.CreatedAt))
             {
                 var alarmTime = alarm.CreatedAt;
