@@ -40,6 +40,34 @@ public class BriefingViewModel
     // Data availability
     public bool HasData { get; set; }
     public string DataDateLabel { get; set; } = "Yesterday";
+
+    // Weekly Energy Health (Sprint 5)
+    public WeeklyHealth Weekly { get; set; } = new();
+
+    // Monthly Energy Report (Sprint 5)
+    public MonthlyReport Monthly { get; set; } = new();
+}
+
+public class WeeklyHealth
+{
+    public string WeekLabel { get; set; } = "";
+    public double TotalKwh { get; set; }
+    public double AvgPf { get; set; }
+    public int AlarmCount { get; set; }
+    public bool HasPriorWeek { get; set; }
+    public double PriorWeekKwh { get; set; }
+    public double? WowChangePct { get; set; }
+}
+
+public class MonthlyReport
+{
+    public string MonthLabel { get; set; } = "";
+    public double MonthToDateKwh { get; set; }
+    public double EstimatedCost { get; set; }
+    public double PeakKw { get; set; }
+    public bool HasPriorMonth { get; set; }
+    public double PriorMonthKwh { get; set; }
+    public double? MomChangePct { get; set; }
 }
 
 public class BriefingInsight

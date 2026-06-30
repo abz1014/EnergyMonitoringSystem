@@ -9,17 +9,20 @@ public class BriefingService
     private readonly IEnergyMeterRepository _meterRepo;
     private readonly IMonitoringDeviceRepository _deviceRepo;
     private readonly IAlarmRepository _alarmRepo;
+    private readonly AppSettingsService _settings;
     private readonly ILogger<BriefingService> _logger;
 
     public BriefingService(
         IEnergyMeterRepository meterRepo,
         IMonitoringDeviceRepository deviceRepo,
         IAlarmRepository alarmRepo,
+        AppSettingsService settings,
         ILogger<BriefingService> logger)
     {
         _meterRepo = meterRepo;
         _deviceRepo = deviceRepo;
         _alarmRepo = alarmRepo;
+        _settings = settings;
         _logger = logger;
     }
 
@@ -109,6 +112,8 @@ public class BriefingService
 
             CalculateScore(model);
             GenerateInsights(model);
+            await BuildWeeklyHealthAsync(model);
+            await BuildMonthlyReportAsync(model);
 
             return model;
         }
@@ -220,6 +225,71 @@ public class BriefingService
                 ActionUrl = "/MeterFaceplate",
                 ActionLabel = "View Details"
             });
+        }
+    }
+
+    // Sprint 5: Weekly Energy Health. Anchored to model.ReportDate (the latest date with actual
+    // data, same fallback already resolved above) rather than DateTime.Now, so this stays
+    // consistent with the rest of the briefing instead of comparing against a "today" the
+    // database has no readings for.
+    private async Task BuildWeeklyHealthAsync(BriefingViewModel model)
+    {
+        var weekEnd = model.ReportDate.AddDays(1).AddTicks(-1);
+        var weekStart = model.ReportDate.AddDays(-6);
+        var priorWeekEnd = weekStart.AddTicks(-1);
+        var priorWeekStart = weekStart.AddDays(-7);
+
+        var weekData = (await _meterRepo.GetByDateRange(weekStart, weekEnd))
+            .ExcludeContaminated().ToList();
+        var priorWeekData = (await _meterRepo.GetByDateRange(priorWeekStart, priorWeekEnd))
+            .ExcludeContaminated().ToList();
+
+        model.Weekly.WeekLabel = $"{weekStart:MMM dd} — {model.ReportDate:MMM dd, yyyy}";
+        model.Weekly.TotalKwh = Math.Round(weekData.Sum(d => (double)(d.kWh ?? 0)), 0);
+
+        var pfValues = weekData.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).ToList();
+        model.Weekly.AvgPf = pfValues.Count > 0 ? Math.Round(pfValues.Average(), 3) : 0;
+
+        var allAlarms = await _alarmRepo.GetAllAlarms();
+        model.Weekly.AlarmCount = allAlarms.Count(a => a.CreatedAt >= weekStart && a.CreatedAt <= weekEnd);
+
+        model.Weekly.HasPriorWeek = priorWeekData.Count > 0;
+        if (model.Weekly.HasPriorWeek)
+        {
+            model.Weekly.PriorWeekKwh = Math.Round(priorWeekData.Sum(d => (double)(d.kWh ?? 0)), 0);
+            model.Weekly.WowChangePct = model.Weekly.PriorWeekKwh > 0
+                ? Math.Round((model.Weekly.TotalKwh - model.Weekly.PriorWeekKwh) / model.Weekly.PriorWeekKwh * 100, 1)
+                : null;
+        }
+    }
+
+    // Sprint 5: Monthly Energy Report. Same anchoring rationale as Weekly Energy Health above.
+    private async Task BuildMonthlyReportAsync(BriefingViewModel model)
+    {
+        var monthStart = new DateTime(model.ReportDate.Year, model.ReportDate.Month, 1);
+        var monthEnd = model.ReportDate.AddDays(1).AddTicks(-1);
+        var priorMonthStart = monthStart.AddMonths(-1);
+        var priorMonthEnd = monthStart.AddTicks(-1);
+
+        var monthData = (await _meterRepo.GetByDateRange(monthStart, monthEnd))
+            .ExcludeContaminated().ToList();
+        var priorMonthData = (await _meterRepo.GetByDateRange(priorMonthStart, priorMonthEnd))
+            .ExcludeContaminated().ToList();
+
+        model.Monthly.MonthLabel = model.ReportDate.ToString("MMMM yyyy");
+        model.Monthly.MonthToDateKwh = Math.Round(monthData.Sum(d => (double)(d.kWh ?? 0)), 0);
+        model.Monthly.PeakKw = monthData.Count > 0 ? Math.Round(monthData.Max(d => d.kWtotal ?? 0), 1) : 0;
+
+        var tariffRate = await _settings.GetDoubleAsync("Tariff.DefaultRate", 52.0);
+        model.Monthly.EstimatedCost = Math.Round(model.Monthly.MonthToDateKwh * tariffRate, 0);
+
+        model.Monthly.HasPriorMonth = priorMonthData.Count > 0;
+        if (model.Monthly.HasPriorMonth)
+        {
+            model.Monthly.PriorMonthKwh = Math.Round(priorMonthData.Sum(d => (double)(d.kWh ?? 0)), 0);
+            model.Monthly.MomChangePct = model.Monthly.PriorMonthKwh > 0
+                ? Math.Round((model.Monthly.MonthToDateKwh - model.Monthly.PriorMonthKwh) / model.Monthly.PriorMonthKwh * 100, 1)
+                : null;
         }
     }
 }

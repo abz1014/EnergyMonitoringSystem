@@ -161,5 +161,51 @@
                 </div>
             </div>
         </div>
+
+        <!-- Weekly Energy Health + Monthly Energy Report (Sprint 5) -->
+        <div class="row g-3 mt-1">
+            <div class="col-md-6">
+                <div class="bp-card">
+                    <div class="metric-label" style="margin-bottom: 8px;">Weekly Energy Health — @Model.Weekly.WeekLabel</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #FFFFFF;">@Model.Weekly.TotalKwh.ToString("N0") kWh</div>
+                    <div style="font-size: 13px; color: #94A3B8; margin-top: 4px;">
+                        @if (Model.Weekly.HasPriorWeek && Model.Weekly.WowChangePct.HasValue)
+                        {
+                            var color = Model.Weekly.WowChangePct > 0 ? "#EF4444" : Model.Weekly.WowChangePct < 0 ? "#10B981" : "#94A3B8";
+                            <span style="color:@color; font-weight:600;">@(Model.Weekly.WowChangePct > 0 ? "+" : "")@Model.Weekly.WowChangePct%</span> <text>vs prior week (@Model.Weekly.PriorWeekKwh.ToString("N0") kWh)</text>
+                        }
+                        else
+                        {
+                            <span>Not enough history yet for a week-over-week comparison.</span>
+                        }
+                    </div>
+                    <div style="font-size: 13px; color: #94A3B8; margin-top: 8px; display: flex; justify-content: space-between;">
+                        <span>Avg Power Factor: <strong style="color:#E2E8F0;">@Model.Weekly.AvgPf.ToString("F3")</strong></span>
+                        <span>Alarms this week: <strong style="color:@(Model.Weekly.AlarmCount > 0 ? "#F59E0B" : "#E2E8F0");">@Model.Weekly.AlarmCount</strong></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="bp-card">
+                    <div class="metric-label" style="margin-bottom: 8px;">Monthly Energy Report — @Model.Monthly.MonthLabel</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #FFFFFF;">@Model.Monthly.MonthToDateKwh.ToString("N0") kWh <span style="font-size:13px; color:#94A3B8; font-weight:400;">month-to-date</span></div>
+                    <div style="font-size: 13px; color: #94A3B8; margin-top: 4px;">
+                        @if (Model.Monthly.HasPriorMonth && Model.Monthly.MomChangePct.HasValue)
+                        {
+                            var color = Model.Monthly.MomChangePct > 0 ? "#EF4444" : Model.Monthly.MomChangePct < 0 ? "#10B981" : "#94A3B8";
+                            <span style="color:@color; font-weight:600;">@(Model.Monthly.MomChangePct > 0 ? "+" : "")@Model.Monthly.MomChangePct%</span> <text>vs prior month (@Model.Monthly.PriorMonthKwh.ToString("N0") kWh)</text>
+                        }
+                        else
+                        {
+                            <span>No prior calendar month of data exists yet — comparison will appear once it does.</span>
+                        }
+                    </div>
+                    <div style="font-size: 13px; color: #94A3B8; margin-top: 8px; display: flex; justify-content: space-between;">
+                        <span>Est. Cost: <strong style="color:#E2E8F0;">Rs. @Model.Monthly.EstimatedCost.ToString("N0")</strong></span>
+                        <span>Peak Demand: <strong style="color:#E2E8F0;">@Model.Monthly.PeakKw kW</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 </div>
