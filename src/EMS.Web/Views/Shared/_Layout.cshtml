@@ -167,6 +167,21 @@
             <a class="sidebar-link @(ctrl == "Budget" ? "active" : "")" asp-controller="Budget" asp-action="Index">
                 <span class="sidebar-icon">&#128181;</span> Budget vs Actual
             </a>
+            <a class="sidebar-link @(ctrl == "VoltageImbalance" ? "active" : "")" asp-controller="VoltageImbalance" asp-action="Index">
+                <span class="sidebar-icon">&#9889;</span> Voltage Imbalance
+            </a>
+            <a class="sidebar-link @(ctrl == "PfPenalty" ? "active" : "")" asp-controller="PfPenalty" asp-action="Index">
+                <span class="sidebar-icon">&#128202;</span> PF Penalty Calculator
+            </a>
+            <a class="sidebar-link @(ctrl == "Heatmap" ? "active" : "")" asp-controller="Heatmap" asp-action="Index">
+                <span class="sidebar-icon">&#128293;</span> Consumption Heatmap
+            </a>
+            <a class="sidebar-link @(ctrl == "EquipmentHealth" ? "active" : "")" asp-controller="EquipmentHealth" asp-action="Index">
+                <span class="sidebar-icon">&#128295;</span> Equipment Health
+            </a>
+            <a class="sidebar-link @(ctrl == "Anomaly" ? "active" : "")" asp-controller="Anomaly" asp-action="Index">
+                <span class="sidebar-icon">&#128269;</span> Anomaly Detection
+            </a>
             <a class="sidebar-link @(ctrl == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index">
                 <span class="sidebar-icon">&#9776;</span> Reports
             </a>

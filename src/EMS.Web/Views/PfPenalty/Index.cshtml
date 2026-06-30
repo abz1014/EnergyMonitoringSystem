@@ -1,0 +1,96 @@
+@{
+    ViewData["Title"] = "PF Penalty Calculator";
+    var hasResult = (bool)(ViewBag.HasResult ?? false);
+    var isPenalty = (bool)(ViewBag.IsPenalty ?? false);
+    var currency = ViewBag.Currency as string ?? "Rs.";
+    var defaultTargetPf = (double)(ViewBag.DefaultTargetPf ?? 0.90);
+    var autoActualPf = ViewBag.AutoActualPf as double?;
+    var autoBill = ViewBag.AutoBill as double?;
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Power Factor Penalty Calculator</h1>
+        <p class="text-muted">Estimate the billing penalty for operating below the target power factor</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Monthly Bill Amount (@currency)</label>
+                <input type="number" name="bill" step="0.01" value="@(ViewBag.Bill ?? autoBill)" class="form-control"
+                       style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" required />
+                @if (autoBill.HasValue)
+                {
+                    <small style="color: #64748B;">Estimated from last 30 days: @currency @autoBill.Value.ToString("N0")</small>
+                }
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-light">Actual Power Factor</label>
+                <input type="number" name="actualPf" step="0.001" min="0.01" max="1" value="@(ViewBag.ActualPf ?? autoActualPf)" class="form-control"
+                       style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" required />
+                @if (autoActualPf.HasValue)
+                {
+                    <small style="color: #64748B;">Measured average: @autoActualPf.Value</small>
+                }
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-light">Target Power Factor</label>
+                <input type="number" name="targetPf" step="0.001" min="0.01" max="1" value="@(ViewBag.TargetPf ?? defaultTargetPf)" class="form-control"
+                       style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" required />
+                <small style="color: #64748B;">Default from Settings: @defaultTargetPf</small>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Calculate</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasResult)
+    {
+        @if (isPenalty)
+        {
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                        <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Monthly Penalty</div>
+                        <div style="color: #EF4444; font-size: 28px; font-weight: 700;">@currency @(((double)ViewBag.Penalty).ToString("N0"))</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                        <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Estimated Annual Penalty</div>
+                        <div style="color: #EF4444; font-size: 28px; font-weight: 700;">@currency @(((double)ViewBag.AnnualPenalty).ToString("N0"))</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                        <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">PF Gap</div>
+                        <div style="color: #F59E0B; font-size: 28px; font-weight: 700;">@(((double)ViewBag.TargetPf - (double)ViewBag.ActualPf).ToString("F3"))</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                <span style="color: #E2E8F0;">
+                    At an actual power factor of <strong>@ViewBag.ActualPf</strong> against a target of <strong>@ViewBag.TargetPf</strong>,
+                    you are incurring an estimated <strong style="color:#EF4444;">@currency @(((double)ViewBag.Penalty).ToString("N0"))/month</strong> penalty —
+                    <strong style="color:#EF4444;">@currency @(((double)ViewBag.AnnualPenalty).ToString("N0"))/year</strong> if uncorrected.
+                    Installing or resizing power factor correction capacitors typically resolves this and pays back within months.
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="p-4 text-center" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                <div style="font-size: 36px; color: #10B981;">&#10003;</div>
+                <h4 style="color: #10B981;">No Penalty</h4>
+                <p style="color: #E2E8F0;">Actual PF (@ViewBag.ActualPf) meets or exceeds the target (@ViewBag.TargetPf). No penalty applies.</p>
+            </div>
+        }
+
+        <div class="mt-4 p-3" style="background-color: #1E293B; border-radius: 8px;">
+            <small style="color: #64748B;">Formula: Penalty = Bill × (Target PF ÷ Actual PF − 1), applied only when Actual PF is below Target PF.</small>
+        </div>
+    }
+</div>

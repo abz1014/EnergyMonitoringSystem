@@ -1,0 +1,137 @@
+@{
+    ViewData["Title"] = "Anomaly Detection";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "30d";
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Anomaly Detection</h1>
+        <p class="text-muted">Hourly consumption flagged when it falls outside mean ± 2 standard deviations</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel | @ViewBag.TotalHours hourly readings analyzed</div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #3B82F6;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Mean (kW)</div>
+                    <div style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@ViewBag.Mean</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Std Deviation</div>
+                    <div style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@ViewBag.StdDev</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Anomalies Found</div>
+                    <div style="color: #EF4444; font-size: 22px; font-weight: 700;">@ViewBag.AnomalyCount</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">% of Hours Anomalous</div>
+                    <div style="color: #F59E0B; font-size: 22px; font-weight: 700;">@ViewBag.AnomalyPct%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Hourly Demand with Anomaly Bounds</h5>
+            <div id="anomalyChart" style="height: 380px;"></div>
+        </div>
+
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Flagged Anomalies (Top 20 by deviation)</h5>
+            @{ var anomalies = ViewBag.Anomalies as IEnumerable<dynamic>; }
+            @if (anomalies != null && anomalies.Any())
+            {
+                <table class="table table-dark table-sm" style="background-color: transparent;">
+                    <thead>
+                        <tr style="color: #94A3B8; font-size: 12px;">
+                            <th>Time</th><th>Value (kW)</th><th>Type</th><th>Deviation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in anomalies)
+                        {
+                            <tr style="font-size: 13px;">
+                                <td>@a.Time</td>
+                                <td>@a.Value</td>
+                                <td><span style="color: @(a.Type == "Spike" ? "#EF4444" : "#3B82F6");">@a.Type</span></td>
+                                <td style="color: @(a.Type == "Spike" ? "#EF4444" : "#3B82F6");">@(a.DeviationPct > 0 ? "+" : "")@a.DeviationPct%</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p style="color: #64748B;">No anomalies detected in this period — consumption stayed within normal statistical bounds.</p>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128269;</div>
+            <h4 style="color: #E2E8F0;">Not enough data for anomaly detection</h4>
+            <p style="color: #64748B;">Try a longer time range.</p>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        var values = @Html.Raw(ViewBag.ChartValues);
+        var flags = @Html.Raw(ViewBag.ChartAnomalyFlags);
+        var upper = @(ViewBag.UpperThreshold);
+        var lower = @(ViewBag.LowerThreshold);
+
+        new ApexCharts(document.querySelector('#anomalyChart'), {
+            series: [{ name: 'Demand (kW)', data: values.map(function(v, i) { return { x: i, y: v, fillColor: flags[i] ? '#EF4444' : '#2563EB' }; }) }],
+            chart: { type: 'line', height: 380, background: '#1E293B', toolbar: { show: true }, zoom: { enabled: true } },
+            colors: ['#2563EB'],
+            stroke: { curve: 'smooth', width: 2 },
+            markers: {
+                size: values.map(function(v, i) { return flags[i] ? 5 : 0; }),
+                colors: ['#EF4444'],
+                strokeColors: '#fff', strokeWidth: 1
+            },
+            xaxis: { categories: @Html.Raw(ViewBag.ChartLabels), labels: { style: { colors: '#94A3B8', fontSize: '9px' }, rotate: -45 }, tickAmount: 15 },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toFixed(0); } } },
+            annotations: {
+                yaxis: [
+                    { y: upper, borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'Upper (mean+2σ): ' + upper, style: { color: '#FFF', background: '#EF4444', fontSize: '10px' } } },
+                    { y: lower, borderColor: '#3B82F6', strokeDashArray: 4, label: { text: 'Lower (mean-2σ): ' + lower, style: { color: '#FFF', background: '#3B82F6', fontSize: '10px' } } }
+                ]
+            },
+            tooltip: { theme: 'dark' },
+            grid: { borderColor: '#334155' }
+        }).render();
+    </script>
+}

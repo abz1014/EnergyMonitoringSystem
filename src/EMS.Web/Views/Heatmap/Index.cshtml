@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Consumption Heatmap";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var year = (int)ViewBag.Year;
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Consumption Heatmap Calendar</h1>
+        <p class="text-muted">Daily consumption intensity across the year — spot patterns and anomalies at a glance</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Year</label>
+                <select name="year" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 2; y--)
+                    {
+                        if (y == year) { <option value="@y" selected>@y</option> } else { <option value="@y">@y</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">View</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #2563EB;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Peak Day</div>
+                    <div style="color: #EF4444; font-size: 22px; font-weight: 700;">@ViewBag.MaxVal <span style="font-size:11px;color:#64748B;">kWh</span></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Average Day</div>
+                    <div style="color: #10B981; font-size: 22px; font-weight: 700;">@ViewBag.AvgVal <span style="font-size:11px;color:#64748B;">kWh</span></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Days With Data</div>
+                    <div style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@ViewBag.DaysWithData</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">@year Daily Consumption (kWh)</h5>
+            <div id="heatmapChart" style="height: 420px;"></div>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128197;</div>
+            <h4 style="color: #E2E8F0;">No data available for @year</h4>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        new ApexCharts(document.querySelector('#heatmapChart'), {
+            series: @Html.Raw(ViewBag.HeatmapSeries),
+            chart: { type: 'heatmap', height: 420, background: '#1E293B', toolbar: { show: true } },
+            plotOptions: {
+                heatmap: {
+                    shadeIntensity: 0.6,
+                    colorScale: {
+                        ranges: [
+                            { from: -1, to: -1, color: '#1E293B', name: 'No data' },
+                            { from: 0, to: 0, color: '#1E293B', name: 'No data' }
+                        ]
+                    }
+                }
+            },
+            colors: ['#2563EB'],
+            xaxis: { labels: { style: { colors: '#94A3B8', fontSize: '10px' } }, title: { text: 'Day of Month', style: { color: '#94A3B8' } } },
+            yaxis: { labels: { style: { colors: '#94A3B8' } } },
+            tooltip: { theme: 'dark', y: { formatter: function(v) { return v == null ? 'No data' : v.toLocaleString() + ' kWh'; } } },
+            grid: { borderColor: '#334155' },
+            dataLabels: { enabled: false }
+        }).render();
+    </script>
+}

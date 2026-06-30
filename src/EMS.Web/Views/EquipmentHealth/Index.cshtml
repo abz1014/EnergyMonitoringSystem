@@ -1,0 +1,86 @@
+@model List<EMS.Web.Controllers.EquipmentHealthController.MeterHealth>
+@{
+    ViewData["Title"] = "Equipment Health Score";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "30d";
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Equipment Health Score</h1>
+        <p class="text-muted">Combined score (0-100) from Power Factor, Harmonic Distortion, and Voltage Imbalance per meter</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData && Model != null && Model.Count > 0)
+    {
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel</div>
+
+        <div class="row g-3">
+            @foreach (var m in Model)
+            {
+                <div class="col-md-4">
+                    <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid @m.StatusColor;">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <div style="color: #FFFFFF; font-size: 16px; font-weight: 600;">@m.MeterName</div>
+                                <small style="color: #64748B;">Meter #@m.MeterNo</small>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: @m.StatusColor; font-size: 32px; font-weight: 700;">@m.Score</div>
+                                <small style="color: @m.StatusColor;">@m.Status</small>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between" style="font-size: 12px; color: #94A3B8;">
+                                <span>Power Factor (@m.AvgPf)</span><span>@m.PfScore</span>
+                            </div>
+                            <div style="background: #334155; border-radius: 4px; height: 6px;">
+                                <div style="background: #3B82F6; width: @m.PfScore%; height: 6px; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between" style="font-size: 12px; color: #94A3B8;">
+                                <span>Harmonic Distortion (@m.AvgThd%)</span><span>@m.ThdScore</span>
+                            </div>
+                            <div style="background: #334155; border-radius: 4px; height: 6px;">
+                                <div style="background: #8B5CF6; width: @m.ThdScore%; height: 6px; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="d-flex justify-content-between" style="font-size: 12px; color: #94A3B8;">
+                                <span>Voltage Balance (@m.AvgImbalance%)</span><span>@m.ImbalanceScore</span>
+                            </div>
+                            <div style="background: #334155; border-radius: 4px; height: 6px;">
+                                <div style="background: #F59E0B; width: @m.ImbalanceScore%; height: 6px; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128295;</div>
+            <h4 style="color: #E2E8F0;">No data available for this period</h4>
+        </div>
+    }
+</div>
