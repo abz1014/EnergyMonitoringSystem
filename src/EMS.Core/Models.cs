@@ -109,6 +109,16 @@ public class FlowmeterData
     public string? Area { get; set; }
 }
 
+public class TransformerRating
+{
+    public int MeterNo { get; set; }
+    public string TransformerName { get; set; } = "";
+    public decimal NameplateKva { get; set; }
+    public string? CoolingClass { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class UserDashboardWidget
 {
     public int SrNo { get; set; }

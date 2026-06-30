@@ -214,6 +214,9 @@
             <a class="sidebar-link @(ctrl == "VoltageRange" ? "active" : "")" asp-controller="VoltageRange" asp-action="Index">
                 <span class="sidebar-icon">&#9889;</span> Voltage Out-of-Range
             </a>
+            <a class="sidebar-link @(ctrl == "TransformerLoading" ? "active" : "")" asp-controller="TransformerLoading" asp-action="Index">
+                <span class="sidebar-icon">&#9881;</span> Transformer Loading
+            </a>
             <a class="sidebar-link @(ctrl == "WeekdayWeekend" ? "active" : "")" asp-controller="WeekdayWeekend" asp-action="Index">
                 <span class="sidebar-icon">&#128197;</span> Weekday/Weekend
             </a>
