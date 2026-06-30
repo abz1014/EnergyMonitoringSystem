@@ -11,6 +11,11 @@
     <div class="mb-4">
         <h1 class="h2 mb-2">Cost Dashboard</h1>
         <p class="text-muted">Energy cost analysis | Tariff: @c@Model.DefaultRate/kWh (Peak: @c@Model.PeakRate, Off-Peak: @c@Model.OffPeakRate)</p>
+        <div style="font-size: 13px;">
+            <span style="color: #64748B;">Related financial views:</span>
+            <a asp-controller="Budget" asp-action="Index" style="color: #2563EB; text-decoration: none; margin-left: 8px;">Budget vs Actual &rarr;</a>
+            <a asp-controller="Qbr" asp-action="Index" style="color: #2563EB; text-decoration: none; margin-left: 12px;">Executive QBR &rarr;</a>
+        </div>
     </div>
 
     @if (!Model.HasData)

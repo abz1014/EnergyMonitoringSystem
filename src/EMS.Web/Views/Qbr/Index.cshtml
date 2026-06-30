@@ -10,6 +10,11 @@
         <div>
             <h1 class="h2 mb-2">Executive Quarterly Business Review</h1>
             <p class="text-muted">Auto-generated summary of energy performance, cost, and savings opportunities</p>
+            <div style="font-size: 13px;">
+                <span style="color: #64748B;">Related financial views:</span>
+                <a asp-controller="CostDashboard" asp-action="Index" style="color: #2563EB; text-decoration: none; margin-left: 8px;">Cost Dashboard &rarr;</a>
+                <a asp-controller="Budget" asp-action="Index" style="color: #2563EB; text-decoration: none; margin-left: 12px;">Budget vs Actual &rarr;</a>
+            </div>
         </div>
         @if (hasData)
         {

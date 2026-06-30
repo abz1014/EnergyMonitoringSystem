@@ -8,6 +8,11 @@
     <div class="mb-4">
         <h1 class="h2 mb-2">Energy Budget vs Actual</h1>
         <p class="text-muted">Track consumption against monthly targets — @ViewBag.Year year-to-date</p>
+        <div style="font-size: 13px;">
+            <span style="color: #64748B;">Related financial views:</span>
+            <a asp-controller="CostDashboard" asp-action="Index" style="color: #2563EB; text-decoration: none; margin-left: 8px;">Cost Dashboard &rarr;</a>
+            <a asp-controller="Qbr" asp-action="Index" style="color: #2563EB; text-decoration: none; margin-left: 12px;">Executive QBR &rarr;</a>
+        </div>
     </div>
 
     @if (hasData)
