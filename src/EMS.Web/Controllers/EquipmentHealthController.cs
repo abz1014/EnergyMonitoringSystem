@@ -23,9 +23,9 @@ public class EquipmentHealthController : Controller
         public int MeterNo { get; set; }
         public string MeterName { get; set; } = "";
         public double Score { get; set; }
-        public double PfScore { get; set; }
-        public double ThdScore { get; set; }
-        public double ImbalanceScore { get; set; }
+        public double? PfScore { get; set; }
+        public double? ThdScore { get; set; }
+        public double? ImbalanceScore { get; set; }
         public double AvgPf { get; set; }
         public double AvgThd { get; set; }
         public double AvgImbalance { get; set; }
@@ -73,16 +73,18 @@ public class EquipmentHealthController : Controller
 
                 // PF score: 1.0 PF = 100, 0.5 PF = 0 (linear below target)
                 var pfValues = readings.Where(d => d.PFL1.HasValue && d.PFL1.Value > 0).Select(d => d.PFL1!.Value).ToList();
-                var avgPf = pfValues.Count > 0 ? pfValues.Average() : 0;
-                var pfScore = Math.Clamp((avgPf - 0.5) / 0.5 * 100, 0, 100);
+                var hasPf = pfValues.Count > 0;
+                var avgPf = hasPf ? pfValues.Average() : 0;
+                var pfScore = hasPf ? Math.Clamp((avgPf - 0.5) / 0.5 * 100, 0, 100) : (double?)null;
 
                 // THD score: using average of HarmonicV1-3 as proxy for THD%. 0% = 100, 8%+ = 0 (IEEE 519 limit)
                 var thdValues = readings
                     .Where(d => d.HarmonicV1.HasValue || d.HarmonicV2.HasValue || d.HarmonicV3.HasValue)
                     .Select(d => new[] { d.HarmonicV1, d.HarmonicV2, d.HarmonicV3 }.Where(v => v.HasValue).Select(v => (double)v!.Value).DefaultIfEmpty(0).Average())
                     .ToList();
-                var avgThd = thdValues.Count > 0 ? thdValues.Average() : 0;
-                var thdScore = Math.Clamp(100 - (avgThd / 8.0 * 100), 0, 100);
+                var hasThd = thdValues.Count > 0;
+                var avgThd = hasThd ? thdValues.Average() : 0;
+                var thdScore = hasThd ? Math.Clamp(100 - (avgThd / 8.0 * 100), 0, 100) : (double?)null;
 
                 // Imbalance score: 0% = 100, 5%+ = 0 (severe per NEMA)
                 var imbalanceValues = readings
@@ -95,11 +97,14 @@ public class EquipmentHealthController : Controller
                         var vAvg = (v1 + v2 + v3) / 3.0;
                         return vAvg > 0 ? (vMax - vMin) / vAvg * 100.0 : 0;
                     }).ToList();
-                var avgImbalance = imbalanceValues.Count > 0 ? imbalanceValues.Average() : 0;
-                var imbalanceScore = Math.Clamp(100 - (avgImbalance / 5.0 * 100), 0, 100);
+                var hasImbalance = imbalanceValues.Count > 0;
+                var avgImbalance = hasImbalance ? imbalanceValues.Average() : 0;
+                var imbalanceScore = hasImbalance ? Math.Clamp(100 - (avgImbalance / 5.0 * 100), 0, 100) : (double?)null;
 
-                // Combined score: equal weighting
-                var score = (pfScore + thdScore + imbalanceScore) / 3.0;
+                // Combined score: average only over components that have actual data —
+                // a missing reading must not silently count as the worst (or best) possible score
+                var availableScores = new[] { pfScore, thdScore, imbalanceScore }.Where(s => s.HasValue).Select(s => s!.Value).ToList();
+                var score = availableScores.Count > 0 ? availableScores.Average() : 0;
 
                 var (status, color) = score switch
                 {
@@ -113,9 +118,9 @@ public class EquipmentHealthController : Controller
                     MeterNo = group.Key,
                     MeterName = deviceNames.GetValueOrDefault(group.Key, $"Meter {group.Key}"),
                     Score = Math.Round(score, 1),
-                    PfScore = Math.Round(pfScore, 1),
-                    ThdScore = Math.Round(thdScore, 1),
-                    ImbalanceScore = Math.Round(imbalanceScore, 1),
+                    PfScore = pfScore.HasValue ? Math.Round(pfScore.Value, 1) : null,
+                    ThdScore = thdScore.HasValue ? Math.Round(thdScore.Value, 1) : null,
+                    ImbalanceScore = imbalanceScore.HasValue ? Math.Round(imbalanceScore.Value, 1) : null,
                     AvgPf = Math.Round(avgPf, 3),
                     AvgThd = Math.Round(avgThd, 2),
                     AvgImbalance = Math.Round(avgImbalance, 2),
