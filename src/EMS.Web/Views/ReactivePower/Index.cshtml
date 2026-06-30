@@ -1,0 +1,144 @@
+@{
+    ViewData["Title"] = "Reactive Power";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "30d";
+    var impliedPf = ViewBag.ImpliedPf as double?;
+    var meterBreakdown = ViewBag.MeterBreakdown as IEnumerable<dynamic>;
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Reactive Power</h1>
+        <p class="text-muted">kVARh trend and reactive energy as a share of total apparent energy — the unmeasured cost of low power factor</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        var excluded = (int)(ViewBag.ExcludedRowCount ?? 0);
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel</div>
+        @if (excluded > 0)
+        {
+            <div class="mb-3 p-2" style="background-color: #1E293B; border-radius: 6px; border-left: 3px solid #F59E0B; font-size: 12px; color: #94A3B8;">
+                @excluded reading(s) excluded from these totals — they reported kVAh=0 or an inconsistent kWh/kVAh relationship,
+                which is being investigated as a possible meter register configuration issue.
+            </div>
+        }
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #3B82F6;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Real Energy (kWh)</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@(((double)ViewBag.TotalKwh).ToString("N0"))</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Reactive Energy (kVARh)</div>
+                    <div style="color: #8B5CF6; font-size: 24px; font-weight: 700;">@(((double)ViewBag.TotalKvarh).ToString("N0"))</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Apparent Energy (kVAh)</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@(((double)ViewBag.TotalKvah).ToString("N0"))</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Reactive Fraction</div>
+                    <div style="color: #F59E0B; font-size: 24px; font-weight: 700;">@ViewBag.ReactiveFraction%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+            <span style="color: #E2E8F0;">
+                @ViewBag.ReactiveFraction% of total apparent energy this period was reactive (kVARh), not real working energy.
+                @if (impliedPf.HasValue)
+                {
+                    <text>The energy-register-implied power factor (kWh ÷ kVAh) is <strong>@impliedPf</strong>,
+                    which can be cross-checked against the instantaneous PFL1/PFL2/PFL3 readings elsewhere in this app
+                    as a consistency check between the meter's cumulative registers and its instantaneous readings.</text>
+                }
+                Reducing reactive power (via capacitor banks) shrinks the apparent power (kVA) the system must carry for the same real work,
+                freeing transformer/feeder capacity without changing actual output.
+            </span>
+        </div>
+
+        <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Daily Real vs Reactive Energy</h5>
+            <div id="reactiveTrendChart" style="height: 350px;"></div>
+        </div>
+
+        @if (meterBreakdown != null && meterBreakdown.Any())
+        {
+            <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                <h5 class="text-light mb-3">Reactive Energy by Meter</h5>
+                <table class="table table-dark table-sm" style="background-color: transparent;">
+                    <thead>
+                        <tr style="color: #94A3B8; font-size: 12px;">
+                            <th>Meter</th><th>Reactive (kVARh)</th><th>Apparent (kVAh)</th><th>Reactive %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in meterBreakdown)
+                        {
+                            double pct = m.Kvah > 0 ? Math.Round((double)m.Kvarh / (double)m.Kvah * 100, 1) : 0;
+                            <tr style="font-size: 13px;">
+                                <td>@m.Name</td>
+                                <td>@m.Kvarh</td>
+                                <td>@m.Kvah</td>
+                                <td>@pct%</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#9889;</div>
+            <h4 style="color: #E2E8F0;">No data available for this period</h4>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        new ApexCharts(document.querySelector('#reactiveTrendChart'), {
+            series: [
+                { name: 'Real (kWh)', data: @Html.Raw(ViewBag.DailyKwh) },
+                { name: 'Reactive (kVARh)', data: @Html.Raw(ViewBag.DailyKvarh) }
+            ],
+            chart: { type: 'bar', height: 350, background: '#1E293B', toolbar: { show: true }, stacked: false },
+            plotOptions: { bar: { borderRadius: 3, columnWidth: '55%' } },
+            colors: ['#3B82F6', '#8B5CF6'],
+            xaxis: { categories: @Html.Raw(ViewBag.DailyLabels), labels: { style: { colors: '#94A3B8', fontSize: '10px' }, rotate: -45 } },
+            yaxis: { labels: { style: { colors: '#94A3B8' } } },
+            tooltip: { theme: 'dark' },
+            legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+            grid: { borderColor: '#334155' }
+        }).render();
+    </script>
+}
