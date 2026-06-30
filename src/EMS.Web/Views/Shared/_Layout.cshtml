@@ -161,6 +161,12 @@
             <a class="sidebar-link @(ctrl == "DemandCurve" ? "active" : "")" asp-controller="DemandCurve" asp-action="Index">
                 <span class="sidebar-icon">&#128200;</span> Demand Curve
             </a>
+            <a class="sidebar-link @(ctrl == "WeekdayWeekend" ? "active" : "")" asp-controller="WeekdayWeekend" asp-action="Index">
+                <span class="sidebar-icon">&#128197;</span> Weekday/Weekend
+            </a>
+            <a class="sidebar-link @(ctrl == "Budget" ? "active" : "")" asp-controller="Budget" asp-action="Index">
+                <span class="sidebar-icon">&#128181;</span> Budget vs Actual
+            </a>
             <a class="sidebar-link @(ctrl == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index">
                 <span class="sidebar-icon">&#9776;</span> Reports
             </a>

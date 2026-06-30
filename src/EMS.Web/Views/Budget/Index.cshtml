@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Budget vs Actual";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var currency = ViewBag.Currency as string ?? "Rs.";
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Energy Budget vs Actual</h1>
+        <p class="text-muted">Track consumption against monthly targets — @ViewBag.Year year-to-date</p>
+    </div>
+
+    @if (hasData)
+    {
+        var ytdVariance = (double)ViewBag.YtdVariance;
+        var currentVariance = (double)ViewBag.CurrentMonthVariance;
+        var ytdVarColor = ytdVariance > 5 ? "#EF4444" : ytdVariance < -5 ? "#10B981" : "#94A3B8";
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #3B82F6;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">YTD Actual</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@ViewBag.YtdActual <span style="font-size:12px;color:#64748B;">kWh</span></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">YTD Target</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@ViewBag.YtdTarget <span style="font-size:12px;color:#64748B;">kWh</span></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @ytdVarColor;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">YTD Variance</div>
+                    <div style="color: @ytdVarColor; font-size: 24px; font-weight: 700;">@(ytdVariance > 0 ? "+" : "")@ytdVariance%</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @ytdVarColor;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Variance Cost</div>
+                    <div style="color: @ytdVarColor; font-size: 22px; font-weight: 700;">@currency @(((double)ViewBag.YtdVarianceCost).ToString("N0"))</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @ytdVarColor;">
+            <span style="color: #E2E8F0;">
+                @if (ytdVariance > 0)
+                {
+                    <text>Year-to-date consumption is <strong style="color:#EF4444;">@ytdVariance% above</strong> the monthly target of @ViewBag.MonthlyTarget kWh — an extra cost of <strong style="color:#EF4444;">@currency @(((double)ViewBag.YtdVarianceCost).ToString("N0"))</strong> so far this year.</text>
+                }
+                else
+                {
+                    <text>Year-to-date consumption is <strong style="color:#10B981;">@Math.Abs(ytdVariance)% below</strong> target — saving an estimated <strong style="color:#10B981;">@currency @(Math.Abs((double)ViewBag.YtdVarianceCost).ToString("N0"))</strong> compared to budget.</text>
+                }
+            </span>
+        </div>
+
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Monthly Actual vs Target (@ViewBag.Year)</h5>
+            <div id="budgetChart" style="height: 380px;"></div>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128176;</div>
+            <h4 style="color: #E2E8F0;">No data available</h4>
+            <p style="color: #64748B;">Set a monthly target in Settings, then check back once meter data is available.</p>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        var actuals = @Html.Raw(ViewBag.ActualValues);
+        var target = @(ViewBag.MonthlyTarget);
+
+        new ApexCharts(document.querySelector('#budgetChart'), {
+            series: [{ name: 'Actual', data: actuals.map(function(v) { return { y: v, fillColor: v > target ? '#EF4444' : '#10B981' }; }) }],
+            chart: { type: 'bar', height: 380, background: '#1E293B', toolbar: { show: true } },
+            plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
+            xaxis: { categories: @Html.Raw(ViewBag.Months), labels: { style: { colors: '#94A3B8' } } },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toLocaleString(); } } },
+            annotations: { yaxis: [{ y: target, borderColor: '#F59E0B', strokeDashArray: 4, label: { text: 'Target: ' + target.toLocaleString() + ' kWh', style: { color: '#FFF', background: '#F59E0B', fontSize: '11px' } } }] },
+            tooltip: { theme: 'dark', y: { formatter: function(v) { return v.toLocaleString() + ' kWh'; } } },
+            legend: { show: false },
+            grid: { borderColor: '#334155' }
+        }).render();
+    </script>
+}
