@@ -79,10 +79,15 @@ public class EquipmentHealthController : Controller
                 var avgPf = hasPf ? pfValues.Average() : 0;
                 var pfScore = hasPf ? Math.Clamp((avgPf - 0.5) / 0.5 * 100, 0, 100) : (double?)null;
 
-                // THD score: using average of HarmonicV1-3 as proxy for THD%. 0% = 100, 8%+ = 0 (IEEE 519 limit)
+                // Harmonic index score: using average of HarmonicV1-3 AND HarmonicI1-3 (voltage and
+                // current harmonics both, not voltage-only as before) as a meter-reported proxy for
+                // distortion. 0% = 100, 8%+ = 0 (IEEE 519-style limit). Labeled "Harmonic Index" not
+                // "THD" since the exact register semantics haven't been confirmed with the meter docs.
                 var thdValues = readings
-                    .Where(d => d.HarmonicV1.HasValue || d.HarmonicV2.HasValue || d.HarmonicV3.HasValue)
-                    .Select(d => new[] { d.HarmonicV1, d.HarmonicV2, d.HarmonicV3 }.Where(v => v.HasValue).Select(v => (double)v!.Value).DefaultIfEmpty(0).Average())
+                    .Where(d => d.HarmonicV1.HasValue || d.HarmonicV2.HasValue || d.HarmonicV3.HasValue
+                             || d.HarmonicI1.HasValue || d.HarmonicI2.HasValue || d.HarmonicI3.HasValue)
+                    .Select(d => new[] { d.HarmonicV1, d.HarmonicV2, d.HarmonicV3, d.HarmonicI1, d.HarmonicI2, d.HarmonicI3 }
+                        .Where(v => v.HasValue).Select(v => (double)v!.Value).DefaultIfEmpty(0).Average())
                     .ToList();
                 var hasThd = thdValues.Count > 0;
                 var avgThd = hasThd ? thdValues.Average() : 0;

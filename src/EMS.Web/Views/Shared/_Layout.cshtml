@@ -208,6 +208,12 @@
             <a class="sidebar-link @(ctrl == "Carbon" ? "active" : "")" asp-controller="Carbon" asp-action="Index">
                 <span class="sidebar-icon">&#127807;</span> Carbon / ESG
             </a>
+            <a class="sidebar-link @(ctrl == "FlowMonitoring" ? "active" : "")" asp-controller="FlowMonitoring" asp-action="Index">
+                <span class="sidebar-icon">&#128167;</span> Flow & Level
+            </a>
+            <a class="sidebar-link @(ctrl == "VoltageRange" ? "active" : "")" asp-controller="VoltageRange" asp-action="Index">
+                <span class="sidebar-icon">&#9889;</span> Voltage Out-of-Range
+            </a>
             <a class="sidebar-link @(ctrl == "WeekdayWeekend" ? "active" : "")" asp-controller="WeekdayWeekend" asp-action="Index">
                 <span class="sidebar-icon">&#128197;</span> Weekday/Weekend
             </a>

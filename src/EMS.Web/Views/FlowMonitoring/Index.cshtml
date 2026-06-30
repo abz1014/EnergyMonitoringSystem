@@ -1,0 +1,101 @@
+@model List<EMS.Web.Controllers.FlowMonitoringController.DeviceFlowSummary>
+@{
+    ViewData["Title"] = "Flow & Level Monitoring";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "7d";
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Flow & Level Monitoring</h1>
+        <p class="text-muted">Fuel tank levels and flow rates — previously captured but never surfaced anywhere in the app</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData && Model != null && Model.Count > 0)
+    {
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel</div>
+
+        @for (int i = 0; i < Model.Count; i++)
+        {
+            var d = Model[i];
+            <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+                <h5 class="text-light mb-3">@d.DeviceName</h5>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Avg Level</div>
+                        <div style="color: #FFFFFF; font-size: 20px; font-weight: 700;">@(d.AvgLevel?.ToString() ?? "—") @d.LevelUnit</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Min / Max Level</div>
+                        <div style="color: #FFFFFF; font-size: 20px; font-weight: 700;">@(d.MinLevel?.ToString() ?? "—") — @(d.MaxLevel?.ToString() ?? "—") @d.LevelUnit</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Avg Flow Rate</div>
+                        <div style="color: #3B82F6; font-size: 20px; font-weight: 700;">@(d.AvgFlowRate?.ToString() ?? "—") @d.FlowUnit</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Total Flow (period)</div>
+                        <div style="color: #3B82F6; font-size: 20px; font-weight: 700;">@(d.TotalFlow?.ToString("N0") ?? "—") @d.FlowUnit</div>
+                    </div>
+                </div>
+                <div id="flowChart@(i)" style="height: 250px;"></div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128167;</div>
+            <h4 style="color: #E2E8F0;">No flow/level devices or data found</h4>
+            <p style="color: #64748B;">This page reads from tbFlowmetersData for devices of type FlowMeter/FuelTank.</p>
+        </div>
+    }
+</div>
+
+@if (hasData && Model != null && Model.Count > 0)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        var charts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Select((d, i) => new {
+            index = i, level = d.LevelTrend, flow = d.FlowTrend, labels = d.TrendLabels
+        })));
+
+        charts.forEach(function(c) {
+            new ApexCharts(document.querySelector('#flowChart' + c.index), {
+                series: [
+                    { name: 'Level (%)', type: 'area', data: c.level },
+                    { name: 'Flow Rate', type: 'line', data: c.flow }
+                ],
+                chart: { height: 250, background: '#1E293B', toolbar: { show: true } },
+                colors: ['#10B981', '#3B82F6'],
+                stroke: { curve: 'smooth', width: [1, 2] },
+                fill: { type: ['gradient', 'solid'], gradient: { opacityFrom: 0.3, opacityTo: 0.05 } },
+                xaxis: { categories: c.labels, labels: { style: { colors: '#94A3B8', fontSize: '9px' }, rotate: -45 }, tickAmount: 10 },
+                yaxis: [
+                    { title: { text: 'Level', style: { color: '#10B981' } }, labels: { style: { colors: '#94A3B8' } } },
+                    { opposite: true, title: { text: 'Flow Rate', style: { color: '#3B82F6' } }, labels: { style: { colors: '#94A3B8' } } }
+                ],
+                tooltip: { theme: 'dark', shared: true },
+                legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+                grid: { borderColor: '#334155' }
+            }).render();
+        });
+    </script>
+}
