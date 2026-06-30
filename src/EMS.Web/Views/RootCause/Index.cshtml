@@ -1,0 +1,73 @@
+@model List<EMS.Web.Controllers.RootCauseController.AlarmContext>
+@{
+    ViewData["Title"] = "Root Cause Context";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Root Cause Context</h1>
+        <p class="text-muted">What else was happening around the time of each alarm</p>
+    </div>
+
+    <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+        <strong style="color: #F59E0B;">This is correlation, not diagnosis.</strong>
+        <span style="color: #E2E8F0;">
+            Everything below shows facts that occurred near each alarm in time — it does not claim any of them
+            caused the alarm. With a small alarm sample, unrelated things can coincide by chance. Use this as a
+            starting point for human investigation, not a conclusion.
+        </span>
+    </div>
+
+    @if (hasData && Model != null && Model.Count > 0)
+    {
+        @foreach (var a in Model)
+        {
+            var sevColor = a.SeverityName == "Critical" ? "#EF4444" : a.SeverityName == "Warning" ? "#F59E0B" : "#3B82F6";
+            <div class="mb-3 p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @sevColor;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div style="color: #FFFFFF; font-size: 15px; font-weight: 600;">@a.DeviceName — @a.Message</div>
+                        <small style="color: #64748B;">@a.CreatedAt.ToString("MMM dd, yyyy HH:mm") | @a.Shift shift @(a.IsWeekend ? "| Weekend" : "")</small>
+                    </div>
+                    <span style="color: @sevColor; font-size: 12px; font-weight: 600; text-transform: uppercase;">@a.SeverityName</span>
+                </div>
+                <div class="row g-2 mt-2" style="font-size: 13px;">
+                    <div class="col-md-2">
+                        <div style="color: #94A3B8; font-size: 11px;">PF (±30min)</div>
+                        <div style="color: #E2E8F0;">@(a.PfNearTime?.ToString() ?? "no data")</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="color: #94A3B8; font-size: 11px;">Voltage Imbalance (±30min)</div>
+                        <div style="color: @(a.VoltImbalanceNearTime > 2 ? "#F59E0B" : "#E2E8F0");">@(a.VoltImbalanceNearTime?.ToString() ?? "no data")@(a.VoltImbalanceNearTime.HasValue ? "%" : "")</div>
+                    </div>
+                    <div class="col-md-2">
+                        <div style="color: #94A3B8; font-size: 11px;">Frequency (±30min)</div>
+                        <div style="color: #E2E8F0;">@(a.FreqNearTime?.ToString() ?? "no data")@(a.FreqNearTime.HasValue ? " Hz" : "")</div>
+                    </div>
+                    <div class="col-md-2">
+                        <div style="color: #94A3B8; font-size: 11px;">Same-Day Temp</div>
+                        <div style="color: #E2E8F0;">@(a.SameDayTempC?.ToString("F1") ?? "not entered")@(a.SameDayTempC.HasValue ? "°C" : "")</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="color: #94A3B8; font-size: 11px;">Other Alarms Nearby (±30min)</div>
+                        <div style="color: @(a.NearbyAlarmCount > 0 ? "#F59E0B" : "#E2E8F0");">@a.NearbyAlarmCount @(a.NearbyAlarmCount == 1 ? "alarm" : "alarms")</div>
+                    </div>
+                </div>
+                @if (a.NearbyAlarmCount > 0)
+                {
+                    <div class="mt-2" style="font-size: 12px; color: #F59E0B;">
+                        ⓘ Other alarms occurred within 30 minutes of this one — worth checking whether they share a common cause (e.g. a supply event affecting multiple meters at once).
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128269;</div>
+            <h4 style="color: #E2E8F0;">No alarms to analyze</h4>
+        </div>
+    }
+</div>
