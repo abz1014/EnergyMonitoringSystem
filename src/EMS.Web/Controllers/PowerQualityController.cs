@@ -109,7 +109,10 @@ public class PowerQualityController : Controller
             ViewBag.CurrImbalance = JsonSerializer.Serialize(currImbalance);
 
             // Summary stats
-            var pfVals = sorted.Where(d => d.PFL1.HasValue && d.PFL1 > 0).Select(d => d.PFL1!.Value).ToList();
+            // 3-phase average PF (PFL1+PFL2+PFL3) for the KPI card -- see PowerFactorHelper.
+            // Note: the per-phase chart above (PFL1/PFL2/PFL3 series) intentionally stays
+            // separate per phase, since that's the more useful view for spotting single-phase issues.
+            var pfVals = sorted.Select(EMS.Web.Services.PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).ToList();
             ViewBag.AvgPF = pfVals.Count > 0 ? Math.Round(pfVals.Average(), 3) : 0;
             ViewBag.MaxVoltImbalance = voltImbalance.Count > 0 ? Math.Round(voltImbalance.Max(), 2) : 0;
             ViewBag.MaxCurrImbalance = currImbalance.Count > 0 ? Math.Round(currImbalance.Max(), 2) : 0;

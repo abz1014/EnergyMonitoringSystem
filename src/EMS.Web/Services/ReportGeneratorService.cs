@@ -26,7 +26,7 @@ public class ReportGeneratorService
 
         var totalKwh = data.Sum(d => (double)(d.kWh ?? 0));
         var peakKw = data.Count > 0 ? data.Max(d => d.kWtotal ?? 0) : 0;
-        var avgPf = data.Where(d => d.PFL1.HasValue && d.PFL1 > 0).Select(d => d.PFL1!.Value).DefaultIfEmpty(0).Average();
+        var avgPf = data.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).DefaultIfEmpty(0).Average();
         var totalCost = totalKwh * tariffRate;
         var recordCount = data.Count;
 
@@ -41,7 +41,7 @@ public class ReportGeneratorService
                 Date = g.Key,
                 Kwh = g.Sum(x => (double)(x.kWh ?? 0)),
                 PeakKw = g.Max(x => x.kWtotal ?? 0),
-                AvgPf = g.Where(x => x.PFL1.HasValue && x.PFL1 > 0).Select(x => x.PFL1!.Value).DefaultIfEmpty(0).Average(),
+                AvgPf = g.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).DefaultIfEmpty(0).Average(),
                 Cost = g.Sum(x => (double)(x.kWh ?? 0)) * tariffRate
             })
             .OrderBy(d => d.Date).ToList();
@@ -56,7 +56,7 @@ public class ReportGeneratorService
                 Location = g.First().MeterLocation ?? "",
                 Kwh = g.Sum(x => (double)(x.kWh ?? 0)),
                 PeakKw = g.Max(x => x.kWtotal ?? 0),
-                AvgPf = g.Where(x => x.PFL1.HasValue && x.PFL1 > 0).Select(x => x.PFL1!.Value).DefaultIfEmpty(0).Average(),
+                AvgPf = g.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).DefaultIfEmpty(0).Average(),
                 Cost = g.Sum(x => (double)(x.kWh ?? 0)) * tariffRate
             })
             .OrderByDescending(m => m.Kwh).ToList();

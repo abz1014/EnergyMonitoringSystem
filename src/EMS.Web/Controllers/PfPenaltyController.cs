@@ -38,10 +38,11 @@ public class PfPenaltyController : Controller
             {
                 data = await _meterRepo.GetByDateRange(to.AddDays(-90), to);
             }
-            var validPf = data.Where(d => d.PFL1.HasValue && d.PFL1.Value > 0).ToList();
-            if (validPf.Count > 0)
+            // 3-phase average PF (PFL1+PFL2+PFL3), not PFL1 alone -- see PowerFactorHelper
+            var pfValues = data.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).ToList();
+            if (pfValues.Count > 0)
             {
-                autoActualPf = Math.Round(validPf.Average(d => d.PFL1!.Value), 3);
+                autoActualPf = Math.Round(pfValues.Average(), 3);
             }
             ViewBag.AutoActualPf = autoActualPf;
 

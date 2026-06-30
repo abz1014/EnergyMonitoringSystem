@@ -81,7 +81,7 @@ public class BriefingService
             model.PeakDemand = peakReading?.kWtotal ?? 0;
             model.PeakDemandTime = peakReading?.DateTime?.ToString("HH:mm") ?? "";
 
-            var pfValues = yesterdayData.Where(d => d.PFL1.HasValue && d.PFL1 > 0).Select(d => d.PFL1!.Value).ToList();
+            var pfValues = yesterdayData.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).ToList();
             model.AveragePowerFactor = pfValues.Count > 0 ? Math.Round(pfValues.Average(), 3) : 0;
 
             model.ActiveAlarmCount = await _alarmRepo.GetActiveAlarmCount();

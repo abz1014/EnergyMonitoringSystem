@@ -68,7 +68,7 @@ public class WebDashboardService : IDashboardService
             var monthlyTotal = monthData.Sum(d => (double)(d.kWh ?? 0));
 
             var avgPowerFactor = todayData.Count > 0
-                ? todayData.Where(m => m.PFL1.HasValue && m.PFL1 > 0).Select(m => (double)m.PFL1!.Value).DefaultIfEmpty(0).Average()
+                ? todayData.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).DefaultIfEmpty(0).Average()
                 : 0;
 
             var co2Factor = 0.82;

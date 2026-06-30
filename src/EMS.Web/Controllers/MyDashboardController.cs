@@ -114,7 +114,7 @@ public class MyDashboardController : Controller
         var totalKwh = validData.Sum(d => (double)(d.kWh ?? 0));
         var totalCost = totalKwh * tariffRate;
         var peakKw = validData.Where(d => d.kWtotal.HasValue).Select(d => d.kWtotal!.Value).DefaultIfEmpty(0).Max();
-        var pfValues = validData.Where(d => d.PFL1.HasValue && d.PFL1.Value > 0).Select(d => d.PFL1!.Value).ToList();
+        var pfValues = validData.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).ToList();
         var avgPf = pfValues.Count > 0 ? pfValues.Average() : 0;
 
         var allAlarms = await _alarmRepo.GetAllAlarms();

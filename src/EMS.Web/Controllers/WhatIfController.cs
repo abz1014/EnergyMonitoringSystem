@@ -35,7 +35,8 @@ public class WhatIfController : Controller
             }
 
             var monthlyKwh = data.Where(d => d.kWh.HasValue).Sum(d => (double)d.kWh!.Value);
-            var pfValues = data.Where(d => d.PFL1.HasValue && d.PFL1.Value > 0).Select(d => d.PFL1!.Value).ToList();
+            // 3-phase average PF (PFL1+PFL2+PFL3), not PFL1 alone -- see PowerFactorHelper
+            var pfValues = data.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).ToList();
             var avgPf = pfValues.Count > 0 ? pfValues.Average() : (double)targetPf;
 
             var monthlyBill = monthlyKwh * tariffRate;

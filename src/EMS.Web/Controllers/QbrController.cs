@@ -72,7 +72,7 @@ public class QbrController : Controller
             var totalKwh = validData.Sum(d => (double)(d.kWh ?? 0));
             var totalCost = totalKwh * tariffRate;
             var peakKw = validData.Where(d => d.kWtotal.HasValue).Select(d => d.kWtotal!.Value).DefaultIfEmpty(0).Max();
-            var pfValues = validData.Where(d => d.PFL1.HasValue && d.PFL1.Value > 0).Select(d => d.PFL1!.Value).ToList();
+            var pfValues = validData.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).ToList();
             var avgPf = pfValues.Count > 0 ? pfValues.Average() : 0;
 
             var pfPenalty = avgPf > 0 && avgPf < targetPf ? totalCost * ((double)targetPf / avgPf - 1) : 0;

@@ -3,6 +3,7 @@ namespace EMS.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using EMS.Core.Interfaces;
+using EMS.Web.Services;
 
 [Authorize(Roles = "Admin,Operator,Viewer")]
 public class EquipmentHealthController : Controller
@@ -72,7 +73,8 @@ public class EquipmentHealthController : Controller
                 var readings = group.ToList();
 
                 // PF score: 1.0 PF = 100, 0.5 PF = 0 (linear below target)
-                var pfValues = readings.Where(d => d.PFL1.HasValue && d.PFL1.Value > 0).Select(d => d.PFL1!.Value).ToList();
+                // Uses the 3-phase average (PFL1+PFL2+PFL3), not PFL1 alone -- see PowerFactorHelper
+                var pfValues = readings.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).ToList();
                 var hasPf = pfValues.Count > 0;
                 var avgPf = hasPf ? pfValues.Average() : 0;
                 var pfScore = hasPf ? Math.Clamp((avgPf - 0.5) / 0.5 * 100, 0, 100) : (double?)null;
