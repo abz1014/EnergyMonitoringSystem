@@ -1,0 +1,128 @@
+@{
+    ViewData["Title"] = "Frequency Stability";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "7d";
+    var tolerance = (double)(ViewBag.Tolerance ?? 0.5);
+    var nominalFreq = (double)(ViewBag.NominalFreq ?? 50.0);
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Frequency Stability</h1>
+        <p class="text-muted">Grid frequency deviation from nominal — excursions indicate grid instability or generator/UPS transfer events</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-light">Tolerance Band (± Hz)</label>
+                <input type="number" name="tolerance" value="@tolerance" step="0.05" min="0.05" max="5" class="form-control"
+                       style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" />
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        var excursionPct = (double)ViewBag.ExcursionPct;
+        var excursionColor = excursionPct > 5 ? "#EF4444" : excursionPct > 1 ? "#F59E0B" : "#10B981";
+
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">
+            Period: @ViewBag.DateRangeLabel | Nominal: @nominalFreq Hz | Tolerance: ±@tolerance Hz | @ViewBag.TotalReadings readings
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #3B82F6;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Average Frequency</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@ViewBag.AvgFreq <span style="font-size:11px;color:#64748B;">Hz</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Min / Max</div>
+                    <div style="color: #FFFFFF; font-size: 20px; font-weight: 700;">@ViewBag.MinFreq — @ViewBag.MaxFreq <span style="font-size:11px;color:#64748B;">Hz</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Max Deviation</div>
+                    <div style="color: #F59E0B; font-size: 24px; font-weight: 700;">±@ViewBag.MaxDeviation <span style="font-size:11px;color:#64748B;">Hz</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @excursionColor;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Excursions Beyond Tolerance</div>
+                    <div style="color: @excursionColor; font-size: 24px; font-weight: 700;">@ViewBag.ExcursionCount <span style="font-size:11px;color:#64748B;">(@excursionPct%)</span></div>
+                </div>
+            </div>
+        </div>
+
+        @if (excursionPct > 1)
+        {
+            <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @excursionColor;">
+                <span style="color: #E2E8F0;">
+                    Frequency exceeded the ±@tolerance Hz tolerance band on <strong style="color:@excursionColor;">@ViewBag.ExcursionCount</strong> readings
+                    (<strong style="color:@excursionColor;">@excursionPct%</strong> of the period). Sustained frequency excursions typically indicate
+                    grid instability, generator/UPS transfer events, or a poorly regulated local source — worth correlating against any known outage or transfer logs.
+                </span>
+            </div>
+        }
+
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Frequency Trend</h5>
+            <div id="freqChart" style="height: 380px;"></div>
+        </div>
+
+        <div class="mt-3 p-3" style="background-color: #1E293B; border-radius: 8px;">
+            <small style="color: #64748B;">
+                Nominal frequency and tolerance band are configurable (Settings → General). This tolerance is a generic engineering
+                threshold, not a citation of a specific grid code — adjust to match your utility's actual frequency regulation requirements.
+            </small>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#9889;</div>
+            <h4 style="color: #E2E8F0;">No frequency data available for this period</h4>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        new ApexCharts(document.querySelector('#freqChart'), {
+            series: [{ name: 'Frequency (Hz)', data: @Html.Raw(ViewBag.ChartValues) }],
+            chart: { type: 'line', height: 380, background: '#1E293B', toolbar: { show: true }, zoom: { enabled: true } },
+            colors: ['#3B82F6'],
+            stroke: { curve: 'straight', width: 1.5 },
+            xaxis: { categories: @Html.Raw(ViewBag.ChartLabels), labels: { style: { colors: '#94A3B8', fontSize: '9px' }, rotate: -45 }, tickAmount: 12 },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toFixed(2); } } },
+            annotations: {
+                yaxis: [
+                    { y: @nominalFreq, borderColor: '#10B981', strokeDashArray: 2, label: { text: 'Nominal (@nominalFreq Hz)', style: { color: '#FFF', background: '#10B981', fontSize: '10px' } } },
+                    { y: @(nominalFreq + tolerance), borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'Upper Tolerance', style: { color: '#FFF', background: '#EF4444', fontSize: '10px' } } },
+                    { y: @(nominalFreq - tolerance), borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'Lower Tolerance', style: { color: '#FFF', background: '#EF4444', fontSize: '10px' } } }
+                ]
+            },
+            tooltip: { theme: 'dark', y: { formatter: function(v) { return v.toFixed(3) + ' Hz'; } } },
+            grid: { borderColor: '#334155' },
+            markers: { size: 0 }
+        }).render();
+    </script>
+}
