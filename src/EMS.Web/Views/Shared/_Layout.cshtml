@@ -40,20 +40,42 @@
             text-decoration: none; display: block;
         }
 
-        .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+        .sidebar-nav { flex: 1; padding: 8px 0; overflow-y: auto; }
 
-        .sidebar-section { padding: 8px 20px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+        .sidebar-search-wrap { padding: 8px 16px 4px; }
+        .sidebar-search {
+            width: 100%; padding: 7px 10px; font-size: 13px;
+            background: var(--bg-primary); color: var(--text-primary);
+            border: 1px solid var(--border); border-radius: 6px;
+        }
+        .sidebar-search::placeholder { color: var(--text-muted); }
+        .sidebar-search:focus { outline: none; border-color: var(--accent); }
+
+        .sidebar-group { border-bottom: 1px solid rgba(51,65,85,0.4); }
+        .sidebar-group:last-child { border-bottom: none; }
+        .sidebar-group-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 9px 20px 9px 16px; cursor: pointer; user-select: none;
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--text-muted); font-weight: 600;
+        }
+        .sidebar-group-header:hover { color: var(--text-secondary); }
+        .sidebar-group-caret { font-size: 10px; transition: transform 0.15s; }
+        .sidebar-group.collapsed .sidebar-group-caret { transform: rotate(-90deg); }
+        .sidebar-group.collapsed .sidebar-group-links { display: none; }
+        .sidebar-group.has-active .sidebar-group-header { color: var(--text-secondary); }
 
         .sidebar-link {
             display: flex; align-items: center; gap: 10px;
-            padding: 10px 20px;
+            padding: 8px 20px;
             color: var(--text-secondary);
-            text-decoration: none; font-size: 14px;
+            text-decoration: none; font-size: 13.5px;
             transition: background-color 0.15s, color 0.15s;
             border-left: 3px solid transparent;
         }
         .sidebar-link:hover { background-color: var(--bg-tertiary); color: var(--text-primary); }
         .sidebar-link.active { color: var(--accent); background-color: rgba(37, 99, 235, 0.1); border-left-color: var(--accent); font-weight: 600; }
+        .sidebar-link.hidden-by-search { display: none; }
 
         .sidebar-icon { width: 18px; text-align: center; font-size: 14px; }
 
@@ -134,143 +156,108 @@
     }
 
     <!-- Sidebar -->
+    @{
+        // Each group: (id, label, controllers-in-group). "has-active" / auto-expand is computed
+        // server-side from the current controller so the page you're on is never hidden behind
+        // a collapsed group on load. Collapse state for groups NOT containing the active page is
+        // persisted client-side via localStorage (see script at bottom).
+        var groups = new (string Id, string Label, string[] Controllers)[]
+        {
+            ("overview", "Overview", new[] { "Briefing", "MyDashboard", "Dashboard" }),
+            ("live", "Live Operations", new[] { "LiveMonitoring", "MeterDetails", "FloorMap", "Alarm", "AlarmResponse", "RootCause" }),
+            ("finance", "Financial", new[] { "CostDashboard", "Budget", "Qbr", "Carbon", "PfPenalty", "WhatIf" }),
+            ("powerquality", "Power Quality & Engineering", new[] { "PowerQuality", "VoltageImbalance", "LineVoltageBalance", "VoltageRange", "Frequency", "ReactivePower", "EquipmentHealth", "TransformerLoading", "DiversityFactor", "CapacityHeadroom" }),
+            ("usage", "Usage Patterns", new[] { "ShiftAnalysis", "Baseload", "WeekdayWeekend", "DemandCurve", "Heatmap", "Anomaly", "Forecast" }),
+            ("devices", "Devices & Comparison", new[] { "MeterFaceplate", "Comparison", "EnergyAnalysis", "Sankey", "FlowMonitoring" }),
+            ("reports", "Reports & Data", new[] { "Reports", "DataQuality", "Weather" }),
+            ("admin", "Admin", new[] { "Settings" }),
+        };
+    }
     <nav class="sidebar" id="sidebar">
         <a class="sidebar-brand" asp-controller="Dashboard" asp-action="Index">EMS</a>
 
-        <div class="sidebar-nav">
-            <a class="sidebar-link @(ctrl == "Briefing" ? "active" : "")" asp-controller="Briefing" asp-action="Index" style="@(ctrl == "Briefing" ? "background: rgba(37,99,235,0.15);" : "")">
-                <span class="sidebar-icon">&#9733;</span> Briefing
-            </a>
-            <a class="sidebar-link @(ctrl == "MyDashboard" ? "active" : "")" asp-controller="MyDashboard" asp-action="Index">
-                <span class="sidebar-icon">&#9783;</span> My Dashboard
-            </a>
-
-            <div class="sidebar-section">Monitoring</div>
-            <a class="sidebar-link @(ctrl == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
-                <span class="sidebar-icon">&#9632;</span> Dashboard
-            </a>
-            <a class="sidebar-link @(ctrl == "LiveMonitoring" || ctrl == "MeterDetails" ? "active" : "")" asp-controller="LiveMonitoring" asp-action="Index">
-                <span class="sidebar-icon">&#9673;</span> Live Monitoring
-            </a>
-            <a class="sidebar-link @(ctrl == "FloorMap" ? "active" : "")" asp-controller="FloorMap" asp-action="Index">
-                <span class="sidebar-icon">&#127970;</span> Floor Map
-            </a>
-
-            <div class="sidebar-section">Operations</div>
-            <a class="sidebar-link @(ctrl == "Alarm" ? "active" : "")" asp-controller="Alarm" asp-action="Index">
-                <span class="sidebar-icon">&#9888;</span> Alarms
-            </a>
-            <a class="sidebar-link @(ctrl == "AlarmResponse" ? "active" : "")" asp-controller="AlarmResponse" asp-action="Index">
-                <span class="sidebar-icon">&#9203;</span> Response Time
-            </a>
-            <a class="sidebar-link @(ctrl == "RootCause" ? "active" : "")" asp-controller="RootCause" asp-action="Index">
-                <span class="sidebar-icon">&#128269;</span> Root Cause Context
-            </a>
-
-            <div class="sidebar-section">Finance</div>
-            <a class="sidebar-link @(ctrl == "CostDashboard" ? "active" : "")" asp-controller="CostDashboard" asp-action="Index">
-                <span class="sidebar-icon">Rs</span> Cost Dashboard
-            </a>
-
-            <div class="sidebar-section">Devices</div>
-            <a class="sidebar-link @(ctrl == "MeterFaceplate" ? "active" : "")" asp-controller="MeterFaceplate" asp-action="Index">
-                <span class="sidebar-icon">&#9889;</span> Meter Faceplate
-            </a>
-
-            <div class="sidebar-section">Analysis</div>
-            <a class="sidebar-link @(ctrl == "EnergyAnalysis" ? "active" : "")" asp-controller="EnergyAnalysis" asp-action="Index">
-                <span class="sidebar-icon">&#9650;</span> Energy Analysis
-            </a>
-            <a class="sidebar-link @(ctrl == "Comparison" ? "active" : "")" asp-controller="Comparison" asp-action="Index">
-                <span class="sidebar-icon">&#8651;</span> Meter Comparison
-            </a>
-            <a class="sidebar-link @(ctrl == "PowerQuality" ? "active" : "")" asp-controller="PowerQuality" asp-action="Index">
-                <span class="sidebar-icon">&#9889;</span> Power Quality
-            </a>
-            <a class="sidebar-link @(ctrl == "ShiftAnalysis" ? "active" : "")" asp-controller="ShiftAnalysis" asp-action="Index">
-                <span class="sidebar-icon">&#9201;</span> Shift Comparison
-            </a>
-            <a class="sidebar-link @(ctrl == "Baseload" ? "active" : "")" asp-controller="Baseload" asp-action="Index">
-                <span class="sidebar-icon">&#128176;</span> Baseload Analysis
-            </a>
-            <a class="sidebar-link @(ctrl == "DemandCurve" ? "active" : "")" asp-controller="DemandCurve" asp-action="Index">
-                <span class="sidebar-icon">&#128200;</span> Demand Curve
-            </a>
-            <a class="sidebar-link @(ctrl == "DiversityFactor" ? "active" : "")" asp-controller="DiversityFactor" asp-action="Index">
-                <span class="sidebar-icon">&#9881;</span> Diversity Factor
-            </a>
-            <a class="sidebar-link @(ctrl == "Frequency" ? "active" : "")" asp-controller="Frequency" asp-action="Index">
-                <span class="sidebar-icon">&#9889;</span> Frequency Stability
-            </a>
-            <a class="sidebar-link @(ctrl == "ReactivePower" ? "active" : "")" asp-controller="ReactivePower" asp-action="Index">
-                <span class="sidebar-icon">&#8645;</span> Reactive Power
-            </a>
-            <a class="sidebar-link @(ctrl == "LineVoltageBalance" ? "active" : "")" asp-controller="LineVoltageBalance" asp-action="Index">
-                <span class="sidebar-icon">&#9889;</span> Line Voltage Balance
-            </a>
-            <a class="sidebar-link @(ctrl == "Carbon" ? "active" : "")" asp-controller="Carbon" asp-action="Index">
-                <span class="sidebar-icon">&#127807;</span> Carbon / ESG
-            </a>
-            <a class="sidebar-link @(ctrl == "FlowMonitoring" ? "active" : "")" asp-controller="FlowMonitoring" asp-action="Index">
-                <span class="sidebar-icon">&#128167;</span> Flow & Level
-            </a>
-            <a class="sidebar-link @(ctrl == "VoltageRange" ? "active" : "")" asp-controller="VoltageRange" asp-action="Index">
-                <span class="sidebar-icon">&#9889;</span> Voltage Out-of-Range
-            </a>
-            <a class="sidebar-link @(ctrl == "TransformerLoading" ? "active" : "")" asp-controller="TransformerLoading" asp-action="Index">
-                <span class="sidebar-icon">&#9881;</span> Transformer Loading
-            </a>
-            <a class="sidebar-link @(ctrl == "CapacityHeadroom" ? "active" : "")" asp-controller="CapacityHeadroom" asp-action="Index">
-                <span class="sidebar-icon">&#9881;</span> Capacity Headroom
-            </a>
-            <a class="sidebar-link @(ctrl == "WeekdayWeekend" ? "active" : "")" asp-controller="WeekdayWeekend" asp-action="Index">
-                <span class="sidebar-icon">&#128197;</span> Weekday/Weekend
-            </a>
-            <a class="sidebar-link @(ctrl == "Budget" ? "active" : "")" asp-controller="Budget" asp-action="Index">
-                <span class="sidebar-icon">&#128181;</span> Budget vs Actual
-            </a>
-            <a class="sidebar-link @(ctrl == "VoltageImbalance" ? "active" : "")" asp-controller="VoltageImbalance" asp-action="Index">
-                <span class="sidebar-icon">&#9889;</span> Voltage Imbalance
-            </a>
-            <a class="sidebar-link @(ctrl == "PfPenalty" ? "active" : "")" asp-controller="PfPenalty" asp-action="Index">
-                <span class="sidebar-icon">&#128202;</span> PF Penalty Calculator
-            </a>
-            <a class="sidebar-link @(ctrl == "Heatmap" ? "active" : "")" asp-controller="Heatmap" asp-action="Index">
-                <span class="sidebar-icon">&#128293;</span> Consumption Heatmap
-            </a>
-            <a class="sidebar-link @(ctrl == "EquipmentHealth" ? "active" : "")" asp-controller="EquipmentHealth" asp-action="Index">
-                <span class="sidebar-icon">&#128295;</span> Equipment Health
-            </a>
-            <a class="sidebar-link @(ctrl == "Anomaly" ? "active" : "")" asp-controller="Anomaly" asp-action="Index">
-                <span class="sidebar-icon">&#128269;</span> Anomaly Detection
-            </a>
-            <a class="sidebar-link @(ctrl == "Sankey" ? "active" : "")" asp-controller="Sankey" asp-action="Index">
-                <span class="sidebar-icon">&#8651;</span> Energy Flow
-            </a>
-            <a class="sidebar-link @(ctrl == "Forecast" ? "active" : "")" asp-controller="Forecast" asp-action="Index">
-                <span class="sidebar-icon">&#128302;</span> Forecast
-            </a>
-            <a class="sidebar-link @(ctrl == "WhatIf" ? "active" : "")" asp-controller="WhatIf" asp-action="Index">
-                <span class="sidebar-icon">&#127919;</span> What-If Modeler
-            </a>
-            <a class="sidebar-link @(ctrl == "DataQuality" ? "active" : "")" asp-controller="DataQuality" asp-action="Index">
-                <span class="sidebar-icon">&#10003;</span> Data Quality
-            </a>
-            <a class="sidebar-link @(ctrl == "Weather" ? "active" : "")" asp-controller="Weather" asp-action="Index">
-                <span class="sidebar-icon">&#127777;</span> Weather Correlation
-            </a>
-            <a class="sidebar-link @(ctrl == "Qbr" ? "active" : "")" asp-controller="Qbr" asp-action="Index">
-                <span class="sidebar-icon">&#128203;</span> Executive QBR
-            </a>
-            <a class="sidebar-link @(ctrl == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index">
-                <span class="sidebar-icon">&#9776;</span> Reports
-            </a>
+        <div class="sidebar-search-wrap">
+            <input type="text" id="sidebarSearch" class="sidebar-search" placeholder="Search pages..." autocomplete="off" />
         </div>
 
-            <div class="sidebar-section">Admin</div>
-            <a class="sidebar-link @(ctrl == "Settings" ? "active" : "")" asp-controller="Settings" asp-action="Index">
-                <span class="sidebar-icon">&#9881;</span> Settings
-            </a>
+        <div class="sidebar-nav" id="sidebarNav">
+            @foreach (var g in groups)
+            {
+                var isActiveGroup = g.Controllers.Contains(ctrl);
+                <div class="sidebar-group @(isActiveGroup ? "has-active" : "")" data-group-id="@g.Id">
+                    <div class="sidebar-group-header" onclick="toggleGroup(this)">
+                        <span>@g.Label</span>
+                        <span class="sidebar-group-caret">&#9660;</span>
+                    </div>
+                    <div class="sidebar-group-links">
+                        @if (g.Id == "overview")
+                        {
+                            <a class="sidebar-link @(ctrl == "Briefing" ? "active" : "")" asp-controller="Briefing" asp-action="Index"><span class="sidebar-icon">&#9733;</span> Briefing</a>
+                            <a class="sidebar-link @(ctrl == "MyDashboard" ? "active" : "")" asp-controller="MyDashboard" asp-action="Index"><span class="sidebar-icon">&#9783;</span> My Dashboard</a>
+                            <a class="sidebar-link @(ctrl == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index"><span class="sidebar-icon">&#9632;</span> Dashboard</a>
+                        }
+                        else if (g.Id == "live")
+                        {
+                            <a class="sidebar-link @(ctrl == "LiveMonitoring" || ctrl == "MeterDetails" ? "active" : "")" asp-controller="LiveMonitoring" asp-action="Index"><span class="sidebar-icon">&#9673;</span> Live Monitoring</a>
+                            <a class="sidebar-link @(ctrl == "FloorMap" ? "active" : "")" asp-controller="FloorMap" asp-action="Index"><span class="sidebar-icon">&#127970;</span> Floor Map</a>
+                            <a class="sidebar-link @(ctrl == "Alarm" ? "active" : "")" asp-controller="Alarm" asp-action="Index"><span class="sidebar-icon">&#9888;</span> Alarms</a>
+                            <a class="sidebar-link @(ctrl == "AlarmResponse" ? "active" : "")" asp-controller="AlarmResponse" asp-action="Index"><span class="sidebar-icon">&#9203;</span> Response Time</a>
+                            <a class="sidebar-link @(ctrl == "RootCause" ? "active" : "")" asp-controller="RootCause" asp-action="Index"><span class="sidebar-icon">&#128269;</span> Root Cause Context</a>
+                        }
+                        else if (g.Id == "finance")
+                        {
+                            <a class="sidebar-link @(ctrl == "CostDashboard" ? "active" : "")" asp-controller="CostDashboard" asp-action="Index"><span class="sidebar-icon">Rs</span> Cost Dashboard</a>
+                            <a class="sidebar-link @(ctrl == "Budget" ? "active" : "")" asp-controller="Budget" asp-action="Index"><span class="sidebar-icon">&#128181;</span> Budget vs Actual</a>
+                            <a class="sidebar-link @(ctrl == "Qbr" ? "active" : "")" asp-controller="Qbr" asp-action="Index"><span class="sidebar-icon">&#128203;</span> Executive QBR</a>
+                            <a class="sidebar-link @(ctrl == "Carbon" ? "active" : "")" asp-controller="Carbon" asp-action="Index"><span class="sidebar-icon">&#127807;</span> Carbon / ESG</a>
+                            <a class="sidebar-link @(ctrl == "PfPenalty" ? "active" : "")" asp-controller="PfPenalty" asp-action="Index"><span class="sidebar-icon">&#128202;</span> PF Penalty Calculator</a>
+                            <a class="sidebar-link @(ctrl == "WhatIf" ? "active" : "")" asp-controller="WhatIf" asp-action="Index"><span class="sidebar-icon">&#127919;</span> What-If Modeler</a>
+                        }
+                        else if (g.Id == "powerquality")
+                        {
+                            <a class="sidebar-link @(ctrl == "PowerQuality" ? "active" : "")" asp-controller="PowerQuality" asp-action="Index"><span class="sidebar-icon">&#9889;</span> Power Quality</a>
+                            <a class="sidebar-link @(ctrl == "VoltageImbalance" ? "active" : "")" asp-controller="VoltageImbalance" asp-action="Index"><span class="sidebar-icon">&#9889;</span> Voltage Imbalance</a>
+                            <a class="sidebar-link @(ctrl == "LineVoltageBalance" ? "active" : "")" asp-controller="LineVoltageBalance" asp-action="Index"><span class="sidebar-icon">&#9889;</span> Line Voltage Balance</a>
+                            <a class="sidebar-link @(ctrl == "VoltageRange" ? "active" : "")" asp-controller="VoltageRange" asp-action="Index"><span class="sidebar-icon">&#9889;</span> Voltage Out-of-Range</a>
+                            <a class="sidebar-link @(ctrl == "Frequency" ? "active" : "")" asp-controller="Frequency" asp-action="Index"><span class="sidebar-icon">&#9889;</span> Frequency Stability</a>
+                            <a class="sidebar-link @(ctrl == "ReactivePower" ? "active" : "")" asp-controller="ReactivePower" asp-action="Index"><span class="sidebar-icon">&#8645;</span> Reactive Power</a>
+                            <a class="sidebar-link @(ctrl == "EquipmentHealth" ? "active" : "")" asp-controller="EquipmentHealth" asp-action="Index"><span class="sidebar-icon">&#128295;</span> Equipment Health</a>
+                            <a class="sidebar-link @(ctrl == "TransformerLoading" ? "active" : "")" asp-controller="TransformerLoading" asp-action="Index"><span class="sidebar-icon">&#9881;</span> Transformer Loading</a>
+                            <a class="sidebar-link @(ctrl == "DiversityFactor" ? "active" : "")" asp-controller="DiversityFactor" asp-action="Index"><span class="sidebar-icon">&#9881;</span> Diversity Factor</a>
+                            <a class="sidebar-link @(ctrl == "CapacityHeadroom" ? "active" : "")" asp-controller="CapacityHeadroom" asp-action="Index"><span class="sidebar-icon">&#9881;</span> Capacity Headroom</a>
+                        }
+                        else if (g.Id == "usage")
+                        {
+                            <a class="sidebar-link @(ctrl == "ShiftAnalysis" ? "active" : "")" asp-controller="ShiftAnalysis" asp-action="Index"><span class="sidebar-icon">&#9201;</span> Shift Comparison</a>
+                            <a class="sidebar-link @(ctrl == "Baseload" ? "active" : "")" asp-controller="Baseload" asp-action="Index"><span class="sidebar-icon">&#128176;</span> Baseload Analysis</a>
+                            <a class="sidebar-link @(ctrl == "WeekdayWeekend" ? "active" : "")" asp-controller="WeekdayWeekend" asp-action="Index"><span class="sidebar-icon">&#128197;</span> Weekday/Weekend</a>
+                            <a class="sidebar-link @(ctrl == "DemandCurve" ? "active" : "")" asp-controller="DemandCurve" asp-action="Index"><span class="sidebar-icon">&#128200;</span> Demand Curve</a>
+                            <a class="sidebar-link @(ctrl == "Heatmap" ? "active" : "")" asp-controller="Heatmap" asp-action="Index"><span class="sidebar-icon">&#128293;</span> Consumption Heatmap</a>
+                            <a class="sidebar-link @(ctrl == "Anomaly" ? "active" : "")" asp-controller="Anomaly" asp-action="Index"><span class="sidebar-icon">&#128269;</span> Anomaly Detection</a>
+                            <a class="sidebar-link @(ctrl == "Forecast" ? "active" : "")" asp-controller="Forecast" asp-action="Index"><span class="sidebar-icon">&#128302;</span> Forecast</a>
+                        }
+                        else if (g.Id == "devices")
+                        {
+                            <a class="sidebar-link @(ctrl == "MeterFaceplate" ? "active" : "")" asp-controller="MeterFaceplate" asp-action="Index"><span class="sidebar-icon">&#9889;</span> Meter Faceplate</a>
+                            <a class="sidebar-link @(ctrl == "Comparison" ? "active" : "")" asp-controller="Comparison" asp-action="Index"><span class="sidebar-icon">&#8651;</span> Meter Comparison</a>
+                            <a class="sidebar-link @(ctrl == "EnergyAnalysis" ? "active" : "")" asp-controller="EnergyAnalysis" asp-action="Index"><span class="sidebar-icon">&#9650;</span> Energy Analysis</a>
+                            <a class="sidebar-link @(ctrl == "Sankey" ? "active" : "")" asp-controller="Sankey" asp-action="Index"><span class="sidebar-icon">&#8651;</span> Energy Flow</a>
+                            <a class="sidebar-link @(ctrl == "FlowMonitoring" ? "active" : "")" asp-controller="FlowMonitoring" asp-action="Index"><span class="sidebar-icon">&#128167;</span> Flow & Level</a>
+                        }
+                        else if (g.Id == "reports")
+                        {
+                            <a class="sidebar-link @(ctrl == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index"><span class="sidebar-icon">&#9776;</span> Reports</a>
+                            <a class="sidebar-link @(ctrl == "DataQuality" ? "active" : "")" asp-controller="DataQuality" asp-action="Index"><span class="sidebar-icon">&#10003;</span> Data Quality</a>
+                            <a class="sidebar-link @(ctrl == "Weather" ? "active" : "")" asp-controller="Weather" asp-action="Index"><span class="sidebar-icon">&#127777;</span> Weather Correlation</a>
+                        }
+                        else if (g.Id == "admin")
+                        {
+                            <a class="sidebar-link @(ctrl == "Settings" ? "active" : "")" asp-controller="Settings" asp-action="Index"><span class="sidebar-icon">&#9881;</span> Settings</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
 
         <div class="sidebar-footer">
             @if (User.Identity?.IsAuthenticated == true)
@@ -313,6 +300,68 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        // Sidebar group collapse state, persisted per-browser. A group containing the
+        // current page is always expanded on load regardless of saved state, so you can
+        // never land on a page whose own nav entry is hidden behind a collapsed group.
+        (function () {
+            var STORAGE_KEY = 'ems_sidebar_collapsed_groups';
+
+            function getCollapsedSet() {
+                try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }
+                catch (e) { return new Set(); }
+            }
+            function saveCollapsedSet(set) {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(set))); } catch (e) { }
+            }
+
+            window.toggleGroup = function (headerEl) {
+                var group = headerEl.closest('.sidebar-group');
+                var id = group.getAttribute('data-group-id');
+                var collapsed = getCollapsedSet();
+                group.classList.toggle('collapsed');
+                if (group.classList.contains('collapsed')) { collapsed.add(id); } else { collapsed.delete(id); }
+                saveCollapsedSet(collapsed);
+            };
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var collapsed = getCollapsedSet();
+                document.querySelectorAll('.sidebar-group').forEach(function (group) {
+                    var id = group.getAttribute('data-group-id');
+                    var isActiveGroup = group.classList.contains('has-active');
+                    if (!isActiveGroup && collapsed.has(id)) {
+                        group.classList.add('collapsed');
+                    }
+                });
+
+                // Live search: filters individual links by text, auto-expands any group with a match.
+                var searchInput = document.getElementById('sidebarSearch');
+                if (searchInput) {
+                    searchInput.addEventListener('input', function () {
+                        var q = this.value.trim().toLowerCase();
+                        document.querySelectorAll('.sidebar-group').forEach(function (group) {
+                            var anyMatch = false;
+                            group.querySelectorAll('.sidebar-link').forEach(function (link) {
+                                var text = link.textContent.trim().toLowerCase();
+                                var matches = q === '' || text.indexOf(q) !== -1;
+                                link.classList.toggle('hidden-by-search', !matches);
+                                if (matches) anyMatch = true;
+                            });
+                            if (q === '') {
+                                group.style.display = '';
+                                group.classList.toggle('collapsed', collapsed.has(group.getAttribute('data-group-id')) && !group.classList.contains('has-active'));
+                            } else {
+                                group.style.display = anyMatch ? '' : 'none';
+                                if (anyMatch) group.classList.remove('collapsed');
+                            }
+                        });
+                    });
+                }
+            });
+        })();
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
