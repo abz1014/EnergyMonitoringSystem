@@ -1,0 +1,103 @@
+@{
+    ViewData["Title"] = "Carbon / ESG Report";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "30d";
+    var co2Factor = (double)(ViewBag.CO2Factor ?? 0.82);
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Carbon / ESG Report</h1>
+        <p class="text-muted">Estimated CO2e emissions from electricity consumption</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        var excluded = (int)(ViewBag.ExcludedCount ?? 0);
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel | Emission factor: @co2Factor kg CO2e/kWh</div>
+        @if (excluded > 0)
+        {
+            <div class="mb-3 p-2" style="background-color: #1E293B; border-radius: 6px; border-left: 3px solid #F59E0B; font-size: 12px; color: #94A3B8;">
+                @excluded reading(s) excluded — matched the signature of a known meter register data quality issue currently under investigation with the client.
+            </div>
+        }
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #3B82F6;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Total Consumption</div>
+                    <div style="color: #FFFFFF; font-size: 26px; font-weight: 700;">@(((double)ViewBag.TotalKwh).ToString("N0")) <span style="font-size:13px;color:#64748B;">kWh</span></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Estimated Emissions</div>
+                    <div style="color: #10B981; font-size: 26px; font-weight: 700;">@ViewBag.TotalCarbonTonnes <span style="font-size:13px;color:#64748B;">tCO2e</span></div>
+                    <small style="color: #64748B;">@(((double)ViewBag.TotalCarbonKg).ToString("N0")) kg CO2e</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Annualized Projection</div>
+                    <div style="color: #F59E0B; font-size: 26px; font-weight: 700;">@ViewBag.AnnualizedCarbonTonnes <span style="font-size:13px;color:#64748B;">tCO2e/yr</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Daily Emissions Trend</h5>
+            <div id="carbonChart" style="height: 350px;"></div>
+        </div>
+
+        <div class="p-3" style="background-color: #1E293B; border-radius: 8px;">
+            <small style="color: #64748B;">
+                Emission factor (@co2Factor kg CO2e/kWh) is a configured grid-average assumption set in Settings → General, not a measured value.
+                It does not account for time-of-day generation mix variation. Update it to match your utility's published grid emission factor
+                for more accurate ESG reporting.
+            </small>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#127807;</div>
+            <h4 style="color: #E2E8F0;">No data available for this period</h4>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        new ApexCharts(document.querySelector('#carbonChart'), {
+            series: [{ name: 'CO2e (kg)', data: @Html.Raw(ViewBag.DailyCarbon) }],
+            chart: { type: 'area', height: 350, background: '#1E293B', toolbar: { show: true } },
+            colors: ['#10B981'],
+            stroke: { curve: 'smooth', width: 2 },
+            fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
+            xaxis: { categories: @Html.Raw(ViewBag.DailyLabels), labels: { style: { colors: '#94A3B8', fontSize: '10px' }, rotate: -45 } },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toFixed(0) + ' kg'; } } },
+            tooltip: { theme: 'dark' },
+            grid: { borderColor: '#334155' },
+            markers: { size: 0, hover: { size: 4 } }
+        }).render();
+    </script>
+}
