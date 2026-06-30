@@ -163,13 +163,13 @@
         // persisted client-side via localStorage (see script at bottom).
         var groups = new (string Id, string Label, string[] Controllers)[]
         {
-            ("overview", "Overview", new[] { "Briefing", "MyDashboard", "Dashboard" }),
+            ("overview", "Overview", new[] { "Briefing", "Dashboard" }),
             ("live", "Live Operations", new[] { "LiveMonitoring", "MeterDetails", "FloorMap", "Alarm", "AlarmResponse", "RootCause" }),
             ("finance", "Financial", new[] { "CostDashboard", "Budget", "Qbr", "Carbon", "PfPenalty", "WhatIf" }),
             ("powerquality", "Power Quality & Engineering", new[] { "PowerQuality", "VoltageImbalance", "LineVoltageBalance", "VoltageRange", "Frequency", "ReactivePower", "EquipmentHealth", "TransformerLoading", "DiversityFactor", "CapacityHeadroom" }),
             ("usage", "Usage Patterns", new[] { "TimeOfUse", "DemandCurve", "Heatmap", "Anomaly", "Forecast" }),
-            ("devices", "Devices & Comparison", new[] { "MeterFaceplate", "Comparison", "EnergyAnalysis", "Sankey", "FlowMonitoring" }),
-            ("reports", "Reports & Data", new[] { "Reports", "DataQuality", "Weather" }),
+            ("devices", "Devices & Comparison", new[] { "MeterFaceplate", "Comparison", "EnergyAnalysis", "FlowMonitoring" }),
+            ("reports", "Reports & Data", new[] { "Reports", "DataQuality" }),
             ("admin", "Admin", new[] { "Settings" }),
         };
     }
@@ -193,7 +193,6 @@
                         @if (g.Id == "overview")
                         {
                             <a class="sidebar-link @(ctrl == "Briefing" ? "active" : "")" asp-controller="Briefing" asp-action="Index"><span class="sidebar-icon">&#9733;</span> Briefing</a>
-                            <a class="sidebar-link @(ctrl == "MyDashboard" ? "active" : "")" asp-controller="MyDashboard" asp-action="Index"><span class="sidebar-icon">&#9783;</span> My Dashboard</a>
                             <a class="sidebar-link @(ctrl == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index"><span class="sidebar-icon">&#9632;</span> Dashboard</a>
                         }
                         else if (g.Id == "live")
@@ -239,14 +238,12 @@
                             <a class="sidebar-link @(ctrl == "MeterFaceplate" ? "active" : "")" asp-controller="MeterFaceplate" asp-action="Index"><span class="sidebar-icon">&#9889;</span> Meter Faceplate</a>
                             <a class="sidebar-link @(ctrl == "Comparison" ? "active" : "")" asp-controller="Comparison" asp-action="Index"><span class="sidebar-icon">&#8651;</span> Meter Comparison</a>
                             <a class="sidebar-link @(ctrl == "EnergyAnalysis" ? "active" : "")" asp-controller="EnergyAnalysis" asp-action="Index"><span class="sidebar-icon">&#9650;</span> Energy Analysis</a>
-                            <a class="sidebar-link @(ctrl == "Sankey" ? "active" : "")" asp-controller="Sankey" asp-action="Index"><span class="sidebar-icon">&#8651;</span> Energy Flow</a>
                             <a class="sidebar-link @(ctrl == "FlowMonitoring" ? "active" : "")" asp-controller="FlowMonitoring" asp-action="Index"><span class="sidebar-icon">&#128167;</span> Flow & Level</a>
                         }
                         else if (g.Id == "reports")
                         {
                             <a class="sidebar-link @(ctrl == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index"><span class="sidebar-icon">&#9776;</span> Reports</a>
                             <a class="sidebar-link @(ctrl == "DataQuality" ? "active" : "")" asp-controller="DataQuality" asp-action="Index"><span class="sidebar-icon">&#10003;</span> Data Quality</a>
-                            <a class="sidebar-link @(ctrl == "Weather" ? "active" : "")" asp-controller="Weather" asp-action="Index"><span class="sidebar-icon">&#127777;</span> Weather Correlation</a>
                         }
                         else if (g.Id == "admin")
                         {
