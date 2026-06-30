@@ -16,6 +16,7 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
     public DbSet<FlowmeterData> FlowmetersData { get; set; }
     public DbSet<DeviceTag> DeviceTags { get; set; }
     public DbSet<AppSetting> AppSettings { get; set; }
+    public DbSet<DailyTemperature> DailyTemperatures { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,6 +29,7 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
         modelBuilder.Entity<FlowmeterData>().ToTable("tbFlowmetersData");
         modelBuilder.Entity<DeviceTag>().ToTable("tblDevicesTags");
         modelBuilder.Entity<AppSetting>().ToTable("tblAppSettings");
+        modelBuilder.Entity<DailyTemperature>().ToTable("tblDailyTemperature");
 
         // EnergyMeterData configurations
         modelBuilder.Entity<EnergyMeterData>()
@@ -66,6 +68,9 @@ public class ScadaDbContext : IdentityDbContext<AppUser>
         // AppSetting configurations
         modelBuilder.Entity<AppSetting>()
             .HasKey(e => e.SettingKey);
+
+        modelBuilder.Entity<DailyTemperature>()
+            .HasKey(e => e.TempDate);
 
         // DeviceTag configurations
         modelBuilder.Entity<DeviceTag>()

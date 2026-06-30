@@ -98,10 +98,33 @@
         .apexcharts-menu-item:hover { background: #334155 !important; }
 
         @@media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); }
+            .sidebar { transform: translateX(-100%); width: 260px; }
+            .sidebar.open { transform: translateX(0); box-shadow: 4px 0 16px rgba(0,0,0,0.4); }
             .main-content, .footer, .topbar { margin-left: 0; left: 0; }
             .sidebar-toggle { display: block; }
+
+            /* Touch-friendly tap targets */
+            .sidebar-link { padding: 14px 20px; font-size: 15px; }
+            .btn, .form-select, .form-control { min-height: 42px; font-size: 16px; }
+            .btn-sm { min-height: 36px; }
+
+            /* Stack KPI/summary card rows on small screens, full width */
+            .row > [class*="col-"] { margin-bottom: 8px; }
+
+            /* Shrink page padding to reclaim screen space */
+            .main-content > main > div { padding: 12px !important; }
+
+            /* Tables: allow horizontal scroll instead of squeezing columns unreadable */
+            .table-responsive, table { display: block; overflow-x: auto; white-space: nowrap; }
+
+            /* Charts: cap height so they don't dominate the viewport on small screens */
+            div[id$="Chart"] { max-height: 280px !important; }
+        }
+
+        @@media (max-width: 480px) {
+            .topbar-title { font-size: 12px; }
+            h1.h2 { font-size: 20px; }
+            div[id$="Chart"] { max-height: 220px !important; }
         }
     </style>
 </head>
@@ -193,6 +216,15 @@
             </a>
             <a class="sidebar-link @(ctrl == "WhatIf" ? "active" : "")" asp-controller="WhatIf" asp-action="Index">
                 <span class="sidebar-icon">&#127919;</span> What-If Modeler
+            </a>
+            <a class="sidebar-link @(ctrl == "DataQuality" ? "active" : "")" asp-controller="DataQuality" asp-action="Index">
+                <span class="sidebar-icon">&#10003;</span> Data Quality
+            </a>
+            <a class="sidebar-link @(ctrl == "Weather" ? "active" : "")" asp-controller="Weather" asp-action="Index">
+                <span class="sidebar-icon">&#127777;</span> Weather Correlation
+            </a>
+            <a class="sidebar-link @(ctrl == "Qbr" ? "active" : "")" asp-controller="Qbr" asp-action="Index">
+                <span class="sidebar-icon">&#128203;</span> Executive QBR
             </a>
             <a class="sidebar-link @(ctrl == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index">
                 <span class="sidebar-icon">&#9776;</span> Reports

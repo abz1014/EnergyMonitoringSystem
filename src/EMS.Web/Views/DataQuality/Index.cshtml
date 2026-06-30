@@ -1,0 +1,79 @@
+@model List<EMS.Web.Controllers.DataQualityController.MeterQuality>
+@{
+    ViewData["Title"] = "Data Quality Score";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "7d";
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Data Quality Score</h1>
+        <p class="text-muted">% of expected hourly readings actually received per meter, with gap detection</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData && Model != null && Model.Count > 0)
+    {
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel</div>
+
+        <div class="row g-3">
+            @foreach (var m in Model)
+            {
+                <div class="col-md-6">
+                    <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid @m.StatusColor;">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <div style="color: #FFFFFF; font-size: 16px; font-weight: 600;">@m.MeterName</div>
+                                <small style="color: #64748B;">@m.ActualReadings / @m.ExpectedReadings expected readings</small>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: @m.StatusColor; font-size: 28px; font-weight: 700;">@m.Score%</div>
+                                <small style="color: @m.StatusColor;">@m.Status</small>
+                            </div>
+                        </div>
+                        <div style="background: #334155; border-radius: 4px; height: 8px; margin-bottom: 12px;">
+                            <div style="background: @m.StatusColor; width: @m.Score%; height: 8px; border-radius: 4px;"></div>
+                        </div>
+                        @if (m.GapPeriods.Count > 0)
+                        {
+                            <div style="font-size: 12px; color: #94A3B8; margin-bottom: 4px;">Gap periods (@m.GapPeriods.Count@(m.GapPeriods.Count == 10 ? "+" : "")):</div>
+                            <div style="max-height: 120px; overflow-y: auto;">
+                                @foreach (var gap in m.GapPeriods)
+                                {
+                                    <div style="font-size: 11px; color: #EF4444; font-family: monospace;">@gap</div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <small style="color: #10B981;">No gaps detected</small>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128202;</div>
+            <h4 style="color: #E2E8F0;">No data available for this period</h4>
+        </div>
+    }
+</div>

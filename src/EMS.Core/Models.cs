@@ -109,6 +109,13 @@ public class FlowmeterData
     public string? Area { get; set; }
 }
 
+public class DailyTemperature
+{
+    public DateTime TempDate { get; set; }
+    public decimal AvgTempC { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
 public class AppSetting
 {
     public string SettingKey { get; set; } = "";
