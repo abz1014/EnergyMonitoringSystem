@@ -78,12 +78,18 @@
         var actuals = @Html.Raw(ViewBag.ActualValues);
         var target = @(ViewBag.MonthlyTarget);
 
+        // Explicit axis bounds instead of relying on ApexCharts auto-scale: when the data is
+        // mostly zeros (no demo data for most months) and the target annotation sits well above
+        // the data's own max, auto-scaling can produce a broken NaN tick range. Computing the
+        // bounds ourselves from actuals+target removes the ambiguity entirely.
+        var axisMax = Math.max(Math.max.apply(null, actuals), target) * 1.15;
+
         new ApexCharts(document.querySelector('#budgetChart'), {
             series: [{ name: 'Actual', data: actuals.map(function(v) { return { y: v, fillColor: v > target ? '#EF4444' : '#10B981' }; }) }],
             chart: { type: 'bar', height: 380, background: '#1E293B', toolbar: { show: true } },
             plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
             xaxis: { categories: @Html.Raw(ViewBag.Months), labels: { style: { colors: '#94A3B8' } } },
-            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toLocaleString(); } } },
+            yaxis: { min: 0, max: axisMax, labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toLocaleString(); } } },
             annotations: { yaxis: [{ y: target, borderColor: '#F59E0B', strokeDashArray: 4, label: { text: 'Target: ' + target.toLocaleString() + ' kWh', style: { color: '#FFF', background: '#F59E0B', fontSize: '11px' } } }] },
             tooltip: { theme: 'dark', y: { formatter: function(v) { return v.toLocaleString() + ' kWh'; } } },
             legend: { show: false },

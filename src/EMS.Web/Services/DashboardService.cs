@@ -16,6 +16,13 @@ public class WebDashboardService : IDashboardService
     private static readonly TimeSpan KpiCacheDuration = TimeSpan.FromSeconds(30);
     private const string CacheKeyDashboard = "dashboard_kpi";
 
+    // Defensive filter: excludes rows matching the known-contaminated real-gateway signature
+    // (kVAh=0 and kVARh=0 alongside a kWh value that behaves like a cumulative register, not an
+    // interval reading) until kWh semantics are confirmed with the client -- see
+    // kwh-semantics-pending-confirmation memory. Shared across every kWh-summing method in this
+    // class so the exclusion logic can't drift between call sites.
+    private static bool IsContaminatedReading(EnergyMeterData d) => (d.kVAh ?? -1) == 0 && (d.kVARh ?? -1) == 0;
+
     public WebDashboardService(
         IEnergyMeterRepository energyMeterRepository,
         IMonitoringDeviceRepository deviceRepository,
@@ -45,11 +52,11 @@ public class WebDashboardService : IDashboardService
             var tomorrow = today.AddDays(1);
             var monthStart = new DateTime(today.Year, today.Month, 1);
 
-            var todayData = await _energyMeterRepository.GetByDateRange(today, tomorrow);
+            var todayData = (await _energyMeterRepository.GetByDateRange(today, tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
 
             if (todayData.Count == 0)
             {
-                var latestReading = await _energyMeterRepository.GetByDateRange(DateTime.Now.AddDays(-30), tomorrow);
+                var latestReading = (await _energyMeterRepository.GetByDateRange(DateTime.Now.AddDays(-30), tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
                 if (latestReading.Count > 0)
                 {
                     var latestDate = latestReading.Max(d => d.DateTime ?? DateTime.MinValue).Date;
@@ -64,7 +71,7 @@ public class WebDashboardService : IDashboardService
             var onlineMeters = await _deviceRepository.GetOnlineDeviceCount();
             var totalDevices = (await _deviceRepository.GetAllDevices()).Count;
 
-            var monthData = await _energyMeterRepository.GetByDateRange(monthStart, tomorrow);
+            var monthData = (await _energyMeterRepository.GetByDateRange(monthStart, tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
             var monthlyTotal = monthData.Sum(d => (double)(d.kWh ?? 0));
 
             var avgPowerFactor = todayData.Count > 0
@@ -252,7 +259,7 @@ public class WebDashboardService : IDashboardService
         var now = DateTime.Now;
 
         var twelveMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-11);
-        var data = await _energyMeterRepository.GetByDateRange(twelveMonthsAgo, now.AddDays(1));
+        var data = (await _energyMeterRepository.GetByDateRange(twelveMonthsAgo, now.AddDays(1))).Where(d => !IsContaminatedReading(d)).ToList();
 
         var grouped = data.Where(d => d.DateTime.HasValue)
             .GroupBy(d => new { d.DateTime!.Value.Year, d.DateTime.Value.Month })
@@ -306,12 +313,12 @@ public class WebDashboardService : IDashboardService
         var yesterday = today.AddDays(-1);
         var weekAgo = today.AddDays(-7);
 
-        var todayData = await _energyMeterRepository.GetByDateRange(today, tomorrow);
-        var yesterdayData = await _energyMeterRepository.GetByDateRange(yesterday, today.AddTicks(-1));
+        var todayData = (await _energyMeterRepository.GetByDateRange(today, tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
+        var yesterdayData = (await _energyMeterRepository.GetByDateRange(yesterday, today.AddTicks(-1))).Where(d => !IsContaminatedReading(d)).ToList();
 
         if (todayData.Count == 0 && yesterdayData.Count == 0)
         {
-            var recentData = await _energyMeterRepository.GetByDateRange(today.AddDays(-30), tomorrow);
+            var recentData = (await _energyMeterRepository.GetByDateRange(today.AddDays(-30), tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
             if (recentData.Count > 0)
             {
                 var dates = recentData.Where(d => d.DateTime.HasValue).Select(d => d.DateTime!.Value.Date).Distinct().OrderByDescending(d => d).ToList();
@@ -344,7 +351,7 @@ public class WebDashboardService : IDashboardService
             .GroupBy(d => d.DateTime!.Value.Hour)
             .ToDictionary(g => g.Key, g => g.Sum(x => (double)(x.kWh ?? 0)));
 
-        var weekData = await _energyMeterRepository.GetByDateRange(weekAgo, tomorrow);
+        var weekData = (await _energyMeterRepository.GetByDateRange(weekAgo, tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
         var weekDays = weekData
             .Where(d => d.DateTime.HasValue)
             .GroupBy(d => d.DateTime!.Value.Date)
