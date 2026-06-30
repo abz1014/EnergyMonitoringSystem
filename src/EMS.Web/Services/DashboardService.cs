@@ -167,7 +167,32 @@ public class WebDashboardService : IDashboardService
             charts.LoadProfile = await BuildLoadProfileAsync(today);
             charts.MonthlyTrend = await BuildMonthlyTrendAsync();
 
-            var energyScore = BuildEnergyScore(todaysConsumption, peakDemand, avgPowerFactor, await _alarmRepository.GetActiveAlarmCount(), onlineMeters, totalDevices);
+            // Same 7-day trailing average pattern used by Briefing, so both pages' scores are
+            // computed from comparable inputs via the shared PlantScoreCalculator.
+            var weekAgo = today.AddDays(-7);
+            var weekData = (await _energyMeterRepository.GetByDateRange(weekAgo, today)).Where(d => !IsContaminatedReading(d)).ToList();
+            var weekDailyTotals = weekData
+                .Where(d => d.DateTime.HasValue)
+                .GroupBy(d => d.DateTime!.Value.Date)
+                .Select(g => g.Sum(x => (double)(x.kWh ?? 0)))
+                .ToList();
+            var sevenDayAverage = weekDailyTotals.Count > 0 ? weekDailyTotals.Average() : 0;
+            var consumptionChangePercent = sevenDayAverage > 0
+                ? Math.Round((todaysConsumption - sevenDayAverage) / sevenDayAverage * 100, 1)
+                : 0;
+
+            var dataRatio = totalDevices > 0 ? (double)onlineMeters / totalDevices : 0;
+            var scoreResult = PlantScoreCalculator.Calculate(avgPowerFactor, consumptionChangePercent, await _alarmRepository.GetActiveAlarmCount(), dataRatio);
+            var energyScore = new EnergyScoreDto
+            {
+                Score = scoreResult.Score,
+                PfScore = scoreResult.PfScore,
+                ConsumptionScore = scoreResult.ConsumptionScore,
+                AlarmScore = scoreResult.AlarmScore,
+                PqScore = scoreResult.PowerQualityScore,
+                DataScore = scoreResult.DataQualityScore,
+                Trend = scoreResult.Trend
+            };
 
             var dashboard = new ExecutiveDashboardDto
             {
@@ -280,27 +305,6 @@ public class WebDashboardService : IDashboardService
 
         result.Average = result.Values.Count > 0 ? Math.Round(result.Values.Where(v => v > 0).DefaultIfEmpty(0).Average(), 0) : 0;
         return result;
-    }
-
-    private static EnergyScoreDto BuildEnergyScore(double consumption, double peakDemand, double avgPf, int alarmCount, int onlineMeters, int totalDevices)
-    {
-        var pfScore = avgPf >= 0.95 ? 30 : avgPf >= 0.90 ? 20 : avgPf >= 0.85 ? 10 : 0;
-        var consumptionScore = 25; // baseline — no historical target yet
-        var alarmScore = alarmCount == 0 ? 20 : alarmCount <= 3 ? 15 : alarmCount <= 10 ? 5 : 0;
-        var pqScore = avgPf >= 0.92 ? 15 : avgPf >= 0.85 ? 10 : 5;
-        var dataRatio = totalDevices > 0 ? (double)onlineMeters / totalDevices : 0;
-        var dataScore = dataRatio >= 0.95 ? 10 : dataRatio >= 0.80 ? 5 : 0;
-
-        return new EnergyScoreDto
-        {
-            Score = pfScore + consumptionScore + alarmScore + pqScore + dataScore,
-            PfScore = pfScore,
-            ConsumptionScore = consumptionScore,
-            AlarmScore = alarmScore,
-            PqScore = pqScore,
-            DataScore = dataScore,
-            Trend = alarmCount == 0 && avgPf >= 0.90 ? "improving" : alarmCount > 5 ? "declining" : "stable"
-        };
     }
 
     private async Task<LoadProfileDto> BuildLoadProfileAsync(DateTime today)

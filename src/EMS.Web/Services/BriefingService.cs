@@ -121,32 +121,15 @@ public class BriefingService
 
     private void CalculateScore(BriefingViewModel model)
     {
-        // PF Score (30 pts)
-        model.PfScore = model.AveragePowerFactor >= 0.95 ? 30
-            : model.AveragePowerFactor >= 0.90 ? 20
-            : model.AveragePowerFactor >= 0.85 ? 10 : 0;
-
-        // Consumption Score (25 pts)
-        var absChange = Math.Abs(model.ConsumptionChange);
-        model.ConsumptionScore = absChange <= 5 ? 25
-            : absChange <= 10 ? 15
-            : absChange <= 20 ? 5 : 0;
-
-        // Alarm Score (20 pts)
-        model.AlarmScore = model.ActiveAlarmCount == 0 ? 20
-            : model.ActiveAlarmCount <= 3 ? 15
-            : model.ActiveAlarmCount <= 10 ? 5 : 0;
-
-        // Power Quality (15 pts) — simplified based on PF
-        model.PowerQualityScore = model.AveragePowerFactor >= 0.92 ? 15
-            : model.AveragePowerFactor >= 0.85 ? 10 : 5;
-
-        // Data Quality (10 pts)
         var dataRatio = model.TotalMeters > 0 ? (double)model.ReportingMeters / model.TotalMeters : 0;
-        model.DataQualityScore = dataRatio >= 0.95 ? 10
-            : dataRatio >= 0.80 ? 5 : 0;
+        var result = PlantScoreCalculator.Calculate(model.AveragePowerFactor, model.ConsumptionChange, model.ActiveAlarmCount, dataRatio);
 
-        model.PlantScore = model.PfScore + model.ConsumptionScore + model.AlarmScore + model.PowerQualityScore + model.DataQualityScore;
+        model.PfScore = result.PfScore;
+        model.ConsumptionScore = result.ConsumptionScore;
+        model.AlarmScore = result.AlarmScore;
+        model.PowerQualityScore = result.PowerQualityScore;
+        model.DataQualityScore = result.DataQualityScore;
+        model.PlantScore = result.Score;
     }
 
     private void GenerateInsights(BriefingViewModel model)
