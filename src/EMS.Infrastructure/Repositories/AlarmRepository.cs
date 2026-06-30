@@ -17,6 +17,7 @@ public class AlarmRepository : IAlarmRepository
     public async Task<List<Alarm>> GetAllAlarms()
     {
         return await _context.Alarms
+            .AsNoTracking()
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
     }
@@ -24,6 +25,7 @@ public class AlarmRepository : IAlarmRepository
     public async Task<List<Alarm>> GetActiveAlarms()
     {
         return await _context.Alarms
+            .AsNoTracking()
             .Where(a => a.IsActive)
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
@@ -32,6 +34,7 @@ public class AlarmRepository : IAlarmRepository
     public async Task<List<Alarm>> GetAlarmsByMeterId(int meterId)
     {
         return await _context.Alarms
+            .AsNoTracking()
             .Where(a => a.DeviceID == meterId)
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
@@ -40,6 +43,7 @@ public class AlarmRepository : IAlarmRepository
     public async Task<List<Alarm>> GetAlarmsBySeverity(byte severity)
     {
         return await _context.Alarms
+            .AsNoTracking()
             .Where(a => a.IsActive && a.Severity == severity)
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
@@ -47,7 +51,7 @@ public class AlarmRepository : IAlarmRepository
 
     public async Task<Alarm?> GetAlarmById(int id)
     {
-        return await _context.Alarms.FirstOrDefaultAsync(a => a.AlarmID == id);
+        return await _context.Alarms.AsNoTracking().FirstOrDefaultAsync(a => a.AlarmID == id);
     }
 
     public async Task AcknowledgeAlarm(int id, string acknowledgedBy, string? note = null)
