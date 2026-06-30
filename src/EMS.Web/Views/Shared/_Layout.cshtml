@@ -160,6 +160,9 @@
             <a class="sidebar-link @(ctrl == "Alarm" ? "active" : "")" asp-controller="Alarm" asp-action="Index">
                 <span class="sidebar-icon">&#9888;</span> Alarms
             </a>
+            <a class="sidebar-link @(ctrl == "AlarmResponse" ? "active" : "")" asp-controller="AlarmResponse" asp-action="Index">
+                <span class="sidebar-icon">&#9203;</span> Response Time
+            </a>
 
             <div class="sidebar-section">Finance</div>
             <a class="sidebar-link @(ctrl == "CostDashboard" ? "active" : "")" asp-controller="CostDashboard" asp-action="Index">
