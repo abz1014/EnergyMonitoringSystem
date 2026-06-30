@@ -99,15 +99,7 @@ public class BaseloadController : Controller
             ViewBag.DateRangeLabel = $"{from:MMM dd} — {to.AddDays(-1):MMM dd, yyyy}";
             ViewBag.NightWindow = $"{nightStart:D2}:00 — {nightEnd:D2}:00";
 
-            // 24h profile showing baseload band
-            var hourlyAvg = validData
-                .Where(d => d.kWtotal.HasValue)
-                .GroupBy(d => d.DateTime!.Value.Hour)
-                .OrderBy(g => g.Key)
-                .Select(g => Math.Round(g.Average(x => x.kWtotal!.Value), 1))
-                .ToList();
-
-            // Pad to 24 hours if missing
+            // 24h profile showing baseload band — pad missing hours with 0
             var hourlyByHour = validData
                 .Where(d => d.kWtotal.HasValue)
                 .GroupBy(d => d.DateTime!.Value.Hour)
