@@ -1,0 +1,218 @@
+@{
+    ViewData["Title"] = "Load Analytics";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "30d";
+    var tab = ViewBag.Tab as string ?? "profile";
+    var daysUsed = (int)(ViewBag.DaysOfDataUsed ?? 0);
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Load Analytics</h1>
+        <p class="text-muted">Typical daily load shape, meter ranking, and day/month-over-day/month variance — all computed directly from raw meter readings.</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <input type="hidden" name="tab" id="tabInput" value="@tab" />
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (!hasData)
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#9201;</div>
+            <h4 style="color: #E2E8F0;">No data available for this period</h4>
+        </div>
+        return;
+    }
+
+    <div style="color: #94A3B8; font-size: 13px; margin-bottom: 8px;">Period: @ViewBag.DateRangeLabel (@daysUsed day@(daysUsed == 1 ? "" : "s") of data)</div>
+
+    <div class="mb-3 p-2" style="background-color: #1E293B; border-radius: 6px; border-left: 3px solid #F59E0B; font-size: 12px; color: #94A3B8;">
+        kWh-based figures on this page (Meter Ranking, Daily/Monthly Variance) assume kWh is an interval reading, not a cumulative register total —
+        this is still unconfirmed with the meter vendor. Relative comparisons (rankings, % change) are reliable either way; absolute kWh totals
+        carry that caveat. Load Profile uses kWtotal (instantaneous demand) and is unaffected by this question.
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav mb-4" style="border-bottom: 1px solid #334155;" id="laTabs">
+        <li class="nav-item"><a class="la-tab @(tab == "profile" ? "active" : "")" href="#" data-tab="profile" onclick="switchLaTab(event, this)">Load Profile</a></li>
+        <li class="nav-item"><a class="la-tab @(tab == "ranking" ? "active" : "")" href="#" data-tab="ranking" onclick="switchLaTab(event, this)">Meter Ranking</a></li>
+        <li class="nav-item"><a class="la-tab @(tab == "daily" ? "active" : "")" href="#" data-tab="daily" onclick="switchLaTab(event, this)">Daily Variance</a></li>
+        <li class="nav-item"><a class="la-tab @(tab == "monthly" ? "active" : "")" href="#" data-tab="monthly" onclick="switchLaTab(event, this)">Monthly Variance</a></li>
+    </ul>
+
+    <style>
+        .la-tab { display: inline-block; padding: 10px 18px; color: #94A3B8; text-decoration: none; font-size: 14px; border-bottom: 2px solid transparent; cursor: pointer; }
+        .la-tab:hover { color: #E2E8F0; }
+        .la-tab.active { color: #2563EB; border-bottom-color: #2563EB; font-weight: 600; }
+        .la-panel { display: none; }
+        .la-panel.active { display: block; }
+    </style>
+
+    <!-- ============== LOAD PROFILE TAB ============== -->
+    <div class="la-panel @(tab == "profile" ? "active" : "")" data-panel="profile">
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Peak Hour</div>
+                    <div style="color: #FFFFFF; font-size: 26px; font-weight: 700;">@ViewBag.ProfilePeakHour <span style="font-size:14px;color:#94A3B8;">(@ViewBag.ProfilePeakKw kW avg)</span></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Lowest Hour</div>
+                    <div style="color: #FFFFFF; font-size: 26px; font-weight: 700;">@ViewBag.ProfileTroughHour <span style="font-size:14px;color:#94A3B8;">(@ViewBag.ProfileTroughKw kW avg)</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h6 class="text-light mb-3">Average Demand by Hour of Day (kW)</h6>
+            <div id="profileChart"></div>
+        </div>
+    </div>
+
+    <!-- ============== METER RANKING TAB ============== -->
+    <div class="la-panel @(tab == "ranking" ? "active" : "")" data-panel="ranking">
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h6 class="text-light mb-3">Meters Ranked by Total Consumption</h6>
+            <table class="table table-dark table-sm" style="background-color: transparent;">
+                <thead>
+                    <tr style="color: #94A3B8; font-size: 12px;"><th>Rank</th><th>Meter</th><th>Total kWh</th><th>% of Plant Total</th></tr>
+                </thead>
+                <tbody>
+                    @{ int rank = 1; }
+                    @foreach (var m in (IEnumerable<dynamic>)ViewBag.Ranking)
+                    {
+                        <tr style="font-size: 13px; cursor: pointer;" onclick="window.location='/MeterFaceplate?meterId=@m.MeterNo'">
+                            <td>#@rank</td>
+                            <td>@m.MeterName</td>
+                            <td>@m.TotalKwh kWh</td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div style="background:#334155; border-radius:4px; height:8px; width:120px;">
+                                        <div style="background:#2563EB; width:@(m.SharePct)%; height:8px; border-radius:4px;"></div>
+                                    </div>
+                                    <span>@m.SharePct%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        rank++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============== DAILY VARIANCE TAB ============== -->
+    <div class="la-panel @(tab == "daily" ? "active" : "")" data-panel="daily">
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h6 class="text-light mb-3">Day-over-Day Consumption Change</h6>
+            @{ var dailyRows = (IEnumerable<dynamic>)ViewBag.DailyVariance; }
+            @if (!dailyRows.Any())
+            {
+                <p style="color: #64748B;">Need at least 2 days of data in this range to compute variance.</p>
+            }
+            else
+            {
+                <table class="table table-dark table-sm" style="background-color: transparent;">
+                    <thead>
+                        <tr style="color: #94A3B8; font-size: 12px;"><th>Date</th><th>Total kWh</th><th>Previous Day</th><th>Change</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in dailyRows)
+                        {
+                            double? pct = d.PctChange;
+                            var color = pct == null ? "#64748B" : pct > 0 ? "#EF4444" : pct < 0 ? "#10B981" : "#94A3B8";
+                            <tr style="font-size: 13px;">
+                                <td>@d.Date</td>
+                                <td>@d.Total kWh</td>
+                                <td style="color:#94A3B8;">@d.Previous kWh</td>
+                                <td style="color:@color; font-weight:600;">@(pct.HasValue ? $"{(pct > 0 ? "+" : "")}{pct:F1}%" : "N/A (previous day = 0)")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <!-- ============== MONTHLY VARIANCE TAB ============== -->
+    <div class="la-panel @(tab == "monthly" ? "active" : "")" data-panel="monthly">
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h6 class="text-light mb-3">Month-over-Month Consumption Change</h6>
+            @{
+                var monthlyRows = (IEnumerable<dynamic>)ViewBag.MonthlyVariance;
+                var monthsAvailable = (int)(ViewBag.MonthsOfDataAvailable ?? 0);
+            }
+            @if (!monthlyRows.Any())
+            {
+                <p style="color: #64748B;">
+                    Only @monthsAvailable calendar month@(monthsAvailable == 1 ? "" : "s") of history exists in the database right now.
+                    Monthly variance needs at least 2 complete months to compare — this will activate automatically once more history accumulates.
+                </p>
+            }
+            else
+            {
+                <table class="table table-dark table-sm" style="background-color: transparent;">
+                    <thead>
+                        <tr style="color: #94A3B8; font-size: 12px;"><th>Month</th><th>Total kWh</th><th>Previous Month</th><th>Change</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in monthlyRows)
+                        {
+                            double? pct = m.PctChange;
+                            var color = pct == null ? "#64748B" : pct > 0 ? "#EF4444" : pct < 0 ? "#10B981" : "#94A3B8";
+                            <tr style="font-size: 13px;">
+                                <td>@m.Month</td>
+                                <td>@m.Total kWh</td>
+                                <td style="color:#94A3B8;">@m.Previous kWh</td>
+                                <td style="color:@color; font-weight:600;">@(pct.HasValue ? $"{(pct > 0 ? "+" : "")}{pct:F1}%" : "N/A (previous month = 0)")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+<script>
+    function switchLaTab(e, el) {
+        e.preventDefault();
+        var tabName = el.getAttribute('data-tab');
+        document.querySelectorAll('.la-tab').forEach(function (t) { t.classList.remove('active'); });
+        document.querySelectorAll('.la-panel').forEach(function (p) { p.classList.remove('active'); });
+        el.classList.add('active');
+        document.querySelector('.la-panel[data-panel="' + tabName + '"]').classList.add('active');
+        document.getElementById('tabInput').value = tabName;
+        history.replaceState(null, '', '?tab=' + tabName + '&range=@range');
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    new ApexCharts(document.querySelector('#profileChart'), {
+        series: [{ name: 'Avg Demand (kW)', data: @Html.Raw(ViewBag.ProfileValues) }],
+        chart: { type: 'area', height: 320, background: '#1E293B', toolbar: { show: true } },
+        colors: ['#2563EB'],
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05 } },
+        stroke: { curve: 'smooth', width: 2 },
+        xaxis: { categories: @Html.Raw(ViewBag.ProfileLabels), labels: { style: { colors: '#94A3B8', fontSize: '10px' } } },
+        yaxis: { labels: { style: { colors: '#94A3B8' } }, title: { text: 'kW', style: { color: '#94A3B8' } } },
+        grid: { borderColor: '#334155' },
+        tooltip: { theme: 'dark' }
+    }).render();
+</script>
