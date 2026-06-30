@@ -1,0 +1,155 @@
+@{
+    ViewData["Title"] = "Shift Comparison";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "7d";
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Shift Comparison</h1>
+        <p class="text-muted">Energy consumption by shift — Morning, Afternoon, Night</p>
+    </div>
+
+    <!-- Range Selector -->
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        var morningTotal = (double)ViewBag.MorningTotal;
+        var afternoonTotal = (double)ViewBag.AfternoonTotal;
+        var nightTotal = (double)ViewBag.NightTotal;
+        var morningPct = (double)ViewBag.MorningPct;
+        var afternoonPct = (double)ViewBag.AfternoonPct;
+        var nightPct = (double)ViewBag.NightPct;
+
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel</div>
+
+        <!-- Insight Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Highest Consumption Shift</div>
+                    <div style="color: #EF4444; font-size: 22px; font-weight: 700;">@ViewBag.MostConsumingShift</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Most Efficient Shift</div>
+                    <div style="color: #10B981; font-size: 22px; font-weight: 700;">@ViewBag.MostEfficientShift</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shift Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #F59E0B;">
+                    <h6 style="color: #F59E0B;">@ViewBag.MorningLabel</h6>
+                    <div style="font-size: 28px; font-weight: 700; color: #FFFFFF;">@morningTotal.ToString("N0") <span style="font-size: 14px; color: #64748B;">kWh</span></div>
+                    <div style="color: #94A3B8; font-size: 13px;">@morningPct% of total</div>
+                    <hr style="border-color: #334155;" />
+                    <div class="d-flex justify-content-between" style="font-size: 12px; color: #94A3B8;">
+                        <span>Avg: @ViewBag.MorningAvg kWh</span>
+                        <span>Peak: @ViewBag.MorningPeak kW</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #3B82F6;">
+                    <h6 style="color: #3B82F6;">@ViewBag.AfternoonLabel</h6>
+                    <div style="font-size: 28px; font-weight: 700; color: #FFFFFF;">@afternoonTotal.ToString("N0") <span style="font-size: 14px; color: #64748B;">kWh</span></div>
+                    <div style="color: #94A3B8; font-size: 13px;">@afternoonPct% of total</div>
+                    <hr style="border-color: #334155;" />
+                    <div class="d-flex justify-content-between" style="font-size: 12px; color: #94A3B8;">
+                        <span>Avg: @ViewBag.AfternoonAvg kWh</span>
+                        <span>Peak: @ViewBag.AfternoonPeak kW</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #8B5CF6;">
+                    <h6 style="color: #8B5CF6;">@ViewBag.NightLabel</h6>
+                    <div style="font-size: 28px; font-weight: 700; color: #FFFFFF;">@nightTotal.ToString("N0") <span style="font-size: 14px; color: #64748B;">kWh</span></div>
+                    <div style="color: #94A3B8; font-size: 13px;">@nightPct% of total</div>
+                    <hr style="border-color: #334155;" />
+                    <div class="d-flex justify-content-between" style="font-size: 12px; color: #94A3B8;">
+                        <span>Avg: @ViewBag.NightAvg kWh</span>
+                        <span>Peak: @ViewBag.NightPeak kW</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pie Chart -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-5">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Shift Distribution</h5>
+                    <div id="shiftPieChart" style="height: 280px;"></div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Daily Breakdown by Shift</h5>
+                    <div id="shiftStackedChart" style="height: 280px;"></div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#9201;</div>
+            <h4 style="color: #E2E8F0;">No data available for this period</h4>
+            <p style="color: #64748B;">Try selecting a longer time range.</p>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        new ApexCharts(document.querySelector('#shiftPieChart'), {
+            series: [@ViewBag.MorningTotal, @ViewBag.AfternoonTotal, @ViewBag.NightTotal],
+            labels: ['Morning', 'Afternoon', 'Night'],
+            chart: { type: 'donut', height: 280, background: '#1E293B' },
+            colors: ['#F59E0B', '#3B82F6', '#8B5CF6'],
+            legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
+            tooltip: { theme: 'dark', y: { formatter: function(v) { return v.toLocaleString() + ' kWh'; } } },
+            plotOptions: { pie: { donut: { labels: { show: true, value: { color: '#FFFFFF', fontSize: '20px', fontWeight: 700 }, total: { show: true, label: 'Total', color: '#94A3B8', formatter: function(w) { return w.globals.seriesTotals.reduce(function(a,b){return a+b},0).toLocaleString() + ' kWh'; } } } } } }
+        }).render();
+
+        new ApexCharts(document.querySelector('#shiftStackedChart'), {
+            series: [
+                { name: 'Morning', data: @Html.Raw(ViewBag.DailyMorning) },
+                { name: 'Afternoon', data: @Html.Raw(ViewBag.DailyAfternoon) },
+                { name: 'Night', data: @Html.Raw(ViewBag.DailyNight) }
+            ],
+            chart: { type: 'bar', height: 280, background: '#1E293B', stacked: true, toolbar: { show: true } },
+            colors: ['#F59E0B', '#3B82F6', '#8B5CF6'],
+            plotOptions: { bar: { borderRadius: 2 } },
+            xaxis: { categories: @Html.Raw(ViewBag.DailyDates), labels: { style: { colors: '#94A3B8', fontSize: '10px' }, rotate: -45 } },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v.toLocaleString(); } } },
+            tooltip: { theme: 'dark' },
+            legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+            grid: { borderColor: '#334155' }
+        }).render();
+    </script>
+}
