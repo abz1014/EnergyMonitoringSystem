@@ -1,0 +1,121 @@
+@model List<EMS.Web.Controllers.DiversityFactorController.MeterPeak>
+@{
+    ViewData["Title"] = "Diversity Factor";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "30d";
+    var meterCount = (int)(ViewBag.MeterCount ?? 0);
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Diversity Factor</h1>
+        <p class="text-muted">Σ(individual meter peak demand) ÷ system coincident peak demand — quantifies spare infrastructure capacity from non-simultaneous peaks</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData && Model != null && Model.Count > 0)
+    {
+        var df = ViewBag.DiversityFactor as double?;
+
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel | @meterCount meters included</div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #2563EB;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Diversity Factor</div>
+                    <div style="color: #FFFFFF; font-size: 28px; font-weight: 700;">@(df.HasValue ? df.Value.ToString("F2") : "N/A")</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Sum of Individual Peaks</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@ViewBag.SumOfIndividualPeaks <span style="font-size:12px;color:#64748B;">kW</span></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">System Coincident Peak</div>
+                    <div style="color: #EF4444; font-size: 24px; font-weight: 700;">@ViewBag.SystemPeakKw <span style="font-size:12px;color:#64748B;">kW</span></div>
+                    <small style="color: #64748B;">at @ViewBag.SystemPeakAt</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Capacity Saved by Diversity</div>
+                    <div style="color: #10B981; font-size: 24px; font-weight: 700;">@ViewBag.HeadroomKw <span style="font-size:12px;color:#64748B;">kW</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #2563EB;">
+            <span style="color: #E2E8F0;">
+                @if (df.HasValue)
+                {
+                    <text>
+                    A diversity factor of <strong>@df.Value.ToString("F2")</strong> means the system's actual coincident peak demand
+                    (<strong>@ViewBag.SystemPeakKw kW</strong>) is lower than the sum of each meter's individual peak
+                    (<strong>@ViewBag.SumOfIndividualPeaks kW</strong>) because the meters don't all peak at the same time.
+                    If infrastructure were sized for the worst case (every load peaking simultaneously), it would need
+                    @ViewBag.HeadroomKw kW of additional capacity that isn't actually required in practice.
+                    </text>
+                }
+                else
+                {
+                    <text>System peak demand was zero for this period — diversity factor is undefined.</text>
+                }
+            </span>
+        </div>
+
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Individual Meter Peak Demand</h5>
+            <table class="table table-dark table-sm" style="background-color: transparent;">
+                <thead>
+                    <tr style="color: #94A3B8; font-size: 12px;">
+                        <th>Meter</th><th>Peak Demand (kW)</th><th>Occurred At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model)
+                    {
+                        <tr style="font-size: 13px;">
+                            <td>@m.MeterName</td>
+                            <td>@m.MaxDemandKw kW</td>
+                            <td>@(m.PeakAt?.ToString("MMM dd, HH:mm") ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-3 p-3" style="background-color: #1E293B; border-radius: 8px;">
+            <small style="color: #64748B;">
+                Assumption: meter timestamps are reasonably synchronized, so summing readings at each timestamp approximates true coincident demand.
+                If meters poll at different times, the system peak shown here may understate the true instantaneous peak. Confidence: Medium.
+            </small>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128202;</div>
+            <h4 style="color: #E2E8F0;">Not enough data</h4>
+            <p style="color: #64748B;">Diversity factor requires at least 2 meters with demand data in the selected period. @meterCount meter(s) found.</p>
+        </div>
+    }
+</div>
