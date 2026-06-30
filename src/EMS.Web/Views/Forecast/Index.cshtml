@@ -1,0 +1,98 @@
+@{
+    ViewData["Title"] = "Consumption Forecast";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var windowDays = (int)(ViewBag.WindowDays ?? 7);
+    var forecastDays = (int)(ViewBag.ForecastDays ?? 7);
+    var currency = ViewBag.Currency as string ?? "Rs.";
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Consumption Forecast</h1>
+        <p class="text-muted">Moving-average projection based on recent daily consumption trends</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Moving Average Window (days)</label>
+                <input type="number" name="windowDays" value="@windowDays" min="3" max="30" class="form-control"
+                       style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-light">Forecast Horizon (days)</label>
+                <input type="number" name="forecastDays" value="@forecastDays" min="1" max="30" class="form-control"
+                       style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;" />
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Forecast</button>
+            </div>
+        </div>
+    </form>
+
+    @if (hasData)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #2563EB;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Forecasted Total (@forecastDays days)</div>
+                    <div style="color: #FFFFFF; font-size: 26px; font-weight: 700;">@ViewBag.ForecastTotal <span style="font-size:13px;color:#64748B;">kWh</span></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Estimated Cost</div>
+                    <div style="color: #F59E0B; font-size: 26px; font-weight: 700;">@currency @(((double)ViewBag.ForecastCost).ToString("N0"))</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Recent Avg Daily Cost</div>
+                    <div style="color: #FFFFFF; font-size: 26px; font-weight: 700;">@currency @(((double)ViewBag.AvgDailyCost).ToString("N0"))</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+            <small style="color: #94A3B8;">
+                Method: each forecast day is the average of the trailing @windowDays days (actuals, then prior forecasts as the horizon extends).
+                This is a simple moving-average projection and does not account for seasonality, weather, or planned production changes.
+            </small>
+        </div>
+
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Actual vs Forecasted Daily Consumption</h5>
+            <div id="forecastChart" style="height: 400px;"></div>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#128202;</div>
+            <h4 style="color: #E2E8F0;">Not enough historical data</h4>
+            <p style="color: #64748B;">Need at least @windowDays days of data for this window size.</p>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        new ApexCharts(document.querySelector('#forecastChart'), {
+            series: [
+                { name: 'Actual', data: @Html.Raw(ViewBag.ActualSeries) },
+                { name: 'Forecast', data: @Html.Raw(ViewBag.ForecastSeries) }
+            ],
+            chart: { type: 'line', height: 400, background: '#1E293B', toolbar: { show: true } },
+            colors: ['#2563EB', '#F59E0B'],
+            stroke: { curve: 'smooth', width: [3, 3], dashArray: [0, 6] },
+            xaxis: { categories: @Html.Raw(ViewBag.ChartLabels), labels: { style: { colors: '#94A3B8', fontSize: '10px' }, rotate: -45 } },
+            yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function(v) { return v == null ? '' : v.toFixed(0); } } },
+            tooltip: { theme: 'dark', shared: true },
+            legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+            grid: { borderColor: '#334155' },
+            markers: { size: 0, hover: { size: 4 } }
+        }).render();
+    </script>
+}

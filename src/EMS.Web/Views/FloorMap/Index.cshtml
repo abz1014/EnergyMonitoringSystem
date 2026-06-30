@@ -1,0 +1,95 @@
+@model List<EMS.Core.Interfaces.MeterLiveDto>
+@{
+    ViewData["Title"] = "Factory Floor Map";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var locations = ViewBag.Locations as Dictionary<int, string> ?? new();
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Factory Floor Map</h1>
+        <p class="text-muted">Click a meter to view live readings. Color indicates status.</p>
+    </div>
+
+    @if (hasData)
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <svg viewBox="0 0 800 500" style="width: 100%; height: auto;">
+                        <rect x="10" y="10" width="780" height="480" fill="none" stroke="#334155" stroke-width="2" rx="8" />
+
+                        @{ var floors = new[] { ("Floor 1", 30, 30, 240, 440), ("Floor 2", 280, 30, 240, 440), ("Floor 3", 530, 30, 240, 440) }; }
+                        @foreach (var (label, x, y, w, h) in floors)
+                        {
+                            <rect x="@x" y="@y" width="@w" height="@h" fill="#0F172A" stroke="#334155" stroke-width="1" rx="4" />
+                            <text x="@(x + w / 2)" y="@(y + 24)" fill="#94A3B8" font-size="14" text-anchor="middle" font-weight="600">@label</text>
+                        }
+
+                        @foreach (var m in Model)
+                        {
+                            var loc = locations.GetValueOrDefault(m.MeterId, "");
+                            var floorIndex = loc.Contains("1") ? 0 : loc.Contains("2") ? 1 : loc.Contains("3") ? 2 : 0;
+                            var cx = 30 + floorIndex * 250 + 120;
+                            var cy = 250;
+                            var color = m.Status == "online" ? "#10B981" : m.Status == "warning" ? "#F59E0B" : "#EF4444";
+
+                            <g class="meter-node" data-meter-id="@m.MeterId" style="cursor: pointer;" onclick="showMeterDetail(@m.MeterId)">
+                                <circle cx="@cx" cy="@cy" r="36" fill="@color" fill-opacity="0.15" stroke="@color" stroke-width="2">
+                                    <animate attributeName="r" values="36;40;36" dur="2s" repeatCount="indefinite" />
+                                </circle>
+                                <circle cx="@cx" cy="@cy" r="20" fill="@color" />
+                                <text x="@cx" y="@(cy + 5)" fill="#0F172A" font-size="11" text-anchor="middle" font-weight="700">@m.Power.kW.ToString("F0")</text>
+                                <text x="@cx" y="@(cy + 55)" fill="#E2E8F0" font-size="12" text-anchor="middle">@m.Name</text>
+                            </g>
+                        }
+                    </svg>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div id="meterDetailPanel" class="p-4" style="background-color: #1E293B; border-radius: 8px; min-height: 300px;">
+                    <h5 class="text-light mb-3">Meter Details</h5>
+                    <p style="color: #64748B;">Click a meter on the map to view its live readings.</p>
+                </div>
+                <div class="mt-3 p-3" style="background-color: #1E293B; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #94A3B8; margin-bottom: 8px;">Legend</div>
+                    <div class="d-flex align-items-center mb-1"><span style="width:12px;height:12px;background:#10B981;border-radius:50%;display:inline-block;margin-right:8px;"></span><span style="font-size:13px;">Online</span></div>
+                    <div class="d-flex align-items-center mb-1"><span style="width:12px;height:12px;background:#F59E0B;border-radius:50%;display:inline-block;margin-right:8px;"></span><span style="font-size:13px;">Warning</span></div>
+                    <div class="d-flex align-items-center"><span style="width:12px;height:12px;background:#EF4444;border-radius:50%;display:inline-block;margin-right:8px;"></span><span style="font-size:13px;">Offline</span></div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#127970;</div>
+            <h4 style="color: #E2E8F0;">No meters configured</h4>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script>
+        var meters = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Select(m => new {
+            m.MeterId, m.Name, m.Status, kW = m.Power.kW, kVA = m.Power.kVA, m.PowerFactor, m.Frequency,
+            v1 = m.Voltage.L1, v2 = m.Voltage.L2, v3 = m.Voltage.L3
+        })));
+
+        function showMeterDetail(id) {
+            var m = meters.find(function(x) { return x.meterId === id; });
+            if (!m) return;
+            var statusColor = m.status === 'online' ? '#10B981' : m.status === 'warning' ? '#F59E0B' : '#EF4444';
+            document.getElementById('meterDetailPanel').innerHTML =
+                '<h5 class="text-light mb-3">' + m.name + '</h5>' +
+                '<div style="color:' + statusColor + '; font-size: 13px; margin-bottom: 16px; text-transform: uppercase; font-weight: 600;">' + m.status + '</div>' +
+                '<div class="mb-2" style="display:flex; justify-content:space-between;"><span style="color:#94A3B8;">Active Power</span><span style="color:#E2E8F0;">' + m.kW.toFixed(1) + ' kW</span></div>' +
+                '<div class="mb-2" style="display:flex; justify-content:space-between;"><span style="color:#94A3B8;">Apparent Power</span><span style="color:#E2E8F0;">' + m.kVA.toFixed(1) + ' kVA</span></div>' +
+                '<div class="mb-2" style="display:flex; justify-content:space-between;"><span style="color:#94A3B8;">Power Factor</span><span style="color:#E2E8F0;">' + m.powerFactor.toFixed(2) + '</span></div>' +
+                '<div class="mb-2" style="display:flex; justify-content:space-between;"><span style="color:#94A3B8;">Frequency</span><span style="color:#E2E8F0;">' + m.frequency.toFixed(1) + ' Hz</span></div>' +
+                '<div class="mb-2" style="display:flex; justify-content:space-between;"><span style="color:#94A3B8;">Voltage L1/L2/L3</span><span style="color:#E2E8F0;">' + m.v1.toFixed(0) + ' / ' + m.v2.toFixed(0) + ' / ' + m.v3.toFixed(0) + ' V</span></div>' +
+                '<a href="/MeterFaceplate?meterId=' + m.meterId + '" class="btn btn-sm btn-primary w-100 mt-3" style="background-color:#2563EB;">View Faceplate</a>';
+        }
+    </script>
+}

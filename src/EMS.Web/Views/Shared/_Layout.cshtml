@@ -126,6 +126,9 @@
             <a class="sidebar-link @(ctrl == "LiveMonitoring" || ctrl == "MeterDetails" ? "active" : "")" asp-controller="LiveMonitoring" asp-action="Index">
                 <span class="sidebar-icon">&#9673;</span> Live Monitoring
             </a>
+            <a class="sidebar-link @(ctrl == "FloorMap" ? "active" : "")" asp-controller="FloorMap" asp-action="Index">
+                <span class="sidebar-icon">&#127970;</span> Floor Map
+            </a>
 
             <div class="sidebar-section">Operations</div>
             <a class="sidebar-link @(ctrl == "Alarm" ? "active" : "")" asp-controller="Alarm" asp-action="Index">
@@ -181,6 +184,15 @@
             </a>
             <a class="sidebar-link @(ctrl == "Anomaly" ? "active" : "")" asp-controller="Anomaly" asp-action="Index">
                 <span class="sidebar-icon">&#128269;</span> Anomaly Detection
+            </a>
+            <a class="sidebar-link @(ctrl == "Sankey" ? "active" : "")" asp-controller="Sankey" asp-action="Index">
+                <span class="sidebar-icon">&#8651;</span> Energy Flow
+            </a>
+            <a class="sidebar-link @(ctrl == "Forecast" ? "active" : "")" asp-controller="Forecast" asp-action="Index">
+                <span class="sidebar-icon">&#128302;</span> Forecast
+            </a>
+            <a class="sidebar-link @(ctrl == "WhatIf" ? "active" : "")" asp-controller="WhatIf" asp-action="Index">
+                <span class="sidebar-icon">&#127919;</span> What-If Modeler
             </a>
             <a class="sidebar-link @(ctrl == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index">
                 <span class="sidebar-icon">&#9776;</span> Reports

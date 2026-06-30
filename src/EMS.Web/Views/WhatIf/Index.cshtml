@@ -1,0 +1,124 @@
+@{
+    ViewData["Title"] = "What-If Scenario Modeler";
+    var currency = ViewBag.Currency as string ?? "Rs.";
+    var monthlyKwh = (double)ViewBag.MonthlyKwh;
+    var monthlyBill = (double)ViewBag.MonthlyBill;
+    var tariffRate = (double)ViewBag.TariffRate;
+    var avgPf = (double)ViewBag.AvgPf;
+    var targetPf = (double)ViewBag.TargetPf;
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">What-If Scenario Modeler</h1>
+        <p class="text-muted">Adjust the sliders to see how operational changes affect your monthly bill</p>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Current Monthly Usage</div>
+                <div style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@monthlyKwh.ToString("N0") <span style="font-size:11px;color:#64748B;">kWh</span></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Current Monthly Bill (incl. PF penalty)</div>
+                <div id="baseBillDisplay" style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@currency @monthlyBill.ToString("N0")</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Current Power Factor</div>
+                <div style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@avgPf</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-4 mb-4" style="background-color: #1E293B; border-radius: 8px;">
+        <h5 class="text-light mb-4">Scenario Inputs</h5>
+
+        <div class="mb-4">
+            <div class="d-flex justify-content-between mb-1">
+                <label class="text-light">Load Reduction</label>
+                <span id="loadReductionLabel" style="color: #2563EB; font-weight: 600;">0%</span>
+            </div>
+            <input type="range" id="loadReduction" min="0" max="50" value="0" class="form-range" oninput="recalculate()" />
+            <small style="color: #64748B;">e.g. shutting down idle equipment, scheduling shifts more efficiently</small>
+        </div>
+
+        <div class="mb-4">
+            <div class="d-flex justify-content-between mb-1">
+                <label class="text-light">Power Factor After Improvement</label>
+                <span id="pfTargetLabel" style="color: #2563EB; font-weight: 600;">@avgPf</span>
+            </div>
+            <input type="range" id="pfImproved" min="@avgPf" max="1.0" step="0.01" value="@avgPf" class="form-range" oninput="recalculate()" />
+            <small style="color: #64748B;">Drag to simulate installing/resizing capacitor banks. Utility-required minimum: @targetPf — penalty applies below this.</small>
+        </div>
+
+        <div class="mb-2">
+            <div class="d-flex justify-content-between mb-1">
+                <label class="text-light">Tariff Rate Change</label>
+                <span id="tariffLabel" style="color: #2563EB; font-weight: 600;">@currency @tariffRate.ToString("F2")/kWh</span>
+            </div>
+            <input type="range" id="tariffRate" min="@(Math.Round(tariffRate * 0.7,2))" max="@(Math.Round(tariffRate * 1.5,2))" step="0.5" value="@tariffRate" class="form-range" oninput="recalculate()" />
+            <small style="color: #64748B;">Model the impact of a future tariff revision</small>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #94A3B8;">
+                <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Projected Monthly Bill</div>
+                <div id="projectedBill" style="color: #FFFFFF; font-size: 32px; font-weight: 700;">@currency @monthlyBill.ToString("N0")</div>
+                <small id="projectedKwh" style="color: #64748B;">@monthlyKwh.ToString("N0") kWh</small>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #10B981;">
+                <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Monthly Savings</div>
+                <div id="savings" style="color: #10B981; font-size: 32px; font-weight: 700;">@currency 0</div>
+                <small id="annualSavings" style="color: #64748B;">@currency 0/year</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var baseKwh = @monthlyKwh;
+    var baseTariff = @tariffRate;
+    var avgPf = @avgPf;
+    var utilityTargetPf = @targetPf;
+    var currency = '@Html.Raw(currency)';
+
+    // Baseline bill includes today's actual PF penalty (if any), so the savings figure is meaningful
+    var basePenalty = avgPf < utilityTargetPf ? (baseKwh * baseTariff) * (utilityTargetPf / avgPf - 1) : 0;
+    var baseBill = (baseKwh * baseTariff) + basePenalty;
+    document.getElementById('baseBillDisplay').textContent = currency + ' ' + Math.round(baseBill).toLocaleString();
+
+    function recalculate() {
+        var loadReduction = parseFloat(document.getElementById('loadReduction').value);
+        var pfImproved = parseFloat(document.getElementById('pfImproved').value);
+        var tariff = parseFloat(document.getElementById('tariffRate').value);
+
+        document.getElementById('loadReductionLabel').textContent = loadReduction + '%';
+        document.getElementById('pfTargetLabel').textContent = pfImproved.toFixed(2);
+        document.getElementById('tariffLabel').textContent = currency + ' ' + tariff.toFixed(2) + '/kWh';
+
+        var newKwh = baseKwh * (1 - loadReduction / 100);
+        var energyCost = newKwh * tariff;
+
+        // PF penalty under the improved PF: formula matches PF Penalty Calculator
+        var penalty = pfImproved < utilityTargetPf ? energyCost * (utilityTargetPf / pfImproved - 1) : 0;
+
+        var projectedBill = energyCost + penalty;
+        var savings = baseBill - projectedBill;
+
+        document.getElementById('projectedBill').textContent = currency + ' ' + Math.round(projectedBill).toLocaleString();
+        document.getElementById('projectedKwh').textContent = Math.round(newKwh).toLocaleString() + ' kWh';
+        document.getElementById('savings').textContent = currency + ' ' + Math.round(savings).toLocaleString();
+        document.getElementById('annualSavings').textContent = currency + ' ' + Math.round(savings * 12).toLocaleString() + '/year';
+    }
+
+    recalculate();
+</script>
