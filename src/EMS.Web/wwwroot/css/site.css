@@ -20,3 +20,42 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* Sprint 6: global table polish -- every page in this app reuses .table-dark on a near-black
+   background; Bootstrap's default border/hover treatment was tuned for a light table, so on
+   dark backgrounds it under-contrasted row separation and gave no feedback on hover. This is a
+   pure visual fix with a usability point: scanning a 20-row alarm/meter table without any
+   hover/zebra cue is slower and more error-prone than with one, which is why Grafana and Power
+   BI tables both do this by default. */
+.table-dark {
+  --bs-table-bg: transparent;
+  border-color: var(--border, #2A3749);
+}
+.table-dark > tbody > tr {
+  transition: background-color 0.12s ease;
+  border-color: rgba(51, 65, 85, 0.5);
+}
+.table-dark > tbody > tr:hover {
+  background-color: rgba(51, 65, 85, 0.35);
+}
+.table-dark thead th {
+  border-bottom-width: 1px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Form controls on the dark theme -- default Bootstrap controls render with a white background
+   unless overridden per-page (most pages do this inline, inconsistently). Setting it once here
+   means new pages get a correctly-themed control without re-specifying it, and stray controls
+   that forgot to override it no longer flash white against the dark canvas. */
+.form-select, .form-control {
+  background-color: var(--bg-primary, #0B1220);
+  color: var(--text-primary, #E2E8F0);
+  border-color: var(--border, #2A3749);
+}
+.form-select:focus, .form-control:focus {
+  background-color: var(--bg-primary, #0B1220);
+  color: var(--text-primary, #E2E8F0);
+  border-color: var(--accent, #2563EB);
+}
+.form-select option { background-color: var(--bg-secondary, #1E293B); }
