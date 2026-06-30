@@ -131,7 +131,16 @@
                             @foreach (var a in slowestAlarms)
                             {
                                 <tr style="font-size: 13px;">
-                                    <td>@a.DeviceName</td>
+                                    <td>
+                                        @if (((string)a.DeviceName).Contains("Meter"))
+                                        {
+                                            <a href="/MeterFaceplate?meterId=@a.DeviceID" style="color: #E2E8F0; text-decoration: underline; text-decoration-color: #334155;">@a.DeviceName</a>
+                                        }
+                                        else
+                                        {
+                                            @a.DeviceName
+                                        }
+                                    </td>
                                     <td>@a.Message</td>
                                     <td>@a.SeverityName</td>
                                     <td>@(((DateTime)a.CreatedAt).ToString("MMM dd, HH:mm"))</td>

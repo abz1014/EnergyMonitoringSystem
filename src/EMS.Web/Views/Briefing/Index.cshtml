@@ -145,11 +145,11 @@
         <!-- Top Consumer + Data Quality -->
         <div class="row g-3 mt-3">
             <div class="col-md-6">
-                <div class="bp-card">
-                    <div class="metric-label" style="margin-bottom: 8px;">Top Consumer</div>
+                <a href="/MeterFaceplate?meterId=@Model.TopConsumerMeterNo" class="bp-card" style="display: block; text-decoration: none; transition: transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+                    <div class="metric-label" style="margin-bottom: 8px;">Top Consumer <span style="color: #2563EB; font-size: 11px;">View meter &rarr;</span></div>
                     <div style="font-size: 20px; font-weight: 700; color: #FFFFFF;">@Model.TopConsumerName</div>
                     <div style="font-size: 14px; color: #94A3B8;">@Model.TopConsumerKwh.ToString("F0") kWh — highest consumption @Model.DataDateLabel.ToLower()</div>
-                </div>
+                </a>
             </div>
             <div class="col-md-6">
                 <div class="bp-card">

@@ -102,6 +102,7 @@ public class BriefingService
 
             if (topConsumer != null)
             {
+                model.TopConsumerMeterNo = topConsumer.MeterNo;
                 model.TopConsumerName = topConsumer.Name ?? $"Meter-{topConsumer.MeterNo}";
                 model.TopConsumerKwh = Math.Round(topConsumer.Total, 0);
             }

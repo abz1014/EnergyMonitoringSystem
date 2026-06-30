@@ -27,7 +27,17 @@
             <div class="mb-3 p-4" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @sevColor;">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
-                        <div style="color: #FFFFFF; font-size: 15px; font-weight: 600;">@a.DeviceName — @a.Message</div>
+                        <div style="color: #FFFFFF; font-size: 15px; font-weight: 600;">
+                            @if (a.DeviceName.Contains("Meter"))
+                            {
+                                <a href="/MeterFaceplate?meterId=@a.DeviceId" style="color: #FFFFFF; text-decoration: underline; text-decoration-color: #334155;">@a.DeviceName</a>
+                            }
+                            else
+                            {
+                                @a.DeviceName
+                            }
+                            — @a.Message
+                        </div>
                         <small style="color: #64748B;">@a.CreatedAt.ToString("MMM dd, yyyy HH:mm") | @a.Shift shift @(a.IsWeekend ? "| Weekend" : "")</small>
                     </div>
                     <span style="color: @sevColor; font-size: 12px; font-weight: 600; text-transform: uppercase;">@a.SeverityName</span>

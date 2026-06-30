@@ -93,7 +93,7 @@
                 <tbody>
                     @foreach (var m in Model)
                     {
-                        <tr style="font-size: 13px;">
+                        <tr style="font-size: 13px; cursor: pointer;" onclick="window.location='/MeterFaceplate?meterId=@m.MeterNo'">
                             <td>@m.MeterName</td>
                             <td>@m.MaxDemandKw kW</td>
                             <td>@(m.PeakAt?.ToString("MMM dd, HH:mm") ?? "—")</td>

@@ -98,6 +98,7 @@ public class AlarmResponseController : Controller
             // Slowest 10 individual responses
             ViewBag.SlowestAlarms = responseTimes.Take(10).Select(x => new
             {
+                x.Alarm.DeviceID,
                 x.Alarm.DeviceName,
                 x.Alarm.Message,
                 SeverityName = x.Alarm.Severity switch { 3 => "Critical", 2 => "Warning", _ => "Info" },

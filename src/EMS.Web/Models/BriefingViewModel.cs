@@ -30,6 +30,7 @@ public class BriefingViewModel
     public int ReportingMeters { get; set; }
 
     // Top Consumer
+    public int TopConsumerMeterNo { get; set; }
     public string TopConsumerName { get; set; } = "";
     public double TopConsumerKwh { get; set; }
 

@@ -101,7 +101,7 @@
                         @foreach (var m in meterBreakdown)
                         {
                             double pct = m.Kvah > 0 ? Math.Round((double)m.Kvarh / (double)m.Kvah * 100, 1) : 0;
-                            <tr style="font-size: 13px;">
+                            <tr style="font-size: 13px; cursor: pointer;" onclick="window.location='/MeterFaceplate?meterId=@m.MeterNo'">
                                 <td>@m.Name</td>
                                 <td>@m.Kvarh</td>
                                 <td>@m.Kvah</td>

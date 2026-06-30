@@ -41,6 +41,7 @@ public class RootCauseController : Controller
     public class AlarmContext
     {
         public int AlarmId { get; set; }
+        public int DeviceId { get; set; }
         public string DeviceName { get; set; } = "";
         public string Message { get; set; } = "";
         public string SeverityName { get; set; } = "";
@@ -117,6 +118,7 @@ public class RootCauseController : Controller
                 results.Add(new AlarmContext
                 {
                     AlarmId = alarm.AlarmID,
+                    DeviceId = alarm.DeviceID,
                     DeviceName = alarm.DeviceName,
                     Message = alarm.Message,
                     SeverityName = alarm.Severity switch { 3 => "Critical", 2 => "Warning", _ => "Info" },

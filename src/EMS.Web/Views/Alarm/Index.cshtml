@@ -120,7 +120,16 @@
                         <tr>
                             <td>@a.AlarmID</td>
                             <td><span style="color: @sevColor; font-weight: 700; font-size: 11px;">@sevName</span></td>
-                            <td style="font-weight: 500;">@a.DeviceName</td>
+                            <td style="font-weight: 500;">
+                                @if (a.DeviceName.Contains("Meter"))
+                                {
+                                    <a href="/MeterFaceplate?meterId=@a.DeviceID" style="color: #E2E8F0; text-decoration: underline; text-decoration-color: #334155;">@a.DeviceName</a>
+                                }
+                                else
+                                {
+                                    @a.DeviceName
+                                }
+                            </td>
                             <td style="color: #94A3B8;">@a.TagName</td>
                             <td>@a.TagValue.ToString("F1")</td>
                             <td style="color: #94A3B8;">@a.Threshold.ToString("F1")</td>
