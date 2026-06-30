@@ -181,7 +181,18 @@ public class WebDashboardService : IDashboardService
                 ? Math.Round((todaysConsumption - sevenDayAverage) / sevenDayAverage * 100, 1)
                 : 0;
 
-            var dataRatio = totalDevices > 0 ? (double)onlineMeters / totalDevices : 0;
+            // Energy meters that actually reported a reading today vs. energy meters that
+            // exist -- NOT onlineMeters/totalDevices, which only counts each device's IsActive
+            // config flag across every device type (including fuel tanks/PLC that never produce
+            // a kWh reading) and sat near 100% regardless of real conditions. This previously
+            // disagreed with Briefing's equivalent ratio, which is why the two pages' Plant
+            // Scores showed different numbers for the same day -- both now use the same
+            // reporting-based definition (see BriefingService.BuildBriefingAsync for the mirror).
+            var allDevices = await _deviceRepository.GetAllDevices();
+            var totalEnergyMeters = allDevices.Where(d => d.IsActive == 1 && d.DeviceType == "EnergyMeter")
+                .GroupBy(d => d.DeviceID).Select(g => g.First()).Count();
+            var reportingEnergyMeters = todayData.Where(d => d.MeterNo.HasValue).Select(d => d.MeterNo!.Value).Distinct().Count();
+            var dataRatio = totalEnergyMeters > 0 ? (double)reportingEnergyMeters / totalEnergyMeters : 0;
             var scoreResult = PlantScoreCalculator.Calculate(avgPowerFactor, consumptionChangePercent, await _alarmRepository.GetActiveAlarmCount(), dataRatio);
             var energyScore = new EnergyScoreDto
             {

@@ -89,9 +89,19 @@ public class BriefingService
 
             model.ActiveAlarmCount = await _alarmRepo.GetActiveAlarmCount();
 
+            // Scoped to EnergyMeter-type devices only, matching ReportingMeters below -- fuel
+            // tanks and PLCs are also "active devices" but structurally never produce a kWh
+            // reading, so counting them in the denominator here permanently capped this ratio
+            // at ~50% even on a perfect day (confirmed: 3 of 6 active devices are EnergyMeter
+            // type). That mismatch was the reason this page's Plant Score and Dashboard's Plant
+            // Score disagreed -- Dashboard's equivalent ratio only ever counted IsActive flags,
+            // not actual reporting, so it sat near 100% regardless. Both now measure the same
+            // thing: energy meters that actually reported data vs. energy meters that exist.
             var devices = await _deviceRepo.GetAllDevices();
-            var activeDevices = devices.Where(d => d.IsActive == 1).GroupBy(d => d.DeviceID).Select(g => g.First()).ToList();
-            model.TotalMeters = activeDevices.Count;
+            var activeMeters = devices
+                .Where(d => d.IsActive == 1 && d.DeviceType == "EnergyMeter")
+                .GroupBy(d => d.DeviceID).Select(g => g.First()).ToList();
+            model.TotalMeters = activeMeters.Count;
 
             var reportingMeterNos = yesterdayData.Where(d => d.MeterNo.HasValue).Select(d => d.MeterNo!.Value).Distinct().ToList();
             model.ReportingMeters = reportingMeterNos.Count;
