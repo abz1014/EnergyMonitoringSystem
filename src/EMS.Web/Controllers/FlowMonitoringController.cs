@@ -59,8 +59,17 @@ public class FlowMonitoringController : Controller
                 var readings = await _flowRepo.GetFlowmeterData(device.DeviceID!.Value, from, to);
                 if (readings.Count == 0) continue;
 
-                var levelReadings = readings.Where(r => r.InformationType == "Level" && r.Data.HasValue).ToList();
-                var flowReadings = readings.Where(r => r.InformationType == "Flow_Rate" && r.Data.HasValue).ToList();
+                var levelReadings = readings.Where(r => r.InformationType == "Level" && r.Data.HasValue).OrderBy(r => r.DateTime).ToList();
+                var flowReadings = readings.Where(r => r.InformationType == "Flow_Rate" && r.Data.HasValue).OrderBy(r => r.DateTime).ToList();
+
+                // Build trend series against a shared timestamp axis (the union of all Level and
+                // Flow_Rate timestamps), not just whichever happened to come from Level readings.
+                // Level/Flow_Rate are polled independently and are not guaranteed to share exact
+                // timestamps or counts -- using one reading type's timestamps as labels for the
+                // other's values would silently misalign the chart if they ever diverge.
+                var levelByTime = levelReadings.ToDictionary(r => r.DateTime!.Value, r => (double)r.Data!.Value);
+                var flowByTime = flowReadings.ToDictionary(r => r.DateTime!.Value, r => (double)r.Data!.Value);
+                var sharedTimestamps = levelByTime.Keys.Union(flowByTime.Keys).OrderBy(t => t).ToList();
 
                 summaries.Add(new DeviceFlowSummary
                 {
@@ -72,9 +81,9 @@ public class FlowMonitoringController : Controller
                     AvgFlowRate = flowReadings.Count > 0 ? Math.Round(flowReadings.Average(r => (double)r.Data!.Value), 2) : (double?)null,
                     TotalFlow = flowReadings.Count > 0 ? Math.Round(flowReadings.Sum(r => (double)r.Data!.Value), 0) : (double?)null,
                     FlowUnit = flowReadings.FirstOrDefault()?.DataUnit?.Trim() ?? "",
-                    LevelTrend = levelReadings.OrderBy(r => r.DateTime).Select(r => Math.Round((double)r.Data!.Value, 1)).ToList(),
-                    FlowTrend = flowReadings.OrderBy(r => r.DateTime).Select(r => Math.Round((double)r.Data!.Value, 2)).ToList(),
-                    TrendLabels = levelReadings.OrderBy(r => r.DateTime).Select(r => r.DateTime!.Value.ToString(days <= 7 ? "MM/dd HH:mm" : "MM/dd")).ToList()
+                    LevelTrend = sharedTimestamps.Select(t => levelByTime.TryGetValue(t, out var v) ? (double?)Math.Round(v, 1) : null).ToList(),
+                    FlowTrend = sharedTimestamps.Select(t => flowByTime.TryGetValue(t, out var v) ? (double?)Math.Round(v, 2) : null).ToList(),
+                    TrendLabels = sharedTimestamps.Select(t => t.ToString(days <= 7 ? "MM/dd HH:mm" : "MM/dd")).ToList()
                 });
             }
 
@@ -98,8 +107,8 @@ public class FlowMonitoringController : Controller
         public double? AvgFlowRate { get; set; }
         public double? TotalFlow { get; set; }
         public string FlowUnit { get; set; } = "";
-        public List<double> LevelTrend { get; set; } = new();
-        public List<double> FlowTrend { get; set; } = new();
+        public List<double?> LevelTrend { get; set; } = new();
+        public List<double?> FlowTrend { get; set; } = new();
         public List<string> TrendLabels { get; set; } = new();
     }
 }
