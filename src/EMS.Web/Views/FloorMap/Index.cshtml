@@ -16,33 +16,8 @@
         <div class="row">
             <div class="col-md-8">
                 <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
-                    <svg viewBox="0 0 800 500" style="width: 100%; height: auto;">
+                    <svg id="floorMapSvg" viewBox="0 0 800 500" style="width: 100%; height: auto;">
                         <rect x="10" y="10" width="780" height="480" fill="none" stroke="#334155" stroke-width="2" rx="8" />
-
-                        @{ var floors = new[] { ("Floor 1", 30, 30, 240, 440), ("Floor 2", 280, 30, 240, 440), ("Floor 3", 530, 30, 240, 440) }; }
-                        @foreach (var (label, x, y, w, h) in floors)
-                        {
-                            <rect x="@x" y="@y" width="@w" height="@h" fill="#0F172A" stroke="#334155" stroke-width="1" rx="4" />
-                            <text x="@(x + w / 2)" y="@(y + 24)" fill="#94A3B8" font-size="14" text-anchor="middle" font-weight="600">@label</text>
-                        }
-
-                        @foreach (var m in Model)
-                        {
-                            var loc = locations.GetValueOrDefault(m.MeterId, "");
-                            var floorIndex = loc.Contains("1") ? 0 : loc.Contains("2") ? 1 : loc.Contains("3") ? 2 : 0;
-                            var cx = 30 + floorIndex * 250 + 120;
-                            var cy = 250;
-                            var color = m.Status == "online" ? "#10B981" : m.Status == "warning" ? "#F59E0B" : "#EF4444";
-
-                            <g class="meter-node" data-meter-id="@m.MeterId" style="cursor: pointer;" onclick="showMeterDetail(@m.MeterId)">
-                                <circle cx="@cx" cy="@cy" r="36" fill="@color" fill-opacity="0.15" stroke="@color" stroke-width="2">
-                                    <animate attributeName="r" values="36;40;36" dur="2s" repeatCount="indefinite" />
-                                </circle>
-                                <circle cx="@cx" cy="@cy" r="20" fill="@color" />
-                                <text x="@cx" y="@(cy + 5)" fill="#0F172A" font-size="11" text-anchor="middle" font-weight="700">@m.Power.kW.ToString("F0")</text>
-                                <text x="@cx" y="@(cy + 55)" fill="#E2E8F0" font-size="12" text-anchor="middle">@m.Name</text>
-                            </g>
-                        }
                     </svg>
                 </div>
             </div>
@@ -74,8 +49,57 @@
     <script>
         var meters = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Select(m => new {
             m.MeterId, m.Name, m.Status, kW = m.Power.kW, kVA = m.Power.kVA, m.PowerFactor, m.Frequency,
-            v1 = m.Voltage.L1, v2 = m.Voltage.L2, v3 = m.Voltage.L3
+            v1 = m.Voltage.L1, v2 = m.Voltage.L2, v3 = m.Voltage.L3,
+            location = locations.GetValueOrDefault(m.MeterId, "")
         })));
+
+        // Build the floor map entirely client-side (Razor's <text> tag parsing is unreliable for
+        // SVG inside loops in this SDK version, so we avoid emitting SVG markup server-side).
+        var svgNS = 'http://www.w3.org/2000/svg';
+        var svg = document.getElementById('floorMapSvg');
+
+        function resolveFloorIndex(location) {
+            if (location.indexOf('1') !== -1) return 0;
+            if (location.indexOf('2') !== -1) return 1;
+            if (location.indexOf('3') !== -1) return 2;
+            return 3;
+        }
+
+        function makeEl(tag, attrs, text) {
+            var el = document.createElementNS(svgNS, tag);
+            for (var k in attrs) { el.setAttribute(k, attrs[k]); }
+            if (text !== undefined) { el.textContent = text; }
+            return el;
+        }
+
+        var floorLabels = ['Floor 1', 'Floor 2', 'Floor 3', 'Unassigned'];
+        for (var f = 0; f < 4; f++) {
+            var fx = 30 + f * 190;
+            svg.appendChild(makeEl('rect', { x: fx, y: 30, width: 190, height: 440, fill: '#0F172A', stroke: '#334155', 'stroke-width': 1, rx: 4 }));
+            svg.appendChild(makeEl('text', { x: fx + 95, y: 54, fill: '#94A3B8', 'font-size': 14, 'text-anchor': 'middle', 'font-weight': 600 }, floorLabels[f]));
+        }
+
+        var floorSlotCounts = [0, 0, 0, 0];
+        meters.forEach(function(m) {
+            var floorIndex = resolveFloorIndex(m.location);
+            var slot = floorSlotCounts[floorIndex]++;
+            var cx = 30 + floorIndex * 190 + 95;
+            var cy = 90 + slot * 130;
+            var color = m.status === 'online' ? '#10B981' : m.status === 'warning' ? '#F59E0B' : '#EF4444';
+
+            var g = makeEl('g', { class: 'meter-node', style: 'cursor:pointer;' });
+            g.addEventListener('click', function() { showMeterDetail(m.meterId); });
+
+            var halo = makeEl('circle', { cx: cx, cy: cy, r: 36, fill: color, 'fill-opacity': 0.15, stroke: color, 'stroke-width': 2 });
+            halo.appendChild(makeEl('animate', { attributeName: 'r', values: '36;40;36', dur: '2s', repeatCount: 'indefinite' }));
+            g.appendChild(halo);
+
+            g.appendChild(makeEl('circle', { cx: cx, cy: cy, r: 20, fill: color }));
+            g.appendChild(makeEl('text', { x: cx, y: cy + 5, fill: '#0F172A', 'font-size': 11, 'text-anchor': 'middle', 'font-weight': 700 }, m.kW.toFixed(0)));
+            g.appendChild(makeEl('text', { x: cx, y: cy + 55, fill: '#E2E8F0', 'font-size': 12, 'text-anchor': 'middle' }, m.name));
+
+            svg.appendChild(g);
+        });
 
         function showMeterDetail(id) {
             var m = meters.find(function(x) { return x.meterId === id; });
