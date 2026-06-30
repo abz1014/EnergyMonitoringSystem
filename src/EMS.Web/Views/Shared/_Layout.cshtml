@@ -167,7 +167,7 @@
             ("live", "Live Operations", new[] { "LiveMonitoring", "MeterDetails", "FloorMap", "Alarm", "AlarmResponse", "RootCause" }),
             ("finance", "Financial", new[] { "CostDashboard", "Budget", "Qbr", "Carbon", "PfPenalty", "WhatIf" }),
             ("powerquality", "Power Quality & Engineering", new[] { "PowerQuality", "VoltageImbalance", "LineVoltageBalance", "VoltageRange", "Frequency", "ReactivePower", "EquipmentHealth", "TransformerLoading", "DiversityFactor", "CapacityHeadroom" }),
-            ("usage", "Usage Patterns", new[] { "ShiftAnalysis", "Baseload", "WeekdayWeekend", "DemandCurve", "Heatmap", "Anomaly", "Forecast" }),
+            ("usage", "Usage Patterns", new[] { "TimeOfUse", "DemandCurve", "Heatmap", "Anomaly", "Forecast" }),
             ("devices", "Devices & Comparison", new[] { "MeterFaceplate", "Comparison", "EnergyAnalysis", "Sankey", "FlowMonitoring" }),
             ("reports", "Reports & Data", new[] { "Reports", "DataQuality", "Weather" }),
             ("admin", "Admin", new[] { "Settings" }),
@@ -228,9 +228,7 @@
                         }
                         else if (g.Id == "usage")
                         {
-                            <a class="sidebar-link @(ctrl == "ShiftAnalysis" ? "active" : "")" asp-controller="ShiftAnalysis" asp-action="Index"><span class="sidebar-icon">&#9201;</span> Shift Comparison</a>
-                            <a class="sidebar-link @(ctrl == "Baseload" ? "active" : "")" asp-controller="Baseload" asp-action="Index"><span class="sidebar-icon">&#128176;</span> Baseload Analysis</a>
-                            <a class="sidebar-link @(ctrl == "WeekdayWeekend" ? "active" : "")" asp-controller="WeekdayWeekend" asp-action="Index"><span class="sidebar-icon">&#128197;</span> Weekday/Weekend</a>
+                            <a class="sidebar-link @(ctrl == "TimeOfUse" ? "active" : "")" asp-controller="TimeOfUse" asp-action="Index"><span class="sidebar-icon">&#9201;</span> Time-of-Use Analysis</a>
                             <a class="sidebar-link @(ctrl == "DemandCurve" ? "active" : "")" asp-controller="DemandCurve" asp-action="Index"><span class="sidebar-icon">&#128200;</span> Demand Curve</a>
                             <a class="sidebar-link @(ctrl == "Heatmap" ? "active" : "")" asp-controller="Heatmap" asp-action="Index"><span class="sidebar-icon">&#128293;</span> Consumption Heatmap</a>
                             <a class="sidebar-link @(ctrl == "Anomaly" ? "active" : "")" asp-controller="Anomaly" asp-action="Index"><span class="sidebar-icon">&#128269;</span> Anomaly Detection</a>

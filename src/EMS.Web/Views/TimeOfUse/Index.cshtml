@@ -1,0 +1,298 @@
+@{
+    ViewData["Title"] = "Time-of-Use Analysis";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "30d";
+    var tab = ViewBag.Tab as string ?? "shift";
+    var currency = ViewBag.Currency as string ?? "Rs.";
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Time-of-Use Analysis</h1>
+        <p class="text-muted">When is this plant consuming — and wasting — energy? Shift patterns, non-productive baseload, and weekend behavior, sharing one dataset.</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <input type="hidden" name="tab" id="tabInput" value="@tab" />
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+    </form>
+
+    @if (!hasData)
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#9201;</div>
+            <h4 style="color: #E2E8F0;">No data available for this period</h4>
+        </div>
+        return;
+    }
+
+    <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel</div>
+
+    <!-- Tabs -->
+    <ul class="nav mb-4" style="border-bottom: 1px solid #334155;" id="touTabs">
+        <li class="nav-item">
+            <a class="tou-tab @(tab == "shift" ? "active" : "")" href="#" data-tab="shift" onclick="switchTab(event, this)">Shift Comparison</a>
+        </li>
+        <li class="nav-item">
+            <a class="tou-tab @(tab == "baseload" ? "active" : "")" href="#" data-tab="baseload" onclick="switchTab(event, this)">Baseload Analysis</a>
+        </li>
+        <li class="nav-item">
+            <a class="tou-tab @(tab == "weekend" ? "active" : "")" href="#" data-tab="weekend" onclick="switchTab(event, this)">Weekday vs Weekend</a>
+        </li>
+    </ul>
+
+    <style>
+        .tou-tab { display: inline-block; padding: 10px 18px; color: #94A3B8; text-decoration: none; font-size: 14px; border-bottom: 2px solid transparent; cursor: pointer; }
+        .tou-tab:hover { color: #E2E8F0; }
+        .tou-tab.active { color: #2563EB; border-bottom-color: #2563EB; font-weight: 600; }
+        .tou-panel { display: none; }
+        .tou-panel.active { display: block; }
+    </style>
+
+    <!-- ============== SHIFT COMPARISON TAB ============== -->
+    <div class="tou-panel @(tab == "shift" ? "active" : "")" data-panel="shift">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #3B82F6;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">@ViewBag.MorningLabel</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@ViewBag.MorningTotal <span style="font-size:12px;color:#64748B;">kWh</span></div>
+                    <small style="color: #64748B;">@ViewBag.MorningPct% of total | Avg @ViewBag.MorningAvg kWh | Peak @ViewBag.MorningPeak kW</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">@ViewBag.AfternoonLabel</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@ViewBag.AfternoonTotal <span style="font-size:12px;color:#64748B;">kWh</span></div>
+                    <small style="color: #64748B;">@ViewBag.AfternoonPct% of total | Avg @ViewBag.AfternoonAvg kWh | Peak @ViewBag.AfternoonPeak kW</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #8B5CF6;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">@ViewBag.NightLabel</div>
+                    <div style="color: #FFFFFF; font-size: 24px; font-weight: 700;">@ViewBag.NightTotal <span style="font-size:12px;color:#64748B;">kWh</span></div>
+                    <small style="color: #64748B;">@ViewBag.NightPct% of total | Avg @ViewBag.NightAvg kWh | Peak @ViewBag.NightPeak kW</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #2563EB;">
+            <span style="color: #E2E8F0;">
+                <strong>@ViewBag.MostConsumingShift</strong> shift consumes the most energy overall. <strong>@ViewBag.MostEfficientShift</strong> shift has the lowest average consumption per reading.
+            </span>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Shift Distribution</h5>
+                    <div id="shiftDonutChart" style="height: 300px;"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+                    <h5 class="text-light mb-3">Daily Consumption by Shift</h5>
+                    <div id="shiftStackedChart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============== BASELOAD TAB ============== -->
+    <div class="tou-panel @(tab == "baseload" ? "active" : "")" data-panel="baseload">
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Night window: @ViewBag.NightWindow + Weekends</div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Baseload</div>
+                    <div style="color: #EF4444; font-size: 26px; font-weight: 700;">@ViewBag.BaseloadKw<span style="font-size: 13px; color: #64748B;"> kW</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">% of Peak</div>
+                    <div style="color: #F59E0B; font-size: 26px; font-weight: 700;">@ViewBag.BaseloadPctOfPeak%</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #8B5CF6;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Non-Productive Energy</div>
+                    <div style="color: #FFFFFF; font-size: 26px; font-weight: 700;">@ViewBag.NonProductivePct%</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Est. Annual Cost</div>
+                    <div style="color: #EF4444; font-size: 22px; font-weight: 700;">@currency @(((double)ViewBag.AnnualBaseloadCost).ToString("N0"))</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #F59E0B;">
+            <span style="color: #E2E8F0;">
+                Your plant has a baseload of <strong style="color: #EF4444;">@ViewBag.BaseloadKw kW</strong> running continuously during off-hours — that's
+                <strong>@ViewBag.BaseloadPctOfPeak%</strong> of your peak demand. If this runs 24/7/365, it costs an estimated
+                <strong style="color: #EF4444;">@currency @(((double)ViewBag.AnnualBaseloadCost).ToString("N0"))/year</strong>. This period alone, non-productive hours consumed
+                <strong>@currency @(((double)ViewBag.PeriodNonProductiveCost).ToString("N0"))</strong> worth of energy.
+            </span>
+        </div>
+
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">24-Hour Load Profile (Average)</h5>
+            <div id="baseloadChart" style="height: 350px;"></div>
+        </div>
+    </div>
+
+    <!-- ============== WEEKDAY VS WEEKEND TAB ============== -->
+    <div class="tou-panel @(tab == "weekend" ? "active" : "")" data-panel="weekend">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #2563EB;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Weekday Avg Daily</div>
+                    <div style="color: #FFFFFF; font-size: 26px; font-weight: 700;">@ViewBag.WeekdayAvgDaily <span style="font-size:13px;color:#64748B;">kWh</span></div>
+                    <small style="color: #64748B;">@ViewBag.WeekdayDays days, total @ViewBag.WeekdayTotal kWh</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #EF4444;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Weekend Avg Daily</div>
+                    <div style="color: #EF4444; font-size: 26px; font-weight: 700;">@ViewBag.WeekendAvgDaily <span style="font-size:13px;color:#64748B;">kWh</span></div>
+                    <small style="color: #64748B;">@ViewBag.WeekendDays days, total @ViewBag.WeekendTotal kWh</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4" style="background-color: #1E293B; border-radius: 8px; border-top: 4px solid #F59E0B;">
+                    <div style="color: #94A3B8; font-size: 12px; text-transform: uppercase;">Weekend as % of Weekday</div>
+                    <div style="color: #F59E0B; font-size: 26px; font-weight: 700;">@ViewBag.WeekendVsWeekdayPct%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+            <span style="color: #E2E8F0;">
+                Weekends consume <strong>@ViewBag.WeekendVsWeekdayPct%</strong> of weekday levels. Assuming a minimal 20% standby baseline is expected,
+                excess weekend consumption is estimated to cost <strong style="color:#EF4444;">@currency @(((double)ViewBag.AnnualWeekendWasteCost).ToString("N0"))/year</strong>
+                if not addressed.
+            </span>
+        </div>
+
+        <div class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">Daily Consumption (Weekday vs Weekend)</h5>
+            <div id="wwDailyChart" style="height: 320px;"></div>
+        </div>
+
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">24-Hour Profile Comparison</h5>
+            <div id="wwProfileChart" style="height: 320px;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+<script>
+    function switchTab(e, el) {
+        e.preventDefault();
+        var tabName = el.getAttribute('data-tab');
+        document.querySelectorAll('.tou-tab').forEach(function (t) { t.classList.remove('active'); });
+        document.querySelectorAll('.tou-panel').forEach(function (p) { p.classList.remove('active'); });
+        el.classList.add('active');
+        document.querySelector('.tou-panel[data-panel="' + tabName + '"]').classList.add('active');
+        document.getElementById('tabInput').value = tabName;
+        history.replaceState(null, '', '?tab=' + tabName + '&range=@range');
+        // Charts in the other two tabs were initialized while hidden (display:none gives a
+        // 0-width container at ApexCharts' init time, which doesn't self-correct when later
+        // shown). Forcing a resize event makes ApexCharts recompute layout for the now-visible
+        // panel's charts.
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    // Shift donut + stacked bar
+    new ApexCharts(document.querySelector('#shiftDonutChart'), {
+        series: [@ViewBag.MorningTotal, @ViewBag.AfternoonTotal, @ViewBag.NightTotal],
+        labels: ['Morning', 'Afternoon', 'Night'],
+        chart: { type: 'donut', height: 300, background: '#1E293B' },
+        colors: ['#3B82F6', '#F59E0B', '#8B5CF6'],
+        legend: { labels: { colors: '#94A3B8' }, position: 'bottom' },
+        dataLabels: { style: { colors: ['#fff'] } },
+        tooltip: { theme: 'dark' },
+        stroke: { colors: ['#1E293B'] }
+    }).render();
+
+    new ApexCharts(document.querySelector('#shiftStackedChart'), {
+        series: [
+            { name: 'Morning', data: @Html.Raw(ViewBag.DailyMorning) },
+            { name: 'Afternoon', data: @Html.Raw(ViewBag.DailyAfternoon) },
+            { name: 'Night', data: @Html.Raw(ViewBag.DailyNight) }
+        ],
+        chart: { type: 'bar', height: 300, background: '#1E293B', stacked: true, toolbar: { show: true } },
+        colors: ['#3B82F6', '#F59E0B', '#8B5CF6'],
+        plotOptions: { bar: { borderRadius: 2, columnWidth: '55%' } },
+        xaxis: { categories: @Html.Raw(ViewBag.DailyDates), labels: { style: { colors: '#94A3B8', fontSize: '10px' }, rotate: -45 } },
+        yaxis: { labels: { style: { colors: '#94A3B8' } } },
+        legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+        tooltip: { theme: 'dark' },
+        grid: { borderColor: '#334155' }
+    }).render();
+
+    // Baseload chart
+    new ApexCharts(document.querySelector('#baseloadChart'), {
+        series: [
+            { name: 'Average Load', data: @Html.Raw(ViewBag.HourlyProfile) },
+            { name: 'Baseload', data: @Html.Raw(ViewBag.BaseloadLine) }
+        ],
+        chart: { type: 'line', height: 350, background: '#1E293B', toolbar: { show: true } },
+        colors: ['#2563EB', '#EF4444'],
+        stroke: { curve: 'smooth', width: [3, 2], dashArray: [0, 6] },
+        fill: { type: ['gradient', 'none'], gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
+        xaxis: { categories: @Html.Raw(ViewBag.HourlyLabels), labels: { style: { colors: '#94A3B8' } } },
+        yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function (v) { return v.toFixed(0) + ' kW'; } } },
+        tooltip: { theme: 'dark', shared: true },
+        legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+        grid: { borderColor: '#334155' },
+        markers: { size: 0, hover: { size: 4 } }
+    }).render();
+
+    // Weekday/Weekend charts
+    var wwDailyValues = @Html.Raw(ViewBag.WwDailyValues);
+    var wwDailyColors = @Html.Raw(ViewBag.WwDailyColors);
+
+    new ApexCharts(document.querySelector('#wwDailyChart'), {
+        series: [{ name: 'Consumption', data: wwDailyValues.map(function (v, i) { return { x: i, y: v, fillColor: wwDailyColors[i] }; }) }],
+        chart: { type: 'bar', height: 320, background: '#1E293B', toolbar: { show: true } },
+        plotOptions: { bar: { distributed: true, borderRadius: 2 } },
+        xaxis: { categories: @Html.Raw(ViewBag.WwDailyDates), labels: { style: { colors: '#94A3B8', fontSize: '10px' }, rotate: -45 } },
+        yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function (v) { return v.toLocaleString(); } } },
+        tooltip: { theme: 'dark' },
+        legend: { show: false },
+        grid: { borderColor: '#334155' }
+    }).render();
+
+    new ApexCharts(document.querySelector('#wwProfileChart'), {
+        series: [
+            { name: 'Weekday', data: @Html.Raw(ViewBag.WeekdayProfile) },
+            { name: 'Weekend', data: @Html.Raw(ViewBag.WeekendProfile) }
+        ],
+        chart: { type: 'line', height: 320, background: '#1E293B', toolbar: { show: true } },
+        colors: ['#2563EB', '#EF4444'],
+        stroke: { curve: 'smooth', width: 2 },
+        xaxis: { categories: @Html.Raw(ViewBag.HourLabels), labels: { style: { colors: '#94A3B8' }, rotate: -45 } },
+        yaxis: { labels: { style: { colors: '#94A3B8' }, formatter: function (v) { return v.toFixed(0) + ' kWh'; } } },
+        tooltip: { theme: 'dark', shared: true },
+        legend: { labels: { colors: '#94A3B8' }, position: 'top' },
+        grid: { borderColor: '#334155' },
+        markers: { size: 0, hover: { size: 4 } }
+    }).render();
+</script>
