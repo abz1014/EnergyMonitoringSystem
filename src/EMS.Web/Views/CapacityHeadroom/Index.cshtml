@@ -1,0 +1,120 @@
+@{
+    ViewData["Title"] = "Capacity Headroom";
+    var hasData = (bool)(ViewBag.HasData ?? false);
+    var range = ViewBag.Range as string ?? "30d";
+    var contractedKva = (double)(ViewBag.ContractedKva ?? 130.0);
+}
+
+<div style="background-color: #0F172A; color: #E2E8F0; min-height: 100vh; padding: 20px;">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Capacity Headroom</h1>
+        <p class="text-muted">System kVA demand vs. utility-contracted maximum demand</p>
+    </div>
+
+    <form method="get" class="mb-4 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-light">Time Range</label>
+                <select name="range" class="form-select" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
+                    @foreach (var (val, label) in new[] { ("7d","Last 7 Days"), ("30d","Last 30 Days"), ("90d","Last 90 Days") })
+                    {
+                        if (range == val) { <option value="@val" selected>@label</option> } else { <option value="@val">@label</option> }
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" style="background-color: #2563EB;">Analyze</button>
+            </div>
+        </div>
+        <small style="color: #64748B;">Contracted demand (@contractedKva kVA) is set in Settings → Tariff.</small>
+    </form>
+
+    @if (hasData)
+    {
+        var utilPct = (double)ViewBag.PeakUtilizationPct;
+        var color = utilPct >= 100 ? "#EF4444" : utilPct >= 85 ? "#F59E0B" : "#10B981";
+        var headroom = (double)ViewBag.PeakHeadroomKva;
+
+        <div style="color: #94A3B8; font-size: 13px; margin-bottom: 16px;">Period: @ViewBag.DateRangeLabel | @ViewBag.TotalReadings readings</div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @color;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Peak System Demand</div>
+                    <div style="color: @color; font-size: 22px; font-weight: 700;">@ViewBag.PeakKva <span style="font-size:11px;color:#64748B;">kVA</span></div>
+                    <small style="color: #64748B;">at @ViewBag.PeakAt</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #94A3B8;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Contracted Limit</div>
+                    <div style="color: #FFFFFF; font-size: 22px; font-weight: 700;">@contractedKva <span style="font-size:11px;color:#64748B;">kVA</span></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @color;">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">Peak Utilization</div>
+                    <div style="color: @color; font-size: 22px; font-weight: 700;">@utilPct%</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid @(headroom >= 0 ? "#10B981" : "#EF4444");">
+                    <div style="color: #94A3B8; font-size: 11px; text-transform: uppercase;">@(headroom >= 0 ? "Headroom" : "Exceeded By")</div>
+                    <div style="color: @(headroom >= 0 ? "#10B981" : "#EF4444"); font-size: 22px; font-weight: 700;">@Math.Abs(headroom) <span style="font-size:11px;color:#64748B;">kVA</span></div>
+                </div>
+            </div>
+        </div>
+
+        @if ((int)ViewBag.Exceedances > 0)
+        {
+            <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #EF4444;">
+                <span style="color: #E2E8F0;">
+                    System demand exceeded the contracted limit of <strong>@contractedKva kVA</strong> on
+                    <strong style="color:#EF4444;">@ViewBag.Exceedances</strong> readings (<strong style="color:#EF4444;">@ViewBag.ExceedancePct%</strong> of the period).
+                    Depending on the tariff structure, this can trigger demand penalty charges or require a contract revision with the utility.
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="mb-4 p-3" style="background-color: #1E293B; border-radius: 8px; border-left: 4px solid #10B981;">
+                <span style="color: #E2E8F0;">
+                    Demand stayed within the contracted limit throughout this period, with
+                    <strong style="color:#10B981;">@headroom kVA</strong> of headroom remaining at peak.
+                </span>
+            </div>
+        }
+
+        <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
+            <h5 class="text-light mb-3">System kVA Demand vs Contracted Limit</h5>
+            <div id="capacityChart" style="height: 380px;"></div>
+        </div>
+    }
+    else
+    {
+        <div class="p-5 text-center" style="background-color: #1E293B; border-radius: 8px;">
+            <div style="font-size: 48px; color: #64748B;">&#9881;</div>
+            <h4 style="color: #E2E8F0;">No data available for this period</h4>
+        </div>
+    }
+</div>
+
+@if (hasData)
+{
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.min.js"></script>
+    <script>
+        new ApexCharts(document.querySelector('#capacityChart'), {
+            series: [{ name: 'System kVA', data: @Html.Raw(ViewBag.ChartValues) }],
+            chart: { type: 'area', height: 380, background: '#1E293B', toolbar: { show: true }, zoom: { enabled: true } },
+            colors: ['#2563EB'],
+            stroke: { curve: 'smooth', width: 2 },
+            fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
+            xaxis: { categories: @Html.Raw(ViewBag.ChartLabels), labels: { style: { colors: '#94A3B8', fontSize: '9px' }, rotate: -45 }, tickAmount: 12 },
+            yaxis: { title: { text: 'kVA', style: { color: '#94A3B8' } }, labels: { style: { colors: '#94A3B8' } } },
+            annotations: { yaxis: [{ y: @contractedKva, borderColor: '#EF4444', strokeDashArray: 4, label: { text: 'Contracted (@contractedKva kVA)', style: { color: '#FFF', background: '#EF4444', fontSize: '11px' } } }] },
+            tooltip: { theme: 'dark', y: { formatter: function(v) { return v.toFixed(1) + ' kVA'; } } },
+            grid: { borderColor: '#334155' },
+            markers: { size: 0 }
+        }).render();
+    </script>
+}
