@@ -137,6 +137,50 @@
                 </div>
             </div>
         </div>
+
+        <!-- Deep-dive analysis tools -->
+        <div class="p-4 mb-4" style="background-color: #1E293B; border-radius: 8px; border: 1px solid #2A3749;">
+            <h5 class="text-light mb-1">Detailed Analysis</h5>
+            <p style="color: #64748B; font-size: 13px; margin-bottom: 16px;">System-wide reports with event tables, NEMA violation counts, and per-phase breakdowns.</p>
+            <div class="row g-3">
+                <div class="col-sm-6 col-lg-3">
+                    <a href="/VoltageImbalance" style="text-decoration: none;">
+                        <div class="p-3" style="background: #0F172A; border-radius: 8px; border: 1px solid #334155; transition: border-color 0.15s;" onmouseover="this.style.borderColor='#2563EB'" onmouseout="this.style.borderColor='#334155'">
+                            <div style="color: #3B82F6; font-size: 20px; margin-bottom: 8px;"><i class="bi bi-activity"></i></div>
+                            <div style="font-size: 13px; font-weight: 600; color: #E2E8F0; margin-bottom: 4px;">Voltage Imbalance</div>
+                            <div style="font-size: 12px; color: #64748B;">NEMA violations, all meters, 7–90d</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <a href="/VoltageRange" style="text-decoration: none;">
+                        <div class="p-3" style="background: #0F172A; border-radius: 8px; border: 1px solid #334155; transition: border-color 0.15s;" onmouseover="this.style.borderColor='#2563EB'" onmouseout="this.style.borderColor='#334155'">
+                            <div style="color: #F59E0B; font-size: 20px; margin-bottom: 8px;"><i class="bi bi-rulers"></i></div>
+                            <div style="font-size: 13px; font-weight: 600; color: #E2E8F0; margin-bottom: 4px;">Voltage Range Events</div>
+                            <div style="font-size: 12px; color: #64748B;">ANSI C84.1 ±5%, worst event table</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <a href="/LineVoltageBalance" style="text-decoration: none;">
+                        <div class="p-3" style="background: #0F172A; border-radius: 8px; border: 1px solid #334155; transition: border-color 0.15s;" onmouseover="this.style.borderColor='#2563EB'" onmouseout="this.style.borderColor='#334155'">
+                            <div style="color: #10B981; font-size: 20px; margin-bottom: 8px;"><i class="bi bi-graph-up"></i></div>
+                            <div style="font-size: 13px; font-weight: 600; color: #E2E8F0; margin-bottom: 4px;">Line Voltage Balance</div>
+                            <div style="font-size: 12px; color: #64748B;">VLL-based, L-L vs L-N comparison</div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <a href="/ReactivePower" style="text-decoration: none;">
+                        <div class="p-3" style="background: #0F172A; border-radius: 8px; border: 1px solid #334155; transition: border-color 0.15s;" onmouseover="this.style.borderColor='#2563EB'" onmouseout="this.style.borderColor='#334155'">
+                            <div style="color: #8B5CF6; font-size: 20px; margin-bottom: 8px;"><i class="bi bi-arrow-repeat"></i></div>
+                            <div style="font-size: 13px; font-weight: 600; color: #E2E8F0; margin-bottom: 4px;">Reactive Power</div>
+                            <div style="font-size: 12px; color: #64748B;">kVARh, implied PF, reactive fraction</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
     }
     else
     {

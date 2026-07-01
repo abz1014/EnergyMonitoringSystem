@@ -11,7 +11,19 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1 class="h2 mb-2">Energy Monitoring System</h1>
-                <p class="text-muted">Executive Dashboard</p>
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <p class="text-muted mb-0">Executive Dashboard</p>
+                    @if (Model?.KpiCards?.OnlineMeters != null)
+                    {
+                        var omVal = Model.KpiCards.OnlineMeters.Value;
+                        var omTrend = Model.KpiCards.OnlineMeters.Trend ?? "";
+                        var omOk = omTrend.Contains("All") || omTrend.Contains("online");
+                        <span class="d-inline-flex align-items-center gap-1 px-2 py-1" style="background: @(omOk ? "rgba(16,185,129,0.12)" : "rgba(245,158,11,0.12)"); border: 1px solid @(omOk ? "#10B981" : "#F59E0B"); border-radius: 20px; font-size: 12px; color: @(omOk ? "#10B981" : "#F59E0B");">
+                            <i class="bi @(omOk ? "bi-check-circle-fill" : "bi-exclamation-circle-fill")" style="font-size: 11px;"></i>
+                            @omVal.ToString("F0") @(Model.KpiCards.OnlineMeters.Unit)
+                        </span>
+                    }
+                </div>
             </div>
             @if (Model?.EnergyScore != null && Model.EnergyScore.Score > 0)
             {
@@ -88,10 +100,8 @@
                         (Card: Model.KpiCards.CurrentLoad, Color: "#3B82F6", Link: "/LiveMonitoring"),
                         (Card: Model.KpiCards.PeakDemand, Color: "#F59E0B", Link: "/EnergyAnalysis?timeframe=daily&metric=peak"),
                         (Card: Model.KpiCards.MonthlyTotal, Color: "#10B981", Link: "/EnergyAnalysis?timeframe=monthly"),
-                        (Card: Model.KpiCards.OnlineMeters, Color: "#10B981", Link: "/LiveMonitoring"),
                         (Card: Model.KpiCards.EstimatedCost, Color: "#F59E0B", Link: "/CostDashboard"),
-                        (Card: Model.KpiCards.AvgPowerFactor, Color: "#10B981", Link: "/PowerQuality"),
-                        (Card: Model.KpiCards.Co2Emissions, Color: "#10B981", Link: "/Carbon")
+                        (Card: Model.KpiCards.AvgPowerFactor, Color: "#10B981", Link: "/PowerQuality")
                     };
                 @foreach (var kpi in kpis)
                 {
@@ -143,47 +153,48 @@
         }
     </div>
 
-    <!-- Bottom Section - Two Columns -->
-    <div class="row g-4 mb-5">
-        <!-- Location Breakdown -->
-        <div class="col-12 col-lg-6">
-            <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
-                <h3 class="h5 mb-4 text-light">Consumption by Location</h3>
-                @if (Model?.Charts?.LocationBreakdown != null && Model.Charts.LocationBreakdown.Count > 0)
-                {
-                    <div id="locationChart" style="height: 300px;"></div>
-                }
-                else
-                {
-                    <div style="height: 300px; display: flex; align-items: center; justify-content: center; color: #64748B;">
-                        <div style="text-align: center;">
-                            <p>No location data available</p>
-                            <small>Assign meters to buildings to see breakdown</small>
-                        </div>
-                    </div>
-                }
-            </div>
+    <!-- Meter Consumption Breakdown -->
+    <div class="mb-5 p-4" style="background-color: #1E293B; border-radius: 8px;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="h5 mb-0 text-light">Meter Breakdown — Today</h3>
+            <a href="/EnergyAnalysis" style="font-size: 13px; color: #3B82F6; text-decoration: none;">Full analysis <i class="bi bi-arrow-right"></i></a>
         </div>
-
-        <!-- Top Consumers -->
-        <div class="col-12 col-lg-6">
-            <div class="p-4" style="background-color: #1E293B; border-radius: 8px;">
-                <h3 class="h5 mb-4 text-light">Top 10 Consumers</h3>
-                @if (Model?.Charts?.TopConsumers != null && Model.Charts.TopConsumers.Count > 0)
-                {
-                    <div id="consumersChart" style="height: 300px;"></div>
-                }
-                else
-                {
-                    <div style="height: 300px; display: flex; align-items: center; justify-content: center; color: #64748B;">
-                        <div style="text-align: center;">
-                            <p>No consumer data available</p>
-                            <small>Data will appear once meters report consumption</small>
-                        </div>
-                    </div>
-                }
+        @if (Model?.Charts?.TopConsumers != null && Model.Charts.TopConsumers.Count > 0)
+        {
+            var totalKwh = Model.Charts.TopConsumers.Sum(c => c.Consumption);
+            <table class="table table-borderless mb-0" style="color: #E2E8F0;">
+                <thead>
+                    <tr style="font-size: 11px; text-transform: uppercase; color: #64748B; border-bottom: 1px solid #334155;">
+                        <th class="pb-2 fw-normal">Meter</th>
+                        <th class="pb-2 fw-normal text-end">kWh</th>
+                        <th class="pb-2 fw-normal text-end">Share</th>
+                        <th class="pb-2 fw-normal" style="width: 40%;">Distribution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Charts.TopConsumers)
+                    {
+                        var sharePct = totalKwh > 0 ? c.Consumption / totalKwh * 100 : 0;
+                        <tr style="border-bottom: 1px solid rgba(51,65,85,0.4);">
+                            <td class="py-3" style="font-size: 14px; font-weight: 500;">@c.Name</td>
+                            <td class="py-3 text-end" style="font-size: 14px; font-family: 'JetBrains Mono', monospace;">@c.Consumption.ToString("F0")</td>
+                            <td class="py-3 text-end" style="font-size: 14px; color: #94A3B8;">@sharePct.ToString("F1")%</td>
+                            <td class="py-3">
+                                <div style="background: #0F172A; border-radius: 4px; height: 8px; overflow: hidden;">
+                                    <div style="background: #2563EB; height: 100%; width: @(sharePct.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%; border-radius: 4px;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div style="height: 120px; display: flex; align-items: center; justify-content: center; color: #64748B;">
+                <p class="mb-0">No consumption data available</p>
             </div>
-        </div>
+        }
     </div>
 
     <!-- Monthly Trend -->
@@ -249,88 +260,6 @@
             markers: { size: 0, hover: { size: 5 } }
         };
         new ApexCharts(document.querySelector('#loadProfileChart'), loadProfileOptions).render();
-        </text>
-    }
-
-    // Location Breakdown Chart
-    @if (Model?.Charts?.LocationBreakdown != null)
-    {
-        <text>
-        var locationData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-            Model.Charts.LocationBreakdown.Select(l => l.Percentage)
-        ));
-        var locationLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-            Model.Charts.LocationBreakdown.Select(l => l.Location)
-        ));
-
-        var locationOptions = {
-            series: locationData,
-            chart: {
-                type: 'donut',
-                height: 300,
-                background: '#1E293B',
-                events: {
-                    dataPointSelection: function(event, chartContext, config) {
-                        var building = locationLabels[config.dataPointIndex];
-                        window.location.href = '/LiveMonitoring?building=' + encodeURIComponent(building);
-                    }
-                }
-            },
-            labels: locationLabels,
-            colors: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
-            legend: { position: 'bottom', labels: { colors: '#94A3B8' } },
-            tooltip: { theme: 'dark' }
-        };
-        new ApexCharts(document.querySelector("#locationChart"), locationOptions).render();
-        </text>
-    }
-
-    // Top Consumers Chart
-    @if (Model?.Charts?.TopConsumers != null)
-    {
-        <text>
-        var consumersData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-            Model.Charts.TopConsumers.Select(c => c.Consumption)
-        ));
-        var consumersLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-            Model.Charts.TopConsumers.Select(c => c.Name)
-        ));
-
-        var consumersOptions = {
-            series: [{
-                name: 'Consumption (kWh)',
-                data: consumersData
-            }],
-            chart: {
-                type: 'bar',
-                height: 300,
-                background: '#1E293B',
-                toolbar: { show: false },
-                events: {
-                    dataPointSelection: function(event, chartContext, config) {
-                        window.location.href = '/EnergyAnalysis?timeframe=daily';
-                    }
-                }
-            },
-            plotOptions: {
-                bar: {
-                    horizontal: true,
-                    distributed: true,
-                    dataLabels: { position: 'end' }
-                }
-            },
-            colors: ['#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE', '#10B981', '#34D399', '#6EE7B7', '#F59E0B', '#FBBF24'],
-            xaxis: {
-                categories: consumersLabels,
-                labels: { style: { colors: '#94A3B8' } }
-            },
-            yaxis: {
-                labels: { style: { colors: '#94A3B8' } }
-            },
-            tooltip: { theme: 'dark' },
-            legend: { show: false }
-        };
-        new ApexCharts(document.querySelector("#consumersChart"), consumersOptions).render();
         </text>
     }
 

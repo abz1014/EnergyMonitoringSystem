@@ -263,14 +263,10 @@
         // persisted client-side via localStorage (see script at bottom).
         var groups = new (string Id, string Label, string[] Controllers)[]
         {
-            ("overview", "Overview", new[] { "Briefing", "Dashboard" }),
-            ("live", "Live Operations", new[] { "LiveMonitoring", "MeterDetails", "FloorMap", "Alarm", "AlarmResponse", "RootCause" }),
-            ("finance", "Financial", new[] { "CostDashboard", "Budget", "Qbr", "Carbon", "PfPenalty", "WhatIf" }),
-            ("powerquality", "Power Quality & Engineering", new[] { "PowerQuality", "VoltageImbalance", "LineVoltageBalance", "VoltageRange", "Frequency", "ReactivePower", "EquipmentHealth", "TransformerLoading", "DiversityFactor", "CapacityHeadroom" }),
-            ("usage", "Usage Patterns", new[] { "TimeOfUse", "LoadAnalytics", "DemandCurve", "Heatmap", "Anomaly", "Forecast" }),
-            ("devices", "Devices & Comparison", new[] { "MeterFaceplate", "Comparison", "EnergyAnalysis", "FlowMonitoring" }),
-            ("reports", "Reports & Data", new[] { "Reports", "DataQuality" }),
-            ("admin", "Admin", new[] { "Settings" }),
+            ("operations", "Operations", new[] { "Briefing", "Dashboard", "LiveMonitoring", "MeterDetails", "FloorMap", "Alarm", "AlarmResponse", "RootCause" }),
+            ("engineering", "Engineering", new[] { "PowerQuality", "VoltageImbalance", "LineVoltageBalance", "VoltageRange", "Frequency", "ReactivePower", "EquipmentHealth", "TransformerLoading", "DiversityFactor", "CapacityHeadroom", "LoadAnalytics", "TimeOfUse", "DemandCurve", "Heatmap", "Anomaly", "Forecast", "EnergyAnalysis", "Comparison", "MeterFaceplate", "FlowMonitoring" }),
+            ("financial", "Financial", new[] { "CostDashboard", "Budget", "Qbr", "PfPenalty", "WhatIf" }),
+            ("reports", "Reports & Admin", new[] { "Reports", "Carbon", "DataQuality", "Settings" }),
         };
     }
     <nav class="sidebar" id="sidebar">
@@ -290,64 +286,46 @@
                         <span class="sidebar-group-caret"><i class="bi bi-chevron-down"></i></span>
                     </div>
                     <div class="sidebar-group-links">
-                        @if (g.Id == "overview")
+                        @if (g.Id == "operations")
                         {
                             <a class="sidebar-link @(ctrl == "Briefing" ? "active" : "")" asp-controller="Briefing" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-stars"></i></span> Briefing</a>
                             <a class="sidebar-link @(ctrl == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-grid-1x2-fill"></i></span> Dashboard</a>
-                        }
-                        else if (g.Id == "live")
-                        {
                             <a class="sidebar-link @(ctrl == "LiveMonitoring" || ctrl == "MeterDetails" ? "active" : "")" asp-controller="LiveMonitoring" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-broadcast"></i></span> Live Monitoring</a>
                             <a class="sidebar-link @(ctrl == "FloorMap" ? "active" : "")" asp-controller="FloorMap" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-building"></i></span> Floor Map</a>
                             <a class="sidebar-link @(ctrl == "Alarm" ? "active" : "")" asp-controller="Alarm" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-exclamation-triangle-fill"></i></span> Alarms</a>
                             <a class="sidebar-link @(ctrl == "AlarmResponse" ? "active" : "")" asp-controller="AlarmResponse" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-stopwatch-fill"></i></span> Response Time</a>
-                            <a class="sidebar-link @(ctrl == "RootCause" ? "active" : "")" asp-controller="RootCause" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-search"></i></span> Root Cause Context</a>
+                            <a class="sidebar-link @(ctrl == "RootCause" ? "active" : "")" asp-controller="RootCause" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-search"></i></span> Root Cause</a>
                         }
-                        else if (g.Id == "finance")
+                        else if (g.Id == "engineering")
+                        {
+                            <a class="sidebar-link @(ctrl == "PowerQuality" || ctrl == "VoltageImbalance" || ctrl == "LineVoltageBalance" || ctrl == "VoltageRange" || ctrl == "Frequency" || ctrl == "ReactivePower" ? "active" : "")" asp-controller="PowerQuality" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-lightning-charge-fill"></i></span> Power Quality</a>
+                            <a class="sidebar-link @(ctrl == "EquipmentHealth" ? "active" : "")" asp-controller="EquipmentHealth" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-heart-pulse-fill"></i></span> Equipment Health</a>
+                            <a class="sidebar-link @(ctrl == "TransformerLoading" ? "active" : "")" asp-controller="TransformerLoading" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-cpu-fill"></i></span> Transformer Loading</a>
+                            <a class="sidebar-link @(ctrl == "CapacityHeadroom" || ctrl == "DiversityFactor" ? "active" : "")" asp-controller="CapacityHeadroom" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-speedometer2"></i></span> Capacity & Diversity</a>
+                            <a class="sidebar-link @(ctrl == "EnergyAnalysis" ? "active" : "")" asp-controller="EnergyAnalysis" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-graph-up"></i></span> Energy Analysis</a>
+                            <a class="sidebar-link @(ctrl == "LoadAnalytics" ? "active" : "")" asp-controller="LoadAnalytics" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-graph-up-arrow"></i></span> Load Analytics</a>
+                            <a class="sidebar-link @(ctrl == "TimeOfUse" ? "active" : "")" asp-controller="TimeOfUse" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-clock-history"></i></span> Time-of-Use</a>
+                            <a class="sidebar-link @(ctrl == "DemandCurve" ? "active" : "")" asp-controller="DemandCurve" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-bar-chart-steps"></i></span> Demand Curve</a>
+                            <a class="sidebar-link @(ctrl == "Heatmap" ? "active" : "")" asp-controller="Heatmap" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-grid-3x3-gap-fill"></i></span> Heatmap</a>
+                            <a class="sidebar-link @(ctrl == "Anomaly" ? "active" : "")" asp-controller="Anomaly" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-radar"></i></span> Anomaly Detection</a>
+                            <a class="sidebar-link @(ctrl == "Forecast" ? "active" : "")" asp-controller="Forecast" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-graph-up"></i></span> Trend Projection</a>
+                            <a class="sidebar-link @(ctrl == "Comparison" ? "active" : "")" asp-controller="Comparison" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-bar-chart-fill"></i></span> Meter Comparison</a>
+                            <a class="sidebar-link @(ctrl == "MeterFaceplate" ? "active" : "")" asp-controller="MeterFaceplate" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-speedometer"></i></span> Meter Faceplate</a>
+                            <a class="sidebar-link @(ctrl == "FlowMonitoring" ? "active" : "")" asp-controller="FlowMonitoring" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-droplet-fill"></i></span> Flow & Level</a>
+                        }
+                        else if (g.Id == "financial")
                         {
                             <a class="sidebar-link @(ctrl == "CostDashboard" ? "active" : "")" asp-controller="CostDashboard" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-cash-coin"></i></span> Cost Dashboard</a>
                             <a class="sidebar-link @(ctrl == "Budget" ? "active" : "")" asp-controller="Budget" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-wallet2"></i></span> Budget vs Actual</a>
                             <a class="sidebar-link @(ctrl == "Qbr" ? "active" : "")" asp-controller="Qbr" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-file-earmark-bar-graph-fill"></i></span> Executive QBR</a>
-                            <a class="sidebar-link @(ctrl == "Carbon" ? "active" : "")" asp-controller="Carbon" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-tree-fill"></i></span> Carbon / ESG</a>
-                            <a class="sidebar-link @(ctrl == "PfPenalty" ? "active" : "")" asp-controller="PfPenalty" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-bar-chart-line-fill"></i></span> PF Penalty Calculator</a>
+                            <a class="sidebar-link @(ctrl == "PfPenalty" ? "active" : "")" asp-controller="PfPenalty" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-bar-chart-line-fill"></i></span> PF Penalty Calc</a>
                             <a class="sidebar-link @(ctrl == "WhatIf" ? "active" : "")" asp-controller="WhatIf" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-sliders"></i></span> What-If Modeler</a>
-                        }
-                        else if (g.Id == "powerquality")
-                        {
-                            <a class="sidebar-link @(ctrl == "PowerQuality" ? "active" : "")" asp-controller="PowerQuality" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-lightning-charge-fill"></i></span> Power Quality</a>
-                            <a class="sidebar-link @(ctrl == "VoltageImbalance" ? "active" : "")" asp-controller="VoltageImbalance" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-activity"></i></span> Voltage Imbalance</a>
-                            <a class="sidebar-link @(ctrl == "LineVoltageBalance" ? "active" : "")" asp-controller="LineVoltageBalance" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-graph-up"></i></span> Line Voltage Balance</a>
-                            <a class="sidebar-link @(ctrl == "VoltageRange" ? "active" : "")" asp-controller="VoltageRange" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-rulers"></i></span> Voltage Out-of-Range</a>
-                            <a class="sidebar-link @(ctrl == "Frequency" ? "active" : "")" asp-controller="Frequency" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-soundwave"></i></span> Frequency Stability</a>
-                            <a class="sidebar-link @(ctrl == "ReactivePower" ? "active" : "")" asp-controller="ReactivePower" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-arrow-repeat"></i></span> Reactive Power</a>
-                            <a class="sidebar-link @(ctrl == "EquipmentHealth" ? "active" : "")" asp-controller="EquipmentHealth" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-heart-pulse-fill"></i></span> Equipment Health</a>
-                            <a class="sidebar-link @(ctrl == "TransformerLoading" ? "active" : "")" asp-controller="TransformerLoading" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-cpu-fill"></i></span> Transformer Loading</a>
-                            <a class="sidebar-link @(ctrl == "DiversityFactor" ? "active" : "")" asp-controller="DiversityFactor" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-diagram-3-fill"></i></span> Diversity Factor</a>
-                            <a class="sidebar-link @(ctrl == "CapacityHeadroom" ? "active" : "")" asp-controller="CapacityHeadroom" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-speedometer2"></i></span> Capacity Headroom</a>
-                        }
-                        else if (g.Id == "usage")
-                        {
-                            <a class="sidebar-link @(ctrl == "TimeOfUse" ? "active" : "")" asp-controller="TimeOfUse" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-clock-history"></i></span> Time-of-Use Analysis</a>
-                            <a class="sidebar-link @(ctrl == "LoadAnalytics" ? "active" : "")" asp-controller="LoadAnalytics" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-graph-up-arrow"></i></span> Load Analytics</a>
-                            <a class="sidebar-link @(ctrl == "DemandCurve" ? "active" : "")" asp-controller="DemandCurve" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-bar-chart-steps"></i></span> Demand Curve</a>
-                            <a class="sidebar-link @(ctrl == "Heatmap" ? "active" : "")" asp-controller="Heatmap" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-grid-3x3-gap-fill"></i></span> Consumption Heatmap</a>
-                            <a class="sidebar-link @(ctrl == "Anomaly" ? "active" : "")" asp-controller="Anomaly" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-radar"></i></span> Anomaly Detection</a>
-                            <a class="sidebar-link @(ctrl == "Forecast" ? "active" : "")" asp-controller="Forecast" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-graph-up"></i></span> Trend Projection</a>
-                        }
-                        else if (g.Id == "devices")
-                        {
-                            <a class="sidebar-link @(ctrl == "MeterFaceplate" ? "active" : "")" asp-controller="MeterFaceplate" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-speedometer"></i></span> Meter Faceplate</a>
-                            <a class="sidebar-link @(ctrl == "Comparison" ? "active" : "")" asp-controller="Comparison" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-bar-chart-fill"></i></span> Meter Comparison</a>
-                            <a class="sidebar-link @(ctrl == "EnergyAnalysis" ? "active" : "")" asp-controller="EnergyAnalysis" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-graph-up"></i></span> Energy Analysis</a>
-                            <a class="sidebar-link @(ctrl == "FlowMonitoring" ? "active" : "")" asp-controller="FlowMonitoring" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-droplet-fill"></i></span> Flow & Level</a>
                         }
                         else if (g.Id == "reports")
                         {
                             <a class="sidebar-link @(ctrl == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-file-earmark-text-fill"></i></span> Reports</a>
+                            <a class="sidebar-link @(ctrl == "Carbon" ? "active" : "")" asp-controller="Carbon" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-tree-fill"></i></span> Carbon / ESG</a>
                             <a class="sidebar-link @(ctrl == "DataQuality" ? "active" : "")" asp-controller="DataQuality" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-patch-check-fill"></i></span> Data Quality</a>
-                        }
-                        else if (g.Id == "admin")
-                        {
                             <a class="sidebar-link @(ctrl == "Settings" ? "active" : "")" asp-controller="Settings" asp-action="Index"><span class="sidebar-icon"><i class="bi bi-gear-fill"></i></span> Settings</a>
                         }
                     </div>
