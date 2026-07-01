@@ -29,7 +29,7 @@
                 <select name="quarter" class="form-select form-select-sm" style="background-color: #0F172A; color: #E2E8F0; border-color: #334155;">
                     @for (int q = 1; q <= 4; q++)
                     {
-                        if (q == (int)ViewBag.Quarter) { <option value="@q" selected>Q@q</option> } else { <option value="@q">Q@q</option> }
+                        if (q == (int)ViewBag.Quarter) { <option value="@q" selected>Q@(q)</option> } else { <option value="@q">Q@(q)</option> }
                     }
                 </select>
             </div>
