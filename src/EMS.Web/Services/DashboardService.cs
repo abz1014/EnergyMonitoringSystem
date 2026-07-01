@@ -52,6 +52,12 @@ public class WebDashboardService : IDashboardService
             var tomorrow = today.AddDays(1);
             var monthStart = new DateTime(today.Year, today.Month, 1);
 
+            // Fetch all devices once — used for online count, chart device lookup, and score calc.
+            // 6-row table that changes only when hardware changes; repository caches for 10 min.
+            var allDevices = await _deviceRepository.GetAllDevices();
+            var onlineMeters = allDevices.Count(d => d.IsActive == 1);
+            var totalDevices = allDevices.Count;
+
             var todayData = (await _energyMeterRepository.GetByDateRange(today, tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
 
             if (todayData.Count == 0)
@@ -68,8 +74,6 @@ public class WebDashboardService : IDashboardService
 
             var todaysConsumption = todayData.Sum(d => (double)(d.kWh ?? 0));
             var peakDemand = todayData.Count > 0 ? todayData.Max(d => (double)(d.kWtotal ?? 0)) : 0;
-            var onlineMeters = await _deviceRepository.GetOnlineDeviceCount();
-            var totalDevices = (await _deviceRepository.GetAllDevices()).Count;
 
             var monthData = (await _energyMeterRepository.GetByDateRange(monthStart, tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
             var monthlyTotal = monthData.Sum(d => (double)(d.kWh ?? 0));
@@ -163,14 +167,15 @@ public class WebDashboardService : IDashboardService
                 }
             };
 
-            var charts = await BuildChartDataAsync(today, tomorrow, todayData);
-            charts.LoadProfile = await BuildLoadProfileAsync(today);
+            // Single 7-day fetch shared between load profile and score calc — both need the same
+            // trailing window anchored at today after the fallback above has resolved it.
+            var weekAgo = today.AddDays(-7);
+            var weekData = (await _energyMeterRepository.GetByDateRange(weekAgo, tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
+
+            var charts = BuildChartDataAsync(today, todayData, allDevices);
+            charts.LoadProfile = BuildLoadProfileFromData(today, todayData, weekData);
             charts.MonthlyTrend = await BuildMonthlyTrendAsync();
 
-            // Same 7-day trailing average pattern used by Briefing, so both pages' scores are
-            // computed from comparable inputs via the shared PlantScoreCalculator.
-            var weekAgo = today.AddDays(-7);
-            var weekData = (await _energyMeterRepository.GetByDateRange(weekAgo, today)).Where(d => !IsContaminatedReading(d)).ToList();
             var weekDailyTotals = weekData
                 .Where(d => d.DateTime.HasValue)
                 .GroupBy(d => d.DateTime!.Value.Date)
@@ -181,14 +186,8 @@ public class WebDashboardService : IDashboardService
                 ? Math.Round((todaysConsumption - sevenDayAverage) / sevenDayAverage * 100, 1)
                 : 0;
 
-            // Energy meters that actually reported a reading today vs. energy meters that
-            // exist -- NOT onlineMeters/totalDevices, which only counts each device's IsActive
-            // config flag across every device type (including fuel tanks/PLC that never produce
-            // a kWh reading) and sat near 100% regardless of real conditions. This previously
-            // disagreed with Briefing's equivalent ratio, which is why the two pages' Plant
-            // Scores showed different numbers for the same day -- both now use the same
-            // reporting-based definition (see BriefingService.BuildBriefingAsync for the mirror).
-            var allDevices = await _deviceRepository.GetAllDevices();
+            // Energy meters that actually reported a reading today vs. energy meters that exist.
+            // Uses allDevices fetched once above — no second GetAllDevices() call needed.
             var totalEnergyMeters = allDevices.Where(d => d.IsActive == 1 && d.DeviceType == "EnergyMeter")
                 .GroupBy(d => d.DeviceID).Select(g => g.First()).Count();
             var reportingEnergyMeters = todayData.Where(d => d.MeterNo.HasValue).Select(d => d.MeterNo!.Value).Distinct().Count();
@@ -231,7 +230,7 @@ public class WebDashboardService : IDashboardService
         }
     }
 
-    private async Task<ChartDataDto> BuildChartDataAsync(DateTime today, DateTime tomorrow, List<EnergyMeterData> todayData)
+    private static ChartDataDto BuildChartDataAsync(DateTime today, List<EnergyMeterData> todayData, List<MonitoringDevice> allDevices)
     {
         var consumptionTrend = todayData
             .Where(d => d.DateTime.HasValue)
@@ -244,8 +243,7 @@ public class WebDashboardService : IDashboardService
             .OrderBy(c => c.Time)
             .ToList();
 
-        var devices = await _deviceRepository.GetAllDevices();
-        var deviceLookup = devices.Where(d => d.DeviceID.HasValue).GroupBy(d => d.DeviceID!.Value).ToDictionary(g => g.Key, g => g.First());
+        var deviceLookup = allDevices.Where(d => d.DeviceID.HasValue).GroupBy(d => d.DeviceID!.Value).ToDictionary(g => g.Key, g => g.First());
 
         var locationGroups = todayData
             .Where(d => d.MeterNo.HasValue && deviceLookup.ContainsKey(d.MeterNo.Value))
@@ -318,43 +316,16 @@ public class WebDashboardService : IDashboardService
         return result;
     }
 
-    private async Task<LoadProfileDto> BuildLoadProfileAsync(DateTime today)
+    // No DB calls — data is passed in from the single wide fetch in GetExecutiveDashboardAsync.
+    // weekData covers [today-7, tomorrow] so yesterday is a filtered subset of it.
+    private static LoadProfileDto BuildLoadProfileFromData(DateTime today, List<EnergyMeterData> todayData, List<EnergyMeterData> weekData)
     {
         var profile = new LoadProfileDto();
         var hours = Enumerable.Range(0, 24).ToList();
         profile.Hours = hours.Select(h => $"{h:D2}:00").ToList();
 
-        var tomorrow = today.AddDays(1);
         var yesterday = today.AddDays(-1);
-        var weekAgo = today.AddDays(-7);
-
-        var todayData = (await _energyMeterRepository.GetByDateRange(today, tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
-        var yesterdayData = (await _energyMeterRepository.GetByDateRange(yesterday, today.AddTicks(-1))).Where(d => !IsContaminatedReading(d)).ToList();
-
-        if (todayData.Count == 0 && yesterdayData.Count == 0)
-        {
-            var recentData = (await _energyMeterRepository.GetByDateRange(today.AddDays(-30), tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
-            if (recentData.Count > 0)
-            {
-                var dates = recentData.Where(d => d.DateTime.HasValue).Select(d => d.DateTime!.Value.Date).Distinct().OrderByDescending(d => d).ToList();
-                if (dates.Count >= 1)
-                {
-                    var latestDate = dates[0];
-                    today = latestDate;
-                    tomorrow = latestDate.AddDays(1);
-                    yesterday = latestDate.AddDays(-1);
-                    weekAgo = latestDate.AddDays(-7);
-
-                    todayData = recentData.Where(d => d.DateTime.HasValue && d.DateTime.Value.Date == latestDate).ToList();
-                    yesterdayData = dates.Count >= 2
-                        ? recentData.Where(d => d.DateTime.HasValue && d.DateTime.Value.Date == dates[1]).ToList()
-                        : new();
-
-                    profile.TodayLabel = latestDate.ToString("MMM dd");
-                    profile.YesterdayLabel = dates.Count >= 2 ? dates[1].ToString("MMM dd") : "No data";
-                }
-            }
-        }
+        var yesterdayData = weekData.Where(d => d.DateTime.HasValue && d.DateTime.Value.Date == yesterday).ToList();
 
         var todayByHour = todayData
             .Where(d => d.DateTime.HasValue)
@@ -366,11 +337,7 @@ public class WebDashboardService : IDashboardService
             .GroupBy(d => d.DateTime!.Value.Hour)
             .ToDictionary(g => g.Key, g => g.Sum(x => (double)(x.kWh ?? 0)));
 
-        var weekData = (await _energyMeterRepository.GetByDateRange(weekAgo, tomorrow)).Where(d => !IsContaminatedReading(d)).ToList();
-        var weekDays = weekData
-            .Where(d => d.DateTime.HasValue)
-            .GroupBy(d => d.DateTime!.Value.Date)
-            .Count();
+        var weekDays = weekData.Where(d => d.DateTime.HasValue).Select(d => d.DateTime!.Value.Date).Distinct().Count();
         var weekByHour = weekData
             .Where(d => d.DateTime.HasValue)
             .GroupBy(d => d.DateTime!.Value.Hour)

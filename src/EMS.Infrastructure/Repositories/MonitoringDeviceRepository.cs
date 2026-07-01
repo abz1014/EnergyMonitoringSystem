@@ -1,6 +1,7 @@
 namespace EMS.Infrastructure.Repositories;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using EMS.Core.Interfaces;
 using EMS.Core.Models;
 using EMS.Infrastructure.Data;
@@ -8,15 +9,24 @@ using EMS.Infrastructure.Data;
 public class MonitoringDeviceRepository : IMonitoringDeviceRepository
 {
     private readonly ScadaDbContext _context;
+    private readonly IMemoryCache _cache;
+    private const string AllDevicesCacheKey = "monitoring_devices_all";
+    private static readonly TimeSpan DeviceCacheDuration = TimeSpan.FromMinutes(10);
 
-    public MonitoringDeviceRepository(ScadaDbContext context)
+    public MonitoringDeviceRepository(ScadaDbContext context, IMemoryCache cache)
     {
         _context = context;
+        _cache = cache;
     }
 
     public async Task<List<MonitoringDevice>> GetAllDevices()
     {
-        return await _context.MonitoringDevices.AsNoTracking().ToListAsync();
+        if (_cache.TryGetValue(AllDevicesCacheKey, out List<MonitoringDevice>? cached) && cached != null)
+            return cached;
+
+        var devices = await _context.MonitoringDevices.AsNoTracking().ToListAsync();
+        _cache.Set(AllDevicesCacheKey, devices, DeviceCacheDuration);
+        return devices;
     }
 
     public async Task<List<MonitoringDevice>> GetDevicesByType(string type)

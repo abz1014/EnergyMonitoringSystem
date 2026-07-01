@@ -2,26 +2,25 @@ namespace EMS.Web.Controllers;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using EMS.Core.Interfaces;
 using EMS.Core.Models;
 using EMS.Web.Services;
 using System.Text.Json;
 
-// Sprint 4: four analytics that are Class A (zero new data required) under
-// SPRINT4_ANALYTICS_FEASIBILITY.md, sharing one data fetch the same way TimeOfUseController does.
-// All kWh-summing here uses DataIntegrityHelper.ExcludeContaminated -- see that file for the
-// full provenance note. The underlying kWh cumulative-vs-interval semantics question is still
-// open with the client (kwh-semantics-pending-confirmation memory); this page does not hide that,
-// it states it directly in the view.
 [Authorize(Roles = "Admin,Operator,Viewer")]
 public class LoadAnalyticsController : Controller
 {
     private readonly IEnergyMeterRepository _meterRepo;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<LoadAnalyticsController> _logger;
+    private const string MonthlyVarianceCacheKey = "load_analytics_monthly_variance";
+    private static readonly TimeSpan MonthlyVarianceCacheDuration = TimeSpan.FromMinutes(5);
 
-    public LoadAnalyticsController(IEnergyMeterRepository meterRepo, ILogger<LoadAnalyticsController> logger)
+    public LoadAnalyticsController(IEnergyMeterRepository meterRepo, IMemoryCache cache, ILogger<LoadAnalyticsController> logger)
     {
         _meterRepo = meterRepo;
+        _cache = cache;
         _logger = logger;
     }
 
@@ -146,9 +145,13 @@ public class LoadAnalyticsController : Controller
     // --- Tab 4: Monthly Variance (month-over-month % change in system-wide kWh) ---
     private async Task BuildMonthlyVarianceTab()
     {
-        // Independent fetch covering all history, not just the selected range -- monthly
-        // comparison needs full calendar months, which may fall outside the page's range selector.
-        var all = await _meterRepo.GetByDateRange(DateTime.Now.AddYears(-2), DateTime.Now.AddDays(1));
+        // Independent 2-year fetch — monthly comparison needs full calendar months outside the
+        // range selector window. Cached for 5 minutes since month-level data changes slowly.
+        if (!_cache.TryGetValue(MonthlyVarianceCacheKey, out List<EnergyMeterData>? all) || all == null)
+        {
+            all = await _meterRepo.GetByDateRange(DateTime.Now.AddYears(-2), DateTime.Now.AddDays(1));
+            _cache.Set(MonthlyVarianceCacheKey, all, MonthlyVarianceCacheDuration);
+        }
         var clean = all.Where(d => d.DateTime.HasValue).ToList().ExcludeContaminated().ToList();
 
         var monthlyTotals = clean

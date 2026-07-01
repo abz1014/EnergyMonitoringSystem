@@ -37,27 +37,30 @@ public class BriefingService
         {
             var today = DateTime.Now.Date;
             var yesterday = today.AddDays(-1);
-            var yesterdayEnd = today.AddTicks(-1);
-            var weekAgo = today.AddDays(-7);
 
-            var yesterdayData = await _meterRepo.GetByDateRange(yesterday, yesterdayEnd);
+            // Single wide fetch: covers prior month + current month so all downstream
+            // calculations (yesterday, 7-day avg, weekly health, monthly report, prior month)
+            // can filter in memory — 1 DB round trip instead of the previous 6.
+            var priorMonthStart = new DateTime(today.AddMonths(-1).Year, today.AddMonths(-1).Month, 1);
+            var wideEnd = today.AddDays(1).AddTicks(-1);
+            var allData = await _meterRepo.GetByDateRange(priorMonthStart, wideEnd);
 
-            if (yesterdayData.Count == 0)
+            // Resolve the latest date with actual data (same fallback pattern as before).
+            var availableDates = allData.Where(d => d.DateTime.HasValue)
+                .Select(d => d.DateTime!.Value.Date).Distinct().OrderByDescending(d => d).ToList();
+
+            if (availableDates.Count == 0)
             {
-                var recentData = await _meterRepo.GetByDateRange(today.AddDays(-30), today);
-                if (recentData.Count > 0)
-                {
-                    var latestDate = recentData.Max(d => d.DateTime ?? DateTime.MinValue).Date;
-                    yesterdayData = recentData.Where(d => d.DateTime.HasValue && d.DateTime.Value.Date == latestDate).ToList();
-                    yesterday = latestDate;
-                    yesterdayEnd = latestDate.AddDays(1).AddTicks(-1);
-                    model.DataDateLabel = latestDate.ToString("MMM dd, yyyy");
-                }
+                model.HasData = false;
+                return model;
             }
-            else
-            {
-                model.DataDateLabel = "Yesterday";
-            }
+
+            var latestDate = availableDates[0];
+            yesterday = latestDate;
+            var yesterdayEnd = latestDate.AddDays(1).AddTicks(-1);
+            model.DataDateLabel = latestDate.Date == today.AddDays(-1) ? "Yesterday" : latestDate.ToString("MMM dd, yyyy");
+
+            var yesterdayData = allData.Where(d => d.DateTime.HasValue && d.DateTime.Value.Date == yesterday).ToList();
 
             model.ReportDate = yesterday;
             model.HasData = yesterdayData.Count > 0;
@@ -67,8 +70,8 @@ public class BriefingService
 
             model.TotalConsumption = yesterdayData.Sum(d => (double)(d.kWh ?? 0));
 
-            weekAgo = yesterday.AddDays(-7);
-            var weekData = await _meterRepo.GetByDateRange(weekAgo, yesterdayEnd);
+            var weekAgo = yesterday.AddDays(-7);
+            var weekData = allData.Where(d => d.DateTime.HasValue && d.DateTime.Value >= weekAgo && d.DateTime.Value <= yesterdayEnd).ToList();
             var dailyTotals = weekData
                 .Where(d => d.DateTime.HasValue)
                 .GroupBy(d => d.DateTime!.Value.Date)
@@ -122,8 +125,8 @@ public class BriefingService
 
             CalculateScore(model);
             GenerateInsights(model);
-            await BuildWeeklyHealthAsync(model);
-            await BuildMonthlyReportAsync(model);
+            await BuildWeeklyHealthAsync(model, allData);
+            await BuildMonthlyReportAsync(model, allData);
 
             return model;
         }
@@ -238,20 +241,18 @@ public class BriefingService
         }
     }
 
-    // Sprint 5: Weekly Energy Health. Anchored to model.ReportDate (the latest date with actual
-    // data, same fallback already resolved above) rather than DateTime.Now, so this stays
-    // consistent with the rest of the briefing instead of comparing against a "today" the
-    // database has no readings for.
-    private async Task BuildWeeklyHealthAsync(BriefingViewModel model)
+    // Sprint 5: Weekly Energy Health. Uses the wide pre-fetched dataset — no additional DB calls
+    // except one COUNT query for alarms (targeted range query, not full table fetch).
+    private async Task BuildWeeklyHealthAsync(BriefingViewModel model, List<EnergyMeterData> allData)
     {
         var weekEnd = model.ReportDate.AddDays(1).AddTicks(-1);
         var weekStart = model.ReportDate.AddDays(-6);
         var priorWeekEnd = weekStart.AddTicks(-1);
         var priorWeekStart = weekStart.AddDays(-7);
 
-        var weekData = (await _meterRepo.GetByDateRange(weekStart, weekEnd))
+        var weekData = allData.Where(d => d.DateTime.HasValue && d.DateTime.Value >= weekStart && d.DateTime.Value <= weekEnd)
             .ExcludeContaminated().ToList();
-        var priorWeekData = (await _meterRepo.GetByDateRange(priorWeekStart, priorWeekEnd))
+        var priorWeekData = allData.Where(d => d.DateTime.HasValue && d.DateTime.Value >= priorWeekStart && d.DateTime.Value <= priorWeekEnd)
             .ExcludeContaminated().ToList();
 
         model.Weekly.WeekLabel = $"{weekStart:MMM dd} — {model.ReportDate:MMM dd, yyyy}";
@@ -260,8 +261,8 @@ public class BriefingService
         var pfValues = weekData.Select(PowerFactorHelper.ThreePhaseAverage).Where(v => v.HasValue).Select(v => v!.Value).ToList();
         model.Weekly.AvgPf = pfValues.Count > 0 ? Math.Round(pfValues.Average(), 3) : 0;
 
-        var allAlarms = await _alarmRepo.GetAllAlarms();
-        model.Weekly.AlarmCount = allAlarms.Count(a => a.CreatedAt >= weekStart && a.CreatedAt <= weekEnd);
+        // COUNT query — no full table fetch.
+        model.Weekly.AlarmCount = await _alarmRepo.GetAlarmCountInRange(weekStart, weekEnd);
 
         model.Weekly.HasPriorWeek = priorWeekData.Count > 0;
         if (model.Weekly.HasPriorWeek)
@@ -273,17 +274,18 @@ public class BriefingService
         }
     }
 
-    // Sprint 5: Monthly Energy Report. Same anchoring rationale as Weekly Energy Health above.
-    private async Task BuildMonthlyReportAsync(BriefingViewModel model)
+    // Sprint 5: Monthly Energy Report. Uses the wide pre-fetched dataset — no additional DB calls
+    // except one async AppSettings lookup (cached by AppSettingsService).
+    private async Task BuildMonthlyReportAsync(BriefingViewModel model, List<EnergyMeterData> allData)
     {
         var monthStart = new DateTime(model.ReportDate.Year, model.ReportDate.Month, 1);
         var monthEnd = model.ReportDate.AddDays(1).AddTicks(-1);
         var priorMonthStart = monthStart.AddMonths(-1);
         var priorMonthEnd = monthStart.AddTicks(-1);
 
-        var monthData = (await _meterRepo.GetByDateRange(monthStart, monthEnd))
+        var monthData = allData.Where(d => d.DateTime.HasValue && d.DateTime.Value >= monthStart && d.DateTime.Value <= monthEnd)
             .ExcludeContaminated().ToList();
-        var priorMonthData = (await _meterRepo.GetByDateRange(priorMonthStart, priorMonthEnd))
+        var priorMonthData = allData.Where(d => d.DateTime.HasValue && d.DateTime.Value >= priorMonthStart && d.DateTime.Value <= priorMonthEnd)
             .ExcludeContaminated().ToList();
 
         model.Monthly.MonthLabel = model.ReportDate.ToString("MMMM yyyy");

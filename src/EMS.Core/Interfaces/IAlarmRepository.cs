@@ -11,5 +11,6 @@ public interface IAlarmRepository
     Task<Alarm?> GetAlarmById(int id);
     Task AcknowledgeAlarm(int id, string acknowledgedBy, string? note = null);
     Task<int> GetActiveAlarmCount();
+    Task<int> GetAlarmCountInRange(DateTime from, DateTime to);
     Task AddAlarm(Alarm alarm);
 }

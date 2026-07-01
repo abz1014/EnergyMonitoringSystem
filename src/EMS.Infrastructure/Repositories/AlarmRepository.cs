@@ -71,6 +71,11 @@ public class AlarmRepository : IAlarmRepository
         return await _context.Alarms.CountAsync(a => a.IsActive);
     }
 
+    public async Task<int> GetAlarmCountInRange(DateTime from, DateTime to)
+    {
+        return await _context.Alarms.CountAsync(a => a.CreatedAt >= from && a.CreatedAt <= to);
+    }
+
     public async Task AddAlarm(Alarm alarm)
     {
         _context.Alarms.Add(alarm);
