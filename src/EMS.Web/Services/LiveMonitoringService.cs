@@ -30,7 +30,9 @@ public class LiveMonitoringService : ILiveMonitoringService
             var activeAlarms = await _alarmRepository.GetActiveAlarms();
 
             var now = DateTime.Now;
-            var recentData = await _meterRepository.GetByDateRange(now.AddHours(-1), now);
+            // Use 2-hour window so hourly-polled meters don't flip to "offline" mid-hour.
+            // Falls back to 30-day window if the gateway has been down for hours (dev/demo mode).
+            var recentData = await _meterRepository.GetByDateRange(now.AddHours(-2), now);
 
             if (recentData.Count == 0)
             {
@@ -124,10 +126,14 @@ public class LiveMonitoringService : ILiveMonitoringService
 
     private static string DetermineStatus(EnergyMeterData reading)
     {
-        if (!reading.DateTime.HasValue || reading.DateTime.Value < DateTime.Now.AddMinutes(-5))
+        // Thresholds match the gateway's 1-hour polling interval:
+        //   > 90 min since last reading → offline (missed at least one poll cycle)
+        //   30–90 min → warning (one reading received but next is overdue)
+        //   < 30 min → online
+        if (!reading.DateTime.HasValue || reading.DateTime.Value < DateTime.Now.AddMinutes(-90))
             return "offline";
 
-        if (reading.DateTime.Value < DateTime.Now.AddMinutes(-2))
+        if (reading.DateTime.Value < DateTime.Now.AddMinutes(-30))
             return "warning";
 
         var voltage = reading.VoltL1N ?? 0;
